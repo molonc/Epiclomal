@@ -4,6 +4,9 @@ Created on 2017-01-17
 @author: Mirela Andronescu
 '''
 
+# Very nice blog about einsum and how to convert it into nested sums
+# https://obilaniu6266h16.wordpress.com/2016/02/04/einstein-summation-in-numpy/
+
 from __future__ import division
 
 import numpy as np
@@ -64,6 +67,7 @@ class BasicGeMM(object):
             # T is 2 when gamma_prior is [99, 1; 1, 99]        
         
             self.IX[data_type] = get_indicator_matrix(range(self.T[data_type]), X[data_type])
+            # size TxNxM
             # self.IX is actually  the indicator matrix I(X_nm=t)
             # Now self.IX contains 2 matrices: 
             # the first is I(Xnm=0); this is the opposite of the input matrix
@@ -229,12 +233,25 @@ class BasicGeMM(object):
         # Now it's taking the e_log_epsilon
         e_log_epsilon = self.get_e_log_epsilon(data_type)   # SxT   
                  
+        # NOTE: einsum seems much faster than the nested for loops!!!                 
+                 
         # the summations below mean
         # log q(G_km=s) = \sum_t \sum_n I(X_nm=t) * E[I(Z_n=k)] * E[log(epsilon_st)] + log(1/2)
         return np.einsum('stnkm, stnkm, stnkm -> skm',
-                          IX[np.newaxis, :, :, np.newaxis, :],       # IX depends on t (2 groups), n and m
-                          self.pi_star[np.newaxis, np.newaxis, :, :, np.newaxis],  # pi_star depends on n and k
-                          e_log_epsilon[:, :, np.newaxis, np.newaxis, np.newaxis])   # e_log_epsilon depends on s and t
+                         IX[np.newaxis, :, :, np.newaxis, :],       # IX depends on t (2 groups), n and m
+                         self.pi_star[np.newaxis, np.newaxis, :, :, np.newaxis],  # pi_star depends on n and k
+                         e_log_epsilon[:, :, np.newaxis, np.newaxis, np.newaxis])   # e_log_epsilon depends on s and t
+                          
+#         term = np.zeros((self.S[data_type], self.K, self.M[data_type]))
+#         for s in range(self.S[data_type]):
+#             for k in range(self.K):
+#                 for m in range(self.M[data_type]):
+#                     for t in range(self.T[data_type]):
+#                         for n in range(self.N):
+#                             term[s,k,m] += IX[t,n,m] * self.pi_star[n,k] * e_log_epsilon[s,t]
+#         return term                            
+                          
+                          
      
         
     ####################        
@@ -275,8 +292,16 @@ class BasicGeMM(object):
     def _get_beta_star_data_term(self, data_type):
         # MA: added this 
         mu_star = self.get_mu_star(data_type)        # SxKxM
-        return np.einsum('skm -> ks', mu_star[:, :, :])     
+        # MA: use for loops instead of einsum so we can easily extend to regions
+        return np.einsum('skm -> ks', mu_star[:, :, :]) 
             
+#         term = np.zeros((self.K,self.S[data_type]))
+#         for s in range(self.S[data_type]):
+#             for k in range(self.K):
+#                 for m in range(self.M[data_type]):
+#                     term[k,s] += mu_star[s,k,m]
+#         return term                    
+                    
     ####################    
     
     def _update_alpha_star(self):

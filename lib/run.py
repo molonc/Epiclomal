@@ -14,6 +14,7 @@ import time
 
 from lib.basic_gemm import BasicGeMM
 from lib.basic_miss_gemm import BasicMissGeMM
+from lib.region_gemm import RegionGeMM
 from lib.utils import load_labels
 
 ##############################
@@ -24,7 +25,7 @@ def run_basic_gemm_model(args):
     if args.seed is not None:
         np.random.seed(args.seed)
        
-    cell_ids, data, event_ids, priors, regions = load_data(args.config_file)
+    cell_ids, data, event_ids, priors, regions = load_data(args.config_file, args.data_file)
    
     model = BasicGeMM(priors['gamma'],
                       priors['alpha'],
@@ -80,12 +81,13 @@ def run_region_gemm_model(args):
     if args.seed is not None:
         np.random.seed(args.seed)
        
-    cell_ids, data, event_ids, priors, regions = load_data(args.config_file)
+    cell_ids, data, event_ids, priors, regions = load_data(args.config_file, include_regions=True)
    
     model = RegionGeMM(priors['gamma'],
                       priors['alpha'],
                       priors['beta'],
-                      data)
+                      data,
+                      regions)
         
     model.fit(convergence_tolerance=args.convergence_tolerance, num_iters=args.max_num_iters, debug=False)
     
@@ -101,8 +103,9 @@ def run_region_gemm_model(args):
         
 ##############################        
     
-def load_data(file_name):
-    with open(file_name) as fh:
+def load_data(yaml_filename, data_filename, include_regions=False):
+# TODO: separate this into different loads: one for config, one for data, one for regions
+    with open(yaml_filename) as fh:
         config = yaml.load(fh)
     
     cell_ids = []
@@ -117,7 +120,10 @@ def load_data(file_name):
     regions = {}
 
     for data_type in config['data']:
-        data[data_type] = _load_data_frame(config['data'][data_type]['file'])
+        # data[data_type] = _load_data_frame(config['data'][data_type]['file'])
+        data[data_type] = _load_data_frame(data_filename)
+        if (include_regions):
+            regions[data_type] = _load_regions_frame(config['data'][data_type]['region_file'])
         
         priors['gamma'][data_type] = np.array(config['data'][data_type]['gamma_prior'])
         
@@ -150,14 +156,28 @@ def load_data(file_name):
         print 'Number of {0} events: {1}'.format(data_type, len(event_ids[data_type]))
         print 'Beta prior of {0} events: {1}'.format(data_type, priors['beta'][data_type])
         print 'Gamma prior of {0} events: {1}'.format(data_type, priors['gamma'][data_type])
+        #print 'Data: \n', data[data_type]
+        #print 'Regions: \n', regions[data_type] 
+        
+        # This is how to iterate through the regions:
+        #for index, row in regions[data_type].iterrows():
+        #    print index, row["start"], row["end"]        
     
     return  cell_ids, data, event_ids, priors, regions
 
 def _load_data_frame(file_name):
-    print 'Loading {0}.'.format(file_name)
+    print 'Loading data file {0}.'.format(file_name)
     df = pd.read_csv(file_name, compression='gzip', index_col='cell_id', sep='\t')
     
     return df
+
+def _load_regions_frame(file_name):
+    # Assume the data file contains only regions, and the regions start and end are the column index from the data
+    print 'Loading regions file {0}.'.format(file_name)
+    df = pd.read_csv(file_name, compression='gzip', index_col='region', sep='\t')
+    
+    return df
+
 
 def load_samples(cell_ids, file_name):
     if file_name is not None:

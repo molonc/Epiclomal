@@ -28,7 +28,7 @@ class BasicMissGeMM(BasicGeMM):
         
         for data_type in self.data_types:        
             self.log_rho_star[data_type] = self._init_log_rho_star (data_type, X[data_type].as_matrix())        
-            print 'rho_star ', self.get_rho_star(data_type)
+            # print 'rho_star ', self.get_rho_star(data_type)
         
     ###################        
     def _init_log_rho_star (self, data_type, X):

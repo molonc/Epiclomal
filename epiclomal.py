@@ -4,7 +4,7 @@
 # Epicaller, probabilistic model for clustering and imputing single-cell methylation data
 # Author : Mirela Andronescu
 #=======================================================================================================================
-from lib.run import run_basic_gemm_model, run_basic_miss_gemm_model
+from lib.run import run_basic_gemm_model, run_basic_miss_gemm_model, run_region_gemm_model
 
 import argparse
 
@@ -21,6 +21,9 @@ analysis_parser = argparse.ArgumentParser(add_help=False)
 
 analysis_parser.add_argument('--config_file', required=True,
                             help='''Path to YAML format configuration file.''')
+
+analysis_parser.add_argument('--data_file', required=True,
+                            help='''Path to data input file.''')
 
 analysis_parser.add_argument('--lower_bound_file', default=None,
                              help='''Path of file where lower bound convergence will be written.''')
