@@ -1,0 +1,382 @@
+# In this version: 
+# - generates data according to the region based GeMM with missing data
+# - generates the clones independently 
+# - missing and error are probabilities, for each position, make it erroneous or missing with that probability
+# - the missing step is applied after the error step
+# - only 2 states: methylatated (1) and unmethylated (0)
+
+# simulate synthetic data
+
+suppressMessages(library("argparse"))
+library(MCMCpack) # for generating values from a Dirichlet distribution
+ 
+# create parser object
+parser <- ArgumentParser()
+
+# specify our desired options
+# by default ArgumentParser will add a help option
+
+parser$add_argument("--num_loci", type="integer", default=100, help="Number of loci") 
+parser$add_argument("--num_clones", type="integer", default=3, help="Number of clones")
+parser$add_argument("--num_cells", type="integer", default=10, help="Number of cells")
+parser$add_argument("--clone_prevalence", type="character", default="0.2_0.5_0.3", help="Probability of clone prevalences")
+parser$add_argument("--error_probability", type="character", default="0.01_0.01", help="Error probability for each methylation state")
+# error_probability="0.01_0.01" corresponds to P(Y=1|G=0)=0.01 and P(Y=0|G=1)=0.01, respectively
+# If we assume more than 2 states it would be better if error_probability is written as matrix
+
+parser$add_argument("--missing_probability", type="double", default=0.1, help="Missing data probability")
+
+### Genotype probabilities: p(G_krl = s) = mu_krs
+parser$add_argument("--genotype_prob", type="character", default="random", help="random or nonrandom indicating if the genotype probabilities are generated randomly from a Dirichlet distribution") 
+### Generate them using a Dirichlet distribution
+parser$add_argument("--dirichlet_param_genotype_prob", type="character", default="1_1" , help="Dirichlet parameters to generate the genotype probabilities for each region r and clone k") 
+
+parser$add_argument("--num_regions", type="double", default=5, help="Number of regions")  
+parser$add_argument("--region_size_type", type="character", default="equal", help="equal or nonequal")
+parser$add_argument("--region_nonequal", type="character", default="uniform", help="uniform or nonuniform")
+
+parser$add_argument("--output_dir", type="character", default="output", help="The BEGINNING of the output directory file. Name of output dir will have the parameters.")
+# writes: 6 files 
+# 1: all input parameters 
+# 2. region coordinates 
+# 3: true matrix of genotypes
+# 4: Z's (true clone memberships)
+# 5: complete data ( all X's already with error)
+# 6: incomplete data (data with some X's missing)
+
+parser$add_argument("--seed", help="You can set the seed for reproducibility")  
+parser$add_argument("--verbose", type="integer", default=1, help="Set to 1 if you want details of the data generation")  
+parser$add_argument("--saveall", type="integer", default=1, help="Set to 1 if you want the complete data (with errors but without missing observations)")  
+
+
+args <- parser$parse_args() 
+
+
+#####################
+# other parameters ##
+#####################
+# these parameters should be the same for all simulated data sets
+# therefore, we need to set another seed here for them and keep that the same across all simulated data sets from a particular scenario
+set.seed(2) 
+
+S = 2 # number of states, we will consider only two for now in all simulations
+
+#==============================================
+### Generating the genotype probabilites
+### when genotype_prob="random" we generate different mu_krs's for each k and r
+### Important note: when R=1 and region_sizes[1] = num_loci we have the basic-GeMM as in that case we assumed P(G_km = s) = mu_k (probability does not depend on the locus)
+  if (args$genotype_prob=="nonrandom"){
+    mu_array <- array(0.5,c(S,args$num_regions,args$num_clones))
+  }
+  if (args$genotype_prob=="random"){
+    dirichlet_param <- as.double(unlist(strsplit(args$dirichlet_param_genotype_prob, split="_")))
+    mu_array <- array(NA,c(S,args$num_regions,args$num_clones))
+    for (k in 1:args$num_clones) {
+      mu_array[,,k] <- t(round(rdirichlet(args$num_regions, alpha=c(dirichlet_param[1],dirichlet_param[2])),2))
+    }
+  }
+
+
+
+#==============================================
+### Generating the regions
+M <- args$num_loci
+if (args$region_size_type=="equal"){
+  region_sizes <- rmultinom(1,size=M,p=rep(1/(args$num_regions),args$num_regions))
+  reg_coord <- NULL
+  for(r in 1:args$num_regions){
+    if(r==1){
+      reg_coord <- rbind(reg_coord,c(1 , region_sizes[r]))} else{
+        reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) ) }
+  }
+}
+
+if (args$region_size_type=="nonequal"){
+    if(args$region_nonequal=="uniform"){
+        breaks_unif <- c(0,sort(round(runif(args$num_regions-1,min=0,max=M))),M)
+        while(sum(duplicated(breaks_unif))!=0){
+            print("generating regions again")
+            breaks_unif <- c(0,sort(round(runif(args$num_regions-1,min=0,max=M))),M)
+        }
+        region_sizes <- diff(breaks_unif)
+        reg_coord <- NULL
+        for(r in 1:args$num_regions){
+            reg_coord <- rbind(reg_coord,c(breaks_unif[r]+1,breaks_unif[r+1])) 
+        }
+    }
+  
+    if(args$region_nonequal=="nonuniform"){
+        #print("nonuniform")
+        p_reg <- rep(c(0.1,0.2,0.5,0.1,0.1),args$num_regions/5)
+        region_sizes <- rmultinom(1,size=M,p=p_reg) ### unbalanced sizes  
+  
+        ### when R is big we will need a dirichlet if you want some control on which regions to be big or small
+        ### Example for R=500
+        #p_reg <- t(rdirichlet(1, alpha=c(rep(1,100),rep(4,100),rep(50,100),rep(8,100),rep(6,100))))
+    
+        reg_coord <- NULL
+        for(r in 1:R){
+            if(r==1){
+                reg_coord <- rbind(reg_coord,c(1 , region_sizes[r]))
+            } 
+            else{
+                reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) ) 
+            }
+        }    
+    }
+}
+
+
+# disable the scientific notation so that the output dir has the name 100000, and not 1e+05
+options(scipen=999)
+
+# Make the output directory have all the input parameters
+# TO add the regions arguments in the output directory
+output_dir <- paste0(args$output_dir ,"_loci", args$num_loci, "_clones", args$num_clones,
+    "_cells", args$num_cells, "_prev", args$clone_prevalence, "_errpb", args$error_probability,
+    "_mispb", args$missing_probability, "_gpb", args$genotype_prob, "_dirpar", args$dirichlet_param_genotype_prob,
+    "_nregs", args$num_regions, "_rsize-", args$region_size_type, "_rnonequal-", args$region_nonequal)
+
+# if seed is not provided, then length(args$seed) is 0
+if (length(args$seed) > 0) {
+    print ("Setting seed")
+    set.seed(args$seed)
+    output_dir <- paste0(output_dir, "_seed", args$seed)    
+} else {
+    print ("NOT setting seed")
+}
+
+dir.create(output_dir, showWarnings = TRUE)
+# add a data subdirectory
+output_dir <- paste0(output_dir, "/data")
+dir.create(output_dir, showWarnings = TRUE)
+
+
+# BEGIN FUNCTIONS
+# ==========================
+# function that flips all the positions_to_flip in vector from 0 to 1 or from 1 to 0
+flip <- function (vector, positions_to_flip) {
+    for (locus in positions_to_flip) {
+        if (vector[locus] == 0) {
+            vector [locus] <- 1
+        } else if (vector[locus] == 1) {
+            vector [locus] <- 0
+        } else {
+            print ("ERROR: value of vector is not 0 or 1!!")    
+        }         
+    }            
+    return (c(vector))        
+}
+
+#function that generates the observed data for each cell
+xobs.function <- function(z,epsilon,genotype_matrix){
+    g <- genotype_matrix[z,] ### that's Step 2 - assigning the cell a true genotype 
+    x <-rep(NA,length(g))
+  
+    ### one way of generating the x's - that's Step 3
+    #ptm = proc.time()
+    x1 <- g[g==1]
+    x1[sample(1:sum(g==1),size=rbinom(n=1,size=sum(g==1),prob=epsilon[2]))] <- 0 ### epsilon[2] = P(Y=0|G=1)
+    x[g==1] <- x1
+  
+    x0 <- g[g==0]
+    x0[sample(1:sum(g==0),size=rbinom(n=1,size=sum(g==0),prob=epsilon[1]))] <- 1 ### epsilon[1] = P(Y=1|G=0)
+    x[g==0] <- x0
+    #(f1 <- proc.time() - ptm)
+  
+    ### another of way of doing it - sampling each obs from a bernoulli distribution
+    ### it is a bit slower than above when considering M=1e+6
+    ### If we consider more than 2 states it is easier to do this way sampling from a multinomial distribution
+    #ptm = proc.time()
+    #x1 <- rbinom(n=sum(g==1),size=1,prob=(1-epsilon[2,1])) ### prob of success --> P(Y=1|G=1) == 1-epsilon[2,1]
+    #x[g==1] <- x1
+  
+    #x0 <- rbinom(n=sum(g==0),size=1,prob=epsilon[1,2]) ### prob of success --> P(Y=1|G=0) == epsilon[1,2]
+    #x[g==0] <- x0
+    #(f2 <- proc.time() - ptm)
+    return(x)
+}
+
+# function that generates the genotypes for each region in a clone k
+genotype_reg <- function(r,region_sizes,mu_k){
+    g_rk <- sample(c(0,1),size=region_sizes[r],prob=mu_k[,r],replace=TRUE)
+    return(g_rk)
+}
+
+write_data_file <- function (data_matrix, output_file, index="cell_id") {
+    # first write the header into the file
+    # write the \n separately, otherwise it adds an extra tab
+    cat(sapply(c(index,1:ncol(data_matrix)), toString), file=output_file, sep="\t")
+    cat("\n", file=output_file, append=TRUE)
+    rownames(data_matrix) <- c(1:nrow(data_matrix))
+    write.table (data_matrix, output_file , sep="\t", col.names=FALSE, quote=FALSE, append=TRUE)    
+    system(paste0("gzip --force ", output_file))
+}
+
+# END FUNCTIONS
+# =============================
+
+
+### WE NEED TO SAVE mu_array or at least the seed that generates it
+save(mu_array,file=paste0(output_dir, "/mu_array.Rdata"))
+
+
+### SAVE region coordinates 
+#===================================================
+if (args$verbose)   {
+     print ("Region coordinates")
+     print (reg_coord-1)         # I want the coordinates to start from 0
+}
+reg_file <- paste0(output_dir, "/regions_file.tsv")
+write_data_file(reg_coord-1, reg_file, index="region_id")
+
+# Measuring the time with Rprof. For more details see http://stackoverflow.com/questions/6262203/measuring-function-execution-time-in-r
+#Rprof ( tf <- paste0(output_dir, "/log.log"),  memory.profiling = TRUE )
+
+# Create the genotype matrix, that is, the vectors G_k's for k=1,...,K
+# ==========================
+print ("GENERATING EPIGENOTYPES")
+### Generating the genotypes
+# This code generates independent genotypes, no phylogeny
+# It uses the the array in "genotype_probability"
+# It includes regions
+# Remember note above: R=1 and region_size = num_loci corresponds to the basic-GeMM
+
+
+#ptm = proc.time()
+R <- args$num_regions
+K <- args$num_clones
+genotype_matrix <- NULL
+for(k in 1:K){
+  
+  if(k==1){
+    g_k <- unlist(sapply(1:R,genotype_reg,region_sizes=region_sizes,mu_k=mu_array[,,k])) ### the S element of mu_array[,r,k] is the probability of sucess
+    genotype_matrix <- rbind(genotype_matrix,g_k)
+     #if (args$verbose)   {
+     #     print ("First clone of epigenotype matrix")
+     #    print (genotype_matrix) }
+    
+    }else{
+    g_k <- unlist(sapply(1:R,genotype_reg,region_sizes=region_sizes,mu_k=mu_array[,,k]))
+      while (sum(duplicated(rbind(genotype_matrix,g_k))==TRUE) != 0) { ### making sure there all genotype vectors are different from each other
+          #if (args$verbose) {
+          #  print ("Clone is already there, regenerate")
+          #}
+          #c <- c+1
+          g_k <- unlist(sapply(1:R,genotype_reg,region_sizes=region_sizes,mu_k=mu_array[,,k]))
+         }
+    genotype_matrix <- rbind(genotype_matrix,g_k)
+        }
+}
+
+#final <- proc.time() - ptm
+ if (args$verbose) {
+     print ("Final epigenotype matrix: ")
+     print (genotype_matrix)
+ }   
+
+# NOW write the matrix with each clone genotype into a file
+# ========================================
+geno_file <- paste0(output_dir, "/true_clone_epigenotypes.tsv")
+write_data_file(genotype_matrix, geno_file)
+
+
+# Now generate the cells
+# =============================
+print ("GENERATING CELLS")
+
+### Overall, generating the cell data involves 4 steps
+### Step 1: generate the the clone membership of each cell, that is, the Z_i's 
+### Step 2: assign to each cell to its true genotype from the genotype_matrix according to the value of Z
+### Step 3: add error to the true genotype generating the observed data for each cell
+### Step 4: remove some observations from each cell to allow for missing data
+
+
+###########
+### Step 1: generating the clone membership of each cell, that is, the Z_i's 
+###########
+
+### We assume that P(Z_i=k) = pi_k where pi_k is the clonal prevalence of clone k
+
+clone_prev <- as.double(unlist(strsplit(args$clone_prevalence, split="_"))) ### this is the vector with the pi_k's
+Z <- sample(1:K,size=args$num_cells,prob=clone_prev,replace = TRUE) 
+
+if (args$verbose) {
+  print ("Vector with clone memberships:")
+  print (Z)
+}  
+
+#if (args$saveall){
+#  tmp <- cbind(1:length(Z),Z)
+#  colnames(tmp) <- c("cell_id","Z")
+#  write.table(tmp,file=paste0(output_dir, "/true_clone_membership", ".tsv"),row.names=FALSE,sep="\t")
+#  rm(tmp) 
+#  }
+
+tmp <- cbind(1:length(Z),Z)  
+clone_file <- paste0(output_dir, "/true_clone_membership.tsv")
+write_data_file(as.matrix(Z), clone_file)  
+rm(tmp)
+
+# ================================
+##################
+### Steps 2 and 3: generating the observed data for each cell (X_nm or X_nrl)
+##################
+### generating a matrix where each row is the true genotype of a cell
+#data_true <- (t(sapply(Z,function(x){return(genotype_matrix[x,])}))) ### my genotype_matrix is K by M, so data_true is N by M
+### we do not need to save data_true as it can be easily calculated using Z and genotype_matrix
+### we can combine Steps 2 and 3 together and simply generate the observed data
+
+### adding error to data_true
+### this will depend on the epsilon_st's 
+### P(Y_nm = t | G_km = s) = epsilon_st
+### the epsilon's are written in a matrix, for example,
+### epsilon <- rbind(c(0.99,.01),c(0.02,0.98))
+### the rows of epsilon should sum to one
+### apply(epsilon,1,sum)
+
+## If we assume that the rows of epsilon are the same (same error for all states in S) 
+## we can then simply flip the true genotype values with probability epsilon[1,2] without considering the true genotype states
+
+
+### xobs.function is the function that generates the vector of observed genotypes for each cell
+### epsilon should be a 2 by 2 matrix where the first row gives you P(Y=0|G=0) and P(Y=1|G=0) and the second row P(Y=0|G=1) and P(Y=1|G=1)
+### so far we can only accommodate S=2 states 
+
+error_prob <- as.double(unlist(strsplit(args$error_probability, split="_")))
+x_data_matrix <- t(sapply(Z,xobs.function,epsilon=error_prob,genotype_matrix=genotype_matrix))
+
+if (args$verbose) {
+    print ("The complete data matrix with errors and all observations: ")
+    print(x_data_matrix)
+}    
+if (args$saveall)
+    write_data_file (x_data_matrix, paste0(output_dir, "/data_complete", ".tsv"))
+
+
+# ================================
+###########
+### Step 4: Now adding missingness
+###########
+
+print ("ADDING MISSINGNESS")
+
+miss_indices <- sample(1:(args$num_cells*args$num_loci),size=rbinom(1,size=(args$num_cells*args$num_loci),prob=args$missing_probability), replace=F)
+x_data_matrix[miss_indices] <- ""
+#x_data_matrix[miss_indices] <- NA
+#apply(x_data_matrix,1,function(x){sum(is.na(x))/args$num_loci})
+
+if (args$verbose) {
+  print ("Data with missing observations: ")
+  print(x_data_matrix)
+}    
+
+write_data_file (x_data_matrix, paste0(output_dir, "/data_incomplete", ".tsv"))
+
+if (args$verbose) {
+  print ("The end")
+} 
+
+#Rprof ( NULL ) ; print ( summaryRprof ( tf )  )
+
+

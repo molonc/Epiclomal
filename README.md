@@ -1,0 +1,1 @@
+R script generates synthetic methylation data.
