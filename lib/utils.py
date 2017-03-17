@@ -16,10 +16,12 @@ def compute_e_log_dirichlet(x):
     # psi(z) is the digamma function, the derivative of the logarithm of the gamma function evaluated at z
     return psi(x) - psi(np.expand_dims(x.sum(axis=-1), axis=-1))
 
+
+# THis function obsolete, moved inside the class
 def get_indicator_matrix(states, X):
 # for every position that is not missing in X, return 0 if it has state s or 1 otherwise
 # all the missing positions are replaced with 0
-    Y = np.zeros((len(states), X.shape[0], X.shape[1]))
+    Y = np.zeros((len(states), X.shape[0], X.shape[1]))   # size SxNxM, now SxNxRxL
     
     for i, s in enumerate(states):
         Y[i, :, :] = (X == s).astype(int)

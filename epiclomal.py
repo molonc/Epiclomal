@@ -4,7 +4,7 @@
 # Epicaller, probabilistic model for clustering and imputing single-cell methylation data
 # Author : Mirela Andronescu
 #=======================================================================================================================
-from lib.run import run_basic_gemm_model, run_basic_miss_gemm_model, run_region_gemm_model
+from lib.run import run_basic_gemm_model, run_basic_miss_gemm_model, run_region_gemm_model, run_region_miss_gemm_model
 
 import argparse
 
@@ -24,6 +24,9 @@ analysis_parser.add_argument('--config_file', required=True,
 
 analysis_parser.add_argument('--data_file', required=True,
                             help='''Path to data input file.''')
+                            
+analysis_parser.add_argument('--regions_file', default=None,
+                            help='''Path to regions input file.''')                            
 
 analysis_parser.add_argument('--lower_bound_file', default=None,
                              help='''Path of file where lower bound convergence will be written.''')
@@ -43,6 +46,13 @@ analysis_parser.add_argument('--labels_file', default=None,
                              help='''Path of file with initial labels to use.''')
 
 #---------------------------------------------------------------------------------------------------------------------- 
+# Basic-GeMM-M model for testing purposes. This model has one index for m in the basic model, as opposed to Basic-Gemm,
+#   which has 2 indexes, R and maxL
+# basic_parser_M = subparsers.add_parser('Basic-GeMM-M', parents=[analysis_parser],
+#                                       help='''Analyse single cell methylation data using the Basic-GeMM-M model.''')
+# basic_parser_M.set_defaults(func=run_basic_gemm_model_M)
+
+#---------------------------------------------------------------------------------------------------------------------- 
 basic_parser = subparsers.add_parser('Basic-GeMM', parents=[analysis_parser],
                                        help='''Analyse single cell methylation data using the Basic-GeMM model.''')
 
@@ -60,6 +70,13 @@ region_parser = subparsers.add_parser('Region-GeMM', parents=[analysis_parser],
                                        help='''Analyse single cell methylation data using the Region-GeMM model.''')
 
 region_parser.set_defaults(func=run_region_gemm_model)
+
+#---------------------------------------------------------------------------------------------------------------------- 
+region_parser = subparsers.add_parser('Region-Miss-GeMM', parents=[analysis_parser],
+                                       help='''Analyse single cell methylation data using the Region-Miss-GeMM model.''')
+
+region_parser.set_defaults(func=run_region_miss_gemm_model)
+
 
 #---------------------------------------------------------------------------------------------------------------------- 
 # the regions parser will add more input arguments

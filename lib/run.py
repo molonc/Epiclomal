@@ -11,83 +11,71 @@ import os
 import pandas as pd
 import yaml
 import time
+import operator
 
 from lib.basic_gemm import BasicGeMM
 from lib.basic_miss_gemm import BasicMissGeMM
 from lib.region_gemm import RegionGeMM
+from lib.region_miss_gemm import RegionMissGeMM
 from lib.utils import load_labels
+
 
 ##############################
 
 def run_basic_gemm_model(args):
-
-    t0 = time.clock()
-    if args.seed is not None:
-        np.random.seed(args.seed)
-       
-    cell_ids, data, event_ids, priors, regions = load_data(args.config_file, args.data_file)
-   
-    model = BasicGeMM(priors['gamma'],
-                      priors['alpha'],
-                      priors['beta'],
-                      data)
-        
-    model.fit(convergence_tolerance=args.convergence_tolerance, num_iters=args.max_num_iters, debug=False)
-    
-    if args.lower_bound_file is not None:
-        write_lower_bound(model, args.lower_bound_file)
-
-    if args.out_dir is not None:
-        write_cluster_posteriors(cell_ids, model.pi_star, args.out_dir)
-        
-        write_genotype_posteriors(event_ids, model.mu_star, args.out_dir)
-            
-        write_params(model, args.out_dir, event_ids, time.clock() - t0)
+    run_model('BasicGeMM', args)
     
 ##############################
     
 def run_basic_miss_gemm_model(args):
-
-    t0 = time.clock()
-    if args.seed is not None:
-        np.random.seed(args.seed)
-       
-    cell_ids, data, event_ids, priors, regions = load_data(args.config_file)
-   
-    model = BasicMissGeMM(priors['gamma'],
-                          priors['alpha'],
-                          priors['beta'],
-                          data)
-        
-    model.fit(convergence_tolerance=args.convergence_tolerance, num_iters=args.max_num_iters, debug=False)
-    
-    if args.lower_bound_file is not None:
-        write_lower_bound(model, args.lower_bound_file)
-
-    if args.out_dir is not None:
-        write_cluster_posteriors(cell_ids, model.pi_star, args.out_dir)
-        
-        write_genotype_posteriors(event_ids, model.mu_star, args.out_dir)
-            
-        write_params(model, args.out_dir, event_ids, time.clock() - t0)    
-        
-        write_imputed_data_MAP (cell_ids, model, args.out_dir)    
+    run_model('BasicMissGeMM', args)
 
 ##############################    
 
 def run_region_gemm_model(args):
+    run_model('RegionGeMM', args)
+        
+##############################    
+
+def run_region_miss_gemm_model(args):
+    run_model('RegionMissGeMM', args)      
+        
+##############################    
+
+def run_model(mtype, args):
 
     t0 = time.clock()
     if args.seed is not None:
         np.random.seed(args.seed)
        
-    cell_ids, data, event_ids, priors, regions = load_data(args.config_file, include_regions=True)
-   
-    model = RegionGeMM(priors['gamma'],
+    include_regions = False 
+    impute = False
+       
+    if (mtype == 'BasicGeMM'):
+        className = BasicGeMM
+        
+    elif (mtype == 'BasicMissGeMM'):
+        className = BasicMissGeMM
+        impute = True
+        
+    elif (mtype == 'RegionGeMM'):
+        include_regions=True
+        className = RegionGeMM
+        
+    elif (mtype == 'RegionMissGeMM'):
+        include_regions=True
+        className = RegionMissGeMM
+        impute = True
+                       
+    cell_ids, data, event_ids, priors, regions = load_data (args.config_file, 
+                        args.data_file, 
+                        args.regions_file, 
+                        include_regions)
+    model = className(priors['gamma'],
                       priors['alpha'],
                       priors['beta'],
                       data,
-                      regions)
+                      regions)                                                                                                       
         
     model.fit(convergence_tolerance=args.convergence_tolerance, num_iters=args.max_num_iters, debug=False)
     
@@ -95,16 +83,20 @@ def run_region_gemm_model(args):
         write_lower_bound(model, args.lower_bound_file)
 
     if args.out_dir is not None:
-        write_cluster_posteriors(cell_ids, model.pi_star, args.out_dir)
-        
-        write_genotype_posteriors(event_ids, model.mu_star, args.out_dir)
+        write_cluster_posteriors(cell_ids, model.pi_star, args.out_dir)        
+        write_cluster_MAP(cell_ids, model.pi_star, args.out_dir)
+        if (impute):
+            write_imputed_data_MAP(cell_ids, model, args.out_dir)
             
-        write_params(model, args.out_dir, event_ids, time.clock() - t0)
+            
+        # to correct this function    
+        # write_genotype_MAP(event_ids, model, args.out_dir) 
+            
+        write_params(model, args.out_dir, event_ids, time.clock() - t0)          
         
 ##############################        
     
-def load_data(yaml_filename, data_filename, include_regions=False):
-# TODO: separate this into different loads: one for config, one for data, one for regions
+def load_data(yaml_filename, data_filename, regions_filename=None, include_regions=False):
     with open(yaml_filename) as fh:
         config = yaml.load(fh)
     
@@ -123,7 +115,9 @@ def load_data(yaml_filename, data_filename, include_regions=False):
         # data[data_type] = _load_data_frame(config['data'][data_type]['file'])
         data[data_type] = _load_data_frame(data_filename)
         if (include_regions):
-            regions[data_type] = _load_regions_frame(config['data'][data_type]['region_file'])
+            regions[data_type] = _load_regions_frame(regions_filename)
+        else:
+            regions = None            
         
         priors['gamma'][data_type] = np.array(config['data'][data_type]['gamma_prior'])
         
@@ -197,14 +191,32 @@ def load_samples(cell_ids, file_name):
     
     return samples
 
-def write_cluster_posteriors(cell_ids, Z, out_dir):
+##########################
+
+def write_cluster_posteriors(cell_ids, pi_star, out_dir):
     file_name = os.path.join(out_dir, 'cluster_posteriors.tsv.gz')
 
-    df = pd.DataFrame(Z, index=cell_ids)
+    df = pd.DataFrame(pi_star, index=cell_ids)
     
     with gzip.GzipFile(file_name, 'w') as fh:
         df.to_csv(fh, index_label='cell_id', sep='\t')
+    
+##########################    
+       
+def write_cluster_MAP(cell_ids, pi_star, out_dir):        
+    file_name = os.path.join(out_dir, 'cluster_MAP.tsv.gz') 
         
+    labels_pred = []
+    # traverse every row, and find out which cluster has the maximum value
+    df = pd.DataFrame(pi_star)
+    for index, row in df.iterrows():
+        max_index, max_value = max(enumerate(row), key=operator.itemgetter(1))
+        labels_pred.append(max_index)
+    df = pd.DataFrame(np.transpose(labels_pred), index=cell_ids)
+    with gzip.GzipFile(file_name, 'w') as fh:
+        df.to_csv(fh, index_label='cell_id', sep='\t')          
+        
+##########################        
         
 def write_imputed_data_MAP(cell_ids, model, out_dir):
     # note: here I don't write the posterior probabilities, but the MAP values
@@ -212,17 +224,16 @@ def write_imputed_data_MAP(cell_ids, model, out_dir):
 
     for data_type in model.data_types:
         # first create a single matrix of size NxM from rho_star
-        rho_star = model.get_rho_star(data_type)        
-
-        imputed_matrix = np.argmax(rho_star, axis=0)
+        imputed_matrix = model.unregion_rho_star(data_type)        
 
         df = pd.DataFrame(imputed_matrix, index=cell_ids)
     
         with gzip.GzipFile(file_name, 'w') as fh:
             df.to_csv(fh, index_label='cell_id', sep='\t')                
         
-           
+##########################           
 
+# NOT SURE what this would be useful for
 def write_double_cluster_posteriors(cell_ids, model, out_dir):
     file_name = os.path.join(out_dir, 'double_cluster_posteriors.tsv.gz')
     
@@ -231,7 +242,28 @@ def write_double_cluster_posteriors(cell_ids, model, out_dir):
     with gzip.GzipFile(file_name, 'w') as fh:
         df.to_csv(fh, index_label='cell_id', sep='\t')    
 
+##########################
+
+def write_genotype_MAP(event_ids, model, out_dir):
+# TO DO: this is not working properly, to rewrite!!
+# this has to be rewritten in a matrix format
+    file_name = os.path.join(out_dir, 'genotype_MAP.tsv.gz')
+    
+    for data_type in model.data_types:
+        print 'mu star\n', model.get_mu_star(data_type)
+        geno_matrix = model.unregion_mu_star(data_type)
+        
+        print 'Geno matrix\n', geno_matrix
+        df = pd.DataFrame(geno_matrix, index=event_ids)        
+  
+        with gzip.GzipFile(file_name, 'w') as fh:
+            df.to_csv(fh, index=False, sep='\t')
+
+##########################
+
 def write_genotype_posteriors(event_ids, G, out_dir):
+# G is actually mu_star, the fitted parameters of G
+# this has to be rewritten in a matrix format
     file_name = os.path.join(out_dir, 'genotype_posteriors.tsv.gz')
     
     G_out = []
@@ -254,6 +286,8 @@ def write_genotype_posteriors(event_ids, G, out_dir):
   
     with gzip.GzipFile(file_name, 'w') as fh:
         G_out.to_csv(fh, index=False, sep='\t')
+
+##########################
 
 def write_params(model, out_dir, event_ids, cpu_time):
     file_name = os.path.join(out_dir, 'params.yaml')
@@ -283,6 +317,8 @@ def write_params(model, out_dir, event_ids, cpu_time):
 
     with open(file_name, 'w') as fh:
         yaml.dump(params, fh, default_flow_style=False)
+        
+##########################        
         
 def write_lower_bound(model, out_file):
     with open(out_file, 'w') as fh:
