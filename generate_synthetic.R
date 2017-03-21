@@ -8,7 +8,7 @@
 # simulate synthetic data
 
 suppressMessages(library("argparse"))
-library(MCMCpack) # for generating values from a Dirichlet distribution
+suppressMessages(library(MCMCpack)) # for generating values from a Dirichlet distribution
  
 # create parser object
 parser <- ArgumentParser()
