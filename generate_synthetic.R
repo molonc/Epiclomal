@@ -313,9 +313,12 @@ if (args$verbose) {
 #  rm(tmp) 
 #  }
 
+# MA: I'm adding the epigenotype_id in the header of the file
 tmp <- cbind(1:length(Z),Z)  
+colnames(tmp) <- c("cell_id","epigenotype_id")
 clone_file <- paste0(output_dir, "/true_clone_membership.tsv")
-write_data_file(as.matrix(Z), clone_file)  
+write.table (tmp, clone_file, sep="\t", row.names=FALSE, quote=FALSE)
+system(paste0("gzip --force ", clone_file))
 rm(tmp)
 
 # ================================
