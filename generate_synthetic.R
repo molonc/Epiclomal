@@ -76,11 +76,23 @@ S = 2 # number of states, we will consider only two for now in all simulations
     }
   }
 
+print(mu_array)
 
 
 #==============================================
 ### Generating the regions
 M <- args$num_loci
+
+if (args$num_regions == 1){
+  region_sizes <- M
+  reg_coord<- as.matrix(t(c(1,region_sizes)))
+  #print(reg_coord)
+  #print("number of regions equal to 1")
+  } 
+
+if (args$num_regions > 1){
+  #print("number of regions greater than 1")
+
 if (args$region_size_type=="equal"){
   region_sizes <- rmultinom(1,size=M,p=rep(1/(args$num_regions),args$num_regions))
   reg_coord <- NULL
@@ -121,9 +133,10 @@ if (args$region_size_type=="nonequal"){
             } 
             else{
                 reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) ) 
-            }
-        }    
-    }
+              }
+          }    
+      }
+  }
 }
 
 
@@ -197,10 +210,11 @@ xobs.function <- function(z,epsilon,genotype_matrix){
     return(x)
 }
 
-# function that generates the genotypes for each region in a clone k
+
 genotype_reg <- function(r,region_sizes,mu_k){
-    g_rk <- sample(c(0,1),size=region_sizes[r],prob=mu_k[,r],replace=TRUE)
-    return(g_rk)
+  mu_kr <- as.matrix(mu_k)[,r]
+  g_rk <- sample(c(0,1),size=region_sizes[r],prob=mu_kr,replace=TRUE)
+  return(g_rk)
 }
 
 write_data_file <- function (data_matrix, output_file, index="cell_id") {
@@ -228,7 +242,7 @@ if (args$verbose)   {
      print (reg_coord-1)         # I want the coordinates to start from 0
 }
 reg_file <- paste0(output_dir, "/regions_file.tsv")
-write_data_file(reg_coord-1, reg_file, index="region_id")
+write_data_file(as.matrix(reg_coord)-1, reg_file, index="region_id")
 
 # Measuring the time with Rprof. For more details see http://stackoverflow.com/questions/6262203/measuring-function-execution-time-in-r
 #Rprof ( tf <- paste0(output_dir, "/log.log"),  memory.profiling = TRUE )
@@ -250,20 +264,20 @@ genotype_matrix <- NULL
 for(k in 1:K){
   
   if(k==1){
-    g_k <- unlist(sapply(1:R,genotype_reg,region_sizes=region_sizes,mu_k=mu_array[,,k])) ### the S element of mu_array[,r,k] is the probability of sucess
+    g_k <- as.vector(unlist(sapply(1:R,genotype_reg,region_sizes=region_sizes,mu_k=mu_array[,,k]))) ### the S element of mu_array[,r,k] is the probability of sucess
     genotype_matrix <- rbind(genotype_matrix,g_k)
      #if (args$verbose)   {
      #     print ("First clone of epigenotype matrix")
      #    print (genotype_matrix) }
     
     }else{
-    g_k <- unlist(sapply(1:R,genotype_reg,region_sizes=region_sizes,mu_k=mu_array[,,k]))
+    g_k <- as.vector(unlist(sapply(1:R,genotype_reg,region_sizes=region_sizes,mu_k=mu_array[,,k])))
       while (sum(duplicated(rbind(genotype_matrix,g_k))==TRUE) != 0) { ### making sure there all genotype vectors are different from each other
           #if (args$verbose) {
           #  print ("Clone is already there, regenerate")
           #}
           #c <- c+1
-          g_k <- unlist(sapply(1:R,genotype_reg,region_sizes=region_sizes,mu_k=mu_array[,,k]))
+          g_k <- as.vector(unlist(sapply(1:R,genotype_reg,region_sizes=region_sizes,mu_k=mu_array[,,k])))
          }
     genotype_matrix <- rbind(genotype_matrix,g_k)
         }
