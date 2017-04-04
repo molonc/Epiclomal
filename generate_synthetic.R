@@ -144,7 +144,7 @@ if (args$region_size_type=="nonequal"){
 options(scipen=999)
 
 # Make the output directory have all the input parameters
-# TO add the regions arguments in the output directory
+# adding the regions arguments in the output directory
 output_dir <- paste0(args$output_dir ,"_loci", args$num_loci, "_clones", args$num_clones,
     "_cells", args$num_cells, "_prev", args$clone_prevalence, "_errpb", args$error_probability,
     "_mispb", args$missing_probability, "_gpb", args$genotype_prob, "_dirpar", args$dirichlet_param_genotype_prob,
@@ -237,12 +237,23 @@ save(mu_array,file=paste0(output_dir, "/mu_array.Rdata"))
 
 ### SAVE region coordinates 
 #===================================================
+reg_coord<-reg_coord-1      # I want the coordinates to start from 0
 if (args$verbose)   {
      print ("Region coordinates")
-     print (reg_coord-1)         # I want the coordinates to start from 0
+     print (reg_coord)         
 }
 reg_file <- paste0(output_dir, "/regions_file.tsv")
+<<<<<<< Updated upstream
 write_data_file(as.matrix(reg_coord)-1, reg_file, index="region_id")
+=======
+# write_data_file(reg_coord, reg_file, index="region_id")
+# adding start and end to the header, and I want the regions ids to start from 0 -- MAYBE WE SHOULD DO THIS FOR THE OTHER IDS??
+tmp <- cbind(1:nrow(reg_coord)-1,reg_coord) 
+colnames(tmp) <- c("region_id","start","end")
+write.table (tmp, reg_file, sep="\t", row.names=FALSE, quote=FALSE)
+system(paste0("gzip --force ", reg_file))
+rm(tmp)
+>>>>>>> Stashed changes
 
 # Measuring the time with Rprof. For more details see http://stackoverflow.com/questions/6262203/measuring-function-execution-time-in-r
 #Rprof ( tf <- paste0(output_dir, "/log.log"),  memory.profiling = TRUE )
