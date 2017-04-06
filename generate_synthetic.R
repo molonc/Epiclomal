@@ -36,6 +36,7 @@ parser$add_argument("--region_size_type", type="character", default="equal", hel
 parser$add_argument("--region_nonequal", type="character", default="uniform", help="uniform or nonuniform")
 
 parser$add_argument("--output_dir", type="character", default="output", help="The BEGINNING of the output directory file. Name of output dir will have the parameters.")
+parser$add_argument("--given_dir_complete", type="integer", default=0, help="If this is 0, it creates a long output dir name from the input params, if it's 1, the output dir is output_dir.")
 # writes: 6 files 
 # 1: all input parameters 
 # 2. region coordinates 
@@ -76,7 +77,9 @@ S = 2 # number of states, we will consider only two for now in all simulations
     }
   }
 
-print(mu_array)
+if(args$verbose) {
+    print(mu_array)
+}    
 
 
 #==============================================
@@ -143,7 +146,7 @@ if (args$region_size_type=="nonequal"){
 # disable the scientific notation so that the output dir has the name 100000, and not 1e+05
 options(scipen=999)
 
-# Make the output directory have all the input parameters
+# Make the output directory have all the input parameters, only if given_dir_complete is 0, see below
 # adding the regions arguments in the output directory
 output_dir <- paste0(args$output_dir ,"_loci", args$num_loci, "_clones", args$num_clones,
     "_cells", args$num_cells, "_prev", args$clone_prevalence, "_errpb", args$error_probability,
@@ -158,6 +161,12 @@ if (length(args$seed) > 0) {
 } else {
     print ("NOT setting seed")
 }
+
+# if argument given_dir_complete is 1, then just use the given output_dir
+if (args$given_dir_complete)
+    output_dir<-args$output_dir
+
+print(paste0("Output dir is: ", output_dir))
 
 dir.create(output_dir, showWarnings = TRUE)
 # add a data subdirectory
