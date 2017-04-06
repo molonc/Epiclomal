@@ -4,7 +4,7 @@
 # Epicaller, probabilistic model for clustering and imputing single-cell methylation data
 # Author : Mirela Andronescu
 #=======================================================================================================================
-from lib.run import run_basic_gemm_model, run_basic_gemm_model_M, run_basic_miss_gemm_model, run_region_gemm_model, run_region_miss_gemm_model
+from lib.run import run_basic_gemm_model, run_basic_miss_gemm_model, run_region_gemm_model, run_region_miss_gemm_model
 
 import argparse
 
@@ -53,13 +53,6 @@ analysis_parser.add_argument('--seed', default=None, type=int,
 
 analysis_parser.add_argument('--labels_file', default=None,
                              help='''Path of file with initial labels to use.''')
-
-#---------------------------------------------------------------------------------------------------------------------- 
-# Basic-GeMM-M model for testing purposes. This model has one index for m in the basic model, as opposed to Basic-Gemm,
-#   which has 2 indexes, R and maxL
-basic_parser_M = subparsers.add_parser('Basic-GeMM-M', parents=[analysis_parser],
-                                       help='''Analyse single cell methylation data using the Basic-GeMM-M model.''')
-basic_parser_M.set_defaults(func=run_basic_gemm_model_M)
 
 #---------------------------------------------------------------------------------------------------------------------- 
 basic_parser = subparsers.add_parser('Basic-GeMM', parents=[analysis_parser],

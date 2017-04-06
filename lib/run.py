@@ -14,7 +14,6 @@ import time
 import operator
 
 from lib.basic_gemm import BasicGeMM
-from lib.basic_gemm_M import BasicGeMM_M
 from lib.basic_miss_gemm import BasicMissGeMM
 from lib.region_gemm import RegionGeMM
 from lib.region_miss_gemm import RegionMissGeMM
@@ -25,11 +24,6 @@ from lib.utils import load_labels
 
 def run_basic_gemm_model(args):
     run_model('BasicGeMM', args)
-    
-##############################
-
-def run_basic_gemm_model_M(args):
-    run_model('BasicGeMM_M', args)
     
 ##############################
     
@@ -59,9 +53,6 @@ def run_model(mtype, args):
        
     if (mtype == 'BasicGeMM'):
         className = BasicGeMM
-
-    elif (mtype == 'BasicGeMM_M'):
-        className = BasicGeMM_M
         
     elif (mtype == 'BasicMissGeMM'):
         className = BasicMissGeMM
@@ -86,10 +77,13 @@ def run_model(mtype, args):
         
     model.fit(convergence_tolerance=args.convergence_tolerance, num_iters=args.max_num_iters, debug=False)
     
+    # TO REMOVE THIS
     if args.lower_bound_file is not None:
         write_lower_bound(model, args.lower_bound_file)
 
     if args.out_dir is not None:
+        if not os.path.exists(args.out_dir):
+            os.makedirs(args.out_dir)
         write_cluster_posteriors(cell_ids, model.pi_star, args.out_dir)        
         write_cluster_MAP(cell_ids, model.pi_star, args.out_dir)
         # TO DO: I have to write the unregion function for this to work
