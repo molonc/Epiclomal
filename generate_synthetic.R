@@ -58,6 +58,7 @@ args <- parser$parse_args()
 #####################
 # these parameters should be the same for all simulated data sets
 # therefore, we need to set another seed here for them and keep that the same across all simulated data sets from a particular scenario
+
 set.seed(2) 
 
 S = 2 # number of states, we will consider only two for now in all simulations
@@ -159,7 +160,8 @@ if (length(args$seed) > 0) {
     set.seed(args$seed)
     output_dir <- paste0(output_dir, "_seed", args$seed)    
 } else {
-    print ("NOT setting seed")
+    print ("Setting seed to random")
+    set.seed(Sys.time())
 }
 
 # if argument given_dir_complete is 1, then just use the given output_dir
