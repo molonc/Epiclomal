@@ -56,24 +56,32 @@ def safe_multiply(x, y):
 def log_space_normalise(log_X, axis=0):
     return log_X - np.expand_dims(log_sum_exp(log_X, axis=axis), axis=axis) 
     
-def init_log_pi_star(K, N):
-    # This function assign random clusters to the Z variable, and then takes the log
-    labels = np.random.random(size=(N, K)).argmax(axis=1)
-    # np.random.random returns random float in the interval [0,1)
-    # np.random.random(size=(N, K)) is a matrix of size NxK
-    # labels will be the cluster that has the largest sample for every row 1..N
-    # print 'Labels inside init_pi_star: {0}'.format(labels)
-        
+def init_log_pi_star(K, N, initial_clusters_data):
     log_pi_star = np.zeros((N, K))
+
+    if (initial_clusters_data is not None):
+        # initialize to this and exit
+        labels = np.reshape(initial_clusters_data.as_matrix(),N)
+        
+    else:    
+        # This function assign random clusters to the Z variable, and then takes the log
+        labels = np.random.random(size=(N, K)).argmax(axis=1)
+        # np.random.random returns random float in the interval [0,1)
+        # np.random.random(size=(N, K)) is a matrix of size NxK
+        # labels will be the cluster that has the largest sample for every row 1..N
+        # print 'Labels inside init_pi_star: {0}'.format(labels)        
+
     
-    # print 'Range of len of set of labels: {0}'.format(range(len(set(labels))))
+        # print 'Range of len of set of labels: {0}'.format(range(len(set(labels))))
     
-    # MA: I think this is wrong. For example for K=5, N=10, if there wasn't any label 3, as in the example
-    #  labels inside init_pi_star: [2 2 0 1 0 0 2 1 0 4], then Range of len of set of labels is [0, 1, 2, 3]
-    #  then the last cell doesn't get any 1
-    # for i, s in enumerate(range(len(set(labels)))):
-    #     log_pi_star[:, i] = (labels == s).astype(int)
-    # Replacing len(set(labels)) with K    
+        # MA: I think this is wrong. For example for K=5, N=10, if there wasn't any label 3, as in the example
+        #  labels inside init_pi_star: [2 2 0 1 0 0 2 1 0 4], then Range of len of set of labels is [0, 1, 2, 3]
+        #  then the last cell doesn't get any 1
+        # for i, s in enumerate(range(len(set(labels)))):
+        #     log_pi_star[:, i] = (labels == s).astype(int)
+        # Replacing len(set(labels)) with K    
+    
+    print labels
     
     for i, s in enumerate(range(K)):
         log_pi_star[:, i] = (labels == s).astype(int)

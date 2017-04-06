@@ -21,7 +21,8 @@ class BasicGeMM(object):
                  alpha_prior,
                  beta_prior,
                  X,
-                 regions):
+                 regions,
+                 initial_clusters_data):
         
         self.K = len(alpha_prior)               # max number of clusters
         
@@ -88,7 +89,7 @@ class BasicGeMM(object):
             self._init_beta_star(data_type)
             # This just initializes beta_star for each cluster k with beta_prior, matrix KxS, now KxRxS     
         
-        self.log_pi_star = init_log_pi_star(self.K, self.N)
+        self.log_pi_star = init_log_pi_star(self.K, self.N, initial_clusters_data)
         # This function assigns random clusters to the Z variable. 
         # For each cell (row), one of the k values will be 1 and the others 0.
         # Then, return the log of this matrix (log_pi_star) of size N rows x K columns                                                              

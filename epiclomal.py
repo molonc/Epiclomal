@@ -4,7 +4,7 @@
 # Epicaller, probabilistic model for clustering and imputing single-cell methylation data
 # Author : Mirela Andronescu
 #=======================================================================================================================
-from lib.run import run_basic_gemm_model, run_basic_miss_gemm_model, run_region_gemm_model, run_region_miss_gemm_model
+from lib.run import run_basic_gemm_model, run_basic_gemm_model_M, run_basic_miss_gemm_model, run_region_gemm_model, run_region_miss_gemm_model
 
 import argparse
 
@@ -19,14 +19,23 @@ subparsers = parser.add_subparsers()
 #=======================================================================================================================
 analysis_parser = argparse.ArgumentParser(add_help=False)
 
+analysis_parser.add_argument('--K', default=None,
+                            help='''Max number of clusters. If given, use this one instead of the number from the config file.''')
+
 analysis_parser.add_argument('--config_file', required=True,
                             help='''Path to YAML format configuration file.''')
 
 analysis_parser.add_argument('--data_file', required=True,
-                            help='''Path to data input file.''')
+                            help='''Path to methylation data input file.''')
+                            
+analysis_parser.add_argument('--copynumber_file', default=None,
+                            help='''Path to copy number input file.''')                            
                             
 analysis_parser.add_argument('--regions_file', default=None,
                             help='''Path to regions input file.''')                            
+
+analysis_parser.add_argument('--initial_clusters_file', default=None,
+                            help='''Start from these clusters instead of random clusters.''')                            
 
 analysis_parser.add_argument('--lower_bound_file', default=None,
                              help='''Path of file where lower bound convergence will be written.''')
@@ -48,9 +57,9 @@ analysis_parser.add_argument('--labels_file', default=None,
 #---------------------------------------------------------------------------------------------------------------------- 
 # Basic-GeMM-M model for testing purposes. This model has one index for m in the basic model, as opposed to Basic-Gemm,
 #   which has 2 indexes, R and maxL
-# basic_parser_M = subparsers.add_parser('Basic-GeMM-M', parents=[analysis_parser],
-#                                       help='''Analyse single cell methylation data using the Basic-GeMM-M model.''')
-# basic_parser_M.set_defaults(func=run_basic_gemm_model_M)
+basic_parser_M = subparsers.add_parser('Basic-GeMM-M', parents=[analysis_parser],
+                                       help='''Analyse single cell methylation data using the Basic-GeMM-M model.''')
+basic_parser_M.set_defaults(func=run_basic_gemm_model_M)
 
 #---------------------------------------------------------------------------------------------------------------------- 
 basic_parser = subparsers.add_parser('Basic-GeMM', parents=[analysis_parser],

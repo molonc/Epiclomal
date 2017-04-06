@@ -56,7 +56,7 @@ class RegionMissGeMM (BasicMissGeMM):
        
     ######################       
           
-    def _reshape_data_matrix(self, data_type, X):
+    def _region_data_matrix(self, data_type, X):
     # Here in the regions class I will fill up to 0 the remaining values for each region
     # TO DO: maybe this reshaping can be done more efficiently 
         matrix = np.empty((self.N, self.R[data_type], self.maxL[data_type]))
@@ -68,4 +68,3 @@ class RegionMissGeMM (BasicMissGeMM):
         return matrix
         
                 
-        

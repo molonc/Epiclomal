@@ -24,13 +24,14 @@ class RegionGeMM(BasicGeMM):
                  alpha_prior,
                  beta_prior,
                  X,
-                 regions):
+                 regions,
+                 initial_clusters_data):
                  
         self.Rstart = {}
         self.Rend = {}
         self.L = {}          
                  
-        BasicGeMM.__init__(self, gamma_prior, alpha_prior, beta_prior, X, regions)   
+        BasicGeMM.__init__(self, gamma_prior, alpha_prior, beta_prior, X, regions, initial_clusters_data)   
                          
     ###################### 
     
@@ -68,6 +69,7 @@ class RegionGeMM(BasicGeMM):
             
     def _unregion_data_matrix(self, data_type, X):        
     # TO DO
+    # this is necessary when we want to compare the imputed values
         return
         
         

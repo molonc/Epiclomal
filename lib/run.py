@@ -14,6 +14,7 @@ import time
 import operator
 
 from lib.basic_gemm import BasicGeMM
+from lib.basic_gemm_M import BasicGeMM_M
 from lib.basic_miss_gemm import BasicMissGeMM
 from lib.region_gemm import RegionGeMM
 from lib.region_miss_gemm import RegionMissGeMM
@@ -24,6 +25,11 @@ from lib.utils import load_labels
 
 def run_basic_gemm_model(args):
     run_model('BasicGeMM', args)
+    
+##############################
+
+def run_basic_gemm_model_M(args):
+    run_model('BasicGeMM_M', args)
     
 ##############################
     
@@ -53,6 +59,9 @@ def run_model(mtype, args):
        
     if (mtype == 'BasicGeMM'):
         className = BasicGeMM
+
+    elif (mtype == 'BasicGeMM_M'):
+        className = BasicGeMM_M
         
     elif (mtype == 'BasicMissGeMM'):
         className = BasicMissGeMM
@@ -67,15 +76,13 @@ def run_model(mtype, args):
         className = RegionMissGeMM
         impute = True
                        
-    cell_ids, data, event_ids, priors, regions = load_data (args.config_file, 
-                        args.data_file, 
-                        args.regions_file, 
-                        include_regions)
+    cell_ids, data, event_ids, priors, regions, initial_clusters = load_data (args, include_regions)
     model = className(priors['gamma'],
                       priors['alpha'],
                       priors['beta'],
                       data,
-                      regions)                                                                                                       
+                      regions,
+                      initial_clusters)                                                                                                       
         
     model.fit(convergence_tolerance=args.convergence_tolerance, num_iters=args.max_num_iters, debug=False)
     
@@ -85,8 +92,9 @@ def run_model(mtype, args):
     if args.out_dir is not None:
         write_cluster_posteriors(cell_ids, model.pi_star, args.out_dir)        
         write_cluster_MAP(cell_ids, model.pi_star, args.out_dir)
-        if (impute):
-            write_imputed_data_MAP(cell_ids, model, args.out_dir)
+        # TO DO: I have to write the unregion function for this to work
+        #if (impute):
+        #    write_imputed_data_MAP(cell_ids, model, args.out_dir)
             
             
         # to correct this function    
@@ -96,9 +104,21 @@ def run_model(mtype, args):
         
 ##############################        
     
-def load_data(yaml_filename, data_filename, regions_filename=None, include_regions=False):
+def load_data(args, include_regions=False):
+    yaml_filename = args.config_file
+    data_filename = args.data_file
+    regions_filename = args.regions_file
+    copynumber_filename = args.copynumber_file
+    initial_clusters_data = None
     with open(yaml_filename) as fh:
         config = yaml.load(fh)
+    
+    if args.K is not None:
+        num_clusters = int(args.K)
+    else:
+        num_clusters = config['num_clusters']        
+    
+    print 'Num clusters: ', num_clusters
     
     cell_ids = []
     
@@ -110,10 +130,18 @@ def load_data(yaml_filename, data_filename, regions_filename=None, include_regio
     
     # Used only by the region models
     regions = {}
+    
+    if (args.initial_clusters_file != None):
+        initial_clusters_data = _load_initial_clusters_frame(args.initial_clusters_file)
+
+    print initial_clusters_data
 
     for data_type in config['data']:
         # data[data_type] = _load_data_frame(config['data'][data_type]['file'])
-        data[data_type] = _load_data_frame(data_filename)
+        if (data_type == 'meth'):
+            data[data_type] = _load_data_frame(data_filename)
+        if (data_type == 'cn'):
+            data[data_type] = _load_data_frame(copynumber_filename)                    
         if (include_regions):
             regions[data_type] = _load_regions_frame(regions_filename)
         else:
@@ -134,7 +162,7 @@ def load_data(yaml_filename, data_filename, regions_filename=None, include_regio
     for data_type in data:
         data[data_type] = data[data_type].loc[cell_ids]
     
-    priors['alpha'] = np.ones(config['num_clusters']) * config['alpha_prior']
+    priors['alpha'] = np.ones(num_clusters) * config['alpha_prior']
     
     # I'm giving just one number in the yaml file
     #if 'alpha_prior' in config:
@@ -157,19 +185,22 @@ def load_data(yaml_filename, data_filename, regions_filename=None, include_regio
         #for index, row in regions[data_type].iterrows():
         #    print index, row["start"], row["end"]        
     
-    return  cell_ids, data, event_ids, priors, regions
+    return  cell_ids, data, event_ids, priors, regions, initial_clusters_data
 
 def _load_data_frame(file_name):
     print 'Loading data file {0}.'.format(file_name)
     df = pd.read_csv(file_name, compression='gzip', index_col='cell_id', sep='\t')
-    
     return df
+    
+def _load_initial_clusters_frame(file_name):
+    print 'Loading initial clusters file {0}.'.format(file_name)
+    df = pd.read_csv(file_name, compression='gzip', index_col='cell_id', sep='\t')
+    return df    
 
 def _load_regions_frame(file_name):
     # Assume the data file contains only regions, and the regions start and end are the column index from the data
     print 'Loading regions file {0}.'.format(file_name)
-    df = pd.read_csv(file_name, compression='gzip', index_col='region', sep='\t')
-    
+    df = pd.read_csv(file_name, compression='gzip', index_col='region_id', sep='\t')
     return df
 
 
@@ -247,6 +278,7 @@ def write_double_cluster_posteriors(cell_ids, model, out_dir):
 def write_genotype_MAP(event_ids, model, out_dir):
 # TO DO: this is not working properly, to rewrite!!
 # this has to be rewritten in a matrix format
+    # Here I have to obtain the chosen clusters from clusters_MAP, and write the genotype for those
     file_name = os.path.join(out_dir, 'genotype_MAP.tsv.gz')
     
     for data_type in model.data_types:

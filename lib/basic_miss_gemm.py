@@ -55,7 +55,7 @@ class BasicMissGeMM(BasicGeMM):
         
     def unregion_rho_star(self, data_type):
     # transform data back from regioned (index rl) to unregioned (index m)
-    # this will be done differently in the regions class    
+    # this will be done differently in the region-miss class    
         rho_star = self.get_rho_star(data_type)
         states = range(self.T[data_type])
         return np.argmax(rho_star.reshape((len(states), self.N, self.M[data_type])), axis=0)
