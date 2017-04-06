@@ -27,16 +27,16 @@ parser$add_argument("--error_probability", type="character", default="0.01_0.01"
 parser$add_argument("--missing_probability", type="double", default=0.1, help="Missing data probability")
 
 ### Genotype probabilities: p(G_krl = s) = mu_krs
-parser$add_argument("--genotype_prob", type="character", default="random", help="random or nonrandom indicating if the genotype probabilities are generated randomly from a Dirichlet distribution") 
+parser$add_argument("--genotype_prob", type="character", default="random", help="Random or nonrandom indicating if the genotype probabilities are generated randomly from a Dirichlet distribution") 
 ### Generate them using a Dirichlet distribution
 parser$add_argument("--dirichlet_param_genotype_prob", type="character", default="1_1" , help="Dirichlet parameters to generate the genotype probabilities for each region r and clone k") 
 
 parser$add_argument("--num_regions", type="double", default=5, help="Number of regions")  
-parser$add_argument("--region_size_type", type="character", default="equal", help="equal or nonequal")
-parser$add_argument("--region_nonequal", type="character", default="uniform", help="uniform or nonuniform")
+parser$add_argument("--region_size_type", type="character", default="equal", help="Equal or nonequal")
+parser$add_argument("--region_nonequal", type="character", default="uniform", help="Uniform or nonuniform")
 
-parser$add_argument("--output_dir", type="character", default="output", help="The BEGINNING of the output directory file. Name of output dir will have the parameters.")
-parser$add_argument("--given_dir_complete", type="integer", default=0, help="If this is 0, it creates a long output dir name from the input params, if it's 1, the output dir is output_dir.")
+parser$add_argument("--output_dir", type="character", default="output", help="Entire or just the beginning of the output directory file ")
+parser$add_argument("--given_dir_complete", type="integer", default=0, help="If this is 0, it creates a long output dir name with the input parameters, if it's 1, the output dir is output_dir ")
 # writes: 6 files 
 # 1: all input parameters 
 # 2. region coordinates 
@@ -47,7 +47,7 @@ parser$add_argument("--given_dir_complete", type="integer", default=0, help="If 
 
 parser$add_argument("--seed", help="You can set the seed for reproducibility")  
 parser$add_argument("--verbose", type="integer", default=1, help="Set to 1 if you want details of the data generation")  
-parser$add_argument("--saveall", type="integer", default=1, help="Set to 1 if you want the complete data (with errors but without missing observations)")  
+parser$add_argument("--saveall", type="integer", default=1, help="Set to 1 if you want the save all the data (with errors but without missing observations)")  
 
 
 args <- parser$parse_args() 
