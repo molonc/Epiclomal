@@ -281,7 +281,46 @@ if (M > 250) {
            #filename = paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_region_based_PLOT.pdf"))
     rm(tmp)
 
-
+    #=============================
+    ### plotting CpG data from a subset of regions
+    #=============================
+    plot_subset <- 0
+    if(plot_subset == 1){
+      set.seed(14)
+      input_regions <- input_regions[sort(sample(R,size=3)),] 
+      input_CpG_data <- input_CpG_data[,c(input_regions[1,1]:input_regions[1,2],input_regions[2,1]:input_regions[2,2],input_regions[3,1]:input_regions[3,2])]
+      
+      R <- dim(input_regions)[1] ## number of regions
+      M <- dim(input_CpG_data)[2] ## number of loci
+      
+      reg_id <- unlist(sapply(1:R,function(x){rep(x,(input_regions[x,2]-input_regions[x,1])+1)}))
+      annotation_col <- as.matrix(reg_id,nrow=length(colnames(input_CpG_data)))
+      rownames(annotation_col) <- colnames(input_CpG_data)
+      annotation_col <- as.data.frame(annotation_col)
+      colnames(annotation_col) <- "regions"
+      annotation_col$regions <- as.factor(annotation_col$regions)
+      
+      
+      if(args$true_clusters == 1){
+        tmp <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
+      } else{
+        tmp <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
+      }
+      
+      pheatmap(tmp,cluster_rows = FALSE,cluster_cols=FALSE, 
+               #annotation_row =annotation_row, 
+               cellwidth = 5, cellheight = 5,
+               fontsize = 8, main = "CpG-based methylation data",gaps_row = index_gaps,fontsize_row=6,fontsize_col=4, annotation_names_row = FALSE,annotation_names_col= FALSE,
+               show_colnames=FALSE,
+               annotation_col=annotation_col,
+               gaps_col =  (which(!duplicated(reg_id) == TRUE)[-1]-1),
+               filename = paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_subset_of_regions_CpG_based_PLOT.png"))
+      rm(tmp)
+      
+    }
+    
+    
+    
     }
 
 }
