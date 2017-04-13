@@ -36,17 +36,11 @@ true_clusters_file <- paste0(args$path_directory,args$true_clusters_file) }
 if ( args$copy_number == 1){
 input_CN_data_file <- paste0(args$path_directory,args$copy_number_file) }
 
-# input_CN_data_file <- "~/Documents/beast_share_lustre/Projects/BS-seq/whole_genome_single_cell/EPI-91/CN_data_most_variable_CGIs_xeno7_Epiclomal.tsv"
-# input_CpG_data_file <- "~/Documents/beast_share_lustre/Projects/BS-seq/whole_genome_single_cell/EPI-91/most_var_CGIs_all_cells_input_Epiclomal_hg19_xeno7.tsv"
-# input_regions_file <- "~/Documents/beast_share_lustre/Projects/BS-seq/whole_genome_single_cell/EPI-91/most_var_CGIs_regionIDs_input_Epiclomal_hg19_xeno7.tsv"
-# inferred_clusters_file <- "~/Documents/beast_share_lustre/Projects/BS-seq/whole_genome_single_cell/EPI-91/result_Basic_CN_Epiclomal_100repeats_MAXK7_64.tsv"
-# 
-# 
-# input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv"
-# input_regions_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
-# output_clusters_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
-# true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
-# 
+#  input_CN_data_file <- "/Users/cdesouza/Documents/EPI-91/CN_data_most_variable_CGIs_xeno7_Epiclomal.tsv"
+#  input_CpG_data_file <- "/Users/cdesouza/Documents/EPI-91/most_var_CGIs_all_cells_input_Epiclomal_hg19_xeno7.tsv"
+#  input_regions_file <- "/Users/cdesouza/Documents/EPI-91/most_var_CGIs_regionIDs_input_Epiclomal_hg19_xeno7.tsv"
+#  inferred_clusters_file <- "/Users/cdesouza/Documents/EPI-91/result_Basic_CN_Epiclomal_100repeats_MAXK7_64.tsv"
+ 
 # input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.7_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv"
 # input_regions_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.7_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
 # inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.7_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
@@ -245,12 +239,19 @@ if (M > 250) {
     } else{
       tmp <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
     }
-
+    
+    ## in case we want to force some colors to be the same
+    #colnames(annotation_row) <- "inferred_clusters"
+    #annotation_row$inferred_clusters <- paste0("cl", annotation_row$inferred_clusters)
+    #ann_colors = list(
+    #inferred_clusters = c(cl0="blue", cl3="green",cl4="pink"))
+    
     pheatmap(tmp,cluster_cols=FALSE, annotation_row = annotation_row,
              cluster_rows = FALSE,
              #cellwidth = 5, cellheight = 5,
              fontsize = 8, main = "CpG based methylation data",gaps_row = index_gaps,fontsize_row=8,fontsize_col=4,
              annotation_names_row = FALSE,
+             #annotation_colors = ann_colors,
              #annotation_names_col= TRUE,
              show_colnames=FALSE,
              #annotation_col=annotation_col,
@@ -274,9 +275,11 @@ if (M > 250) {
            #cellwidth = 5,cellheight = 5,
            fontsize = 8, main = "Region-based mean methylation fraction data",gaps_row = index_gaps,fontsize_row=8,fontsize_col=6,
            annotation_names_row = FALSE,
+           #annotation_colors = ann_colors,
            border_color=NA,show_colnames=FALSE,
            filename = paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_region_based_PLOT.png"))
            #filename = paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_region_based_PLOT.pdf"))
+    rm(tmp)
 
 
     }
@@ -314,40 +317,13 @@ if (args$copy_number == 1 ){
     pheatmap(tmp,cluster_rows = FALSE,cluster_cols=FALSE, annotation_row = annotation_row,fontsize = 8, main = "Copy number data",gaps_row = index_gaps,fontsize_row=6,fontsize_col=4,
              border_color=NA, annotation_names_row = FALSE,show_colnames=FALSE,
              annotation_col=annotation_col_chr,
+             #annotation_colors = ann_colors,
              #filename = paste0(sub(input_CN_data_file,pattern=".tsv",replacement=""),"_PLOT.pdf"))
              filename = paste0(sub(input_CN_data_file,pattern=".tsv",replacement=""),"_noLines_PLOT.png"))
     rm(tmp)
   
   
 }  
-# 
-# 
-# test <- input_CN_data[order(cell_clusters),]
-# pheatmap(test,cluster_rows = FALSE,cluster_cols=FALSE, cellwidth = 5, cellheight = 5,fontsize = 8, main = "Example heatmap")
-# 
-# 
-# str(cell_clusters)
-# cell_clusters$cluster <- as.factor(cell_clusters$cluster)
-# 
-# annotation_col <- as.matrix(colnames(test),nrow=length(colnames(test)))
-# rownames(annotation_col) <- as.character(1:243)
-# annotation_col <- as.data.frame(annotation_col)
-# colnames(annotation_col) <- "chr"
-# annotation_col$chr <- as.factor(annotation_col$chr)
-# 
-# test <- input_CN_data[order(cell_clusters),]
-# index <- 1:49
-# index_gaps <- index[!duplicated(cell_clusters[order(cell_clusters),])] - 1 
-# index_gaps <- index_gaps[which(index_gaps != 0)]
-# pheatmap(test,cluster_rows = FALSE,cluster_cols=FALSE, annotation_row = cell_clusters, cellwidth = 5, cellheight = 5,fontsize = 8, main = "Example heatmap",gaps_row = index_gaps,border_color=NA)
-# 
-# 
-# test <- rbind(input_CN_data[order(cell_clusters),],mean_meth_matrix[order(cell_clusters),])
-# pheatmap(test,cluster_rows = FALSE,cluster_cols=FALSE, cellwidth = 5, cellheight = 5,fontsize = 8, main = "Example heatmap",gaps_row = c(49))
-# 
-# 
-# 
-# test <- mean_meth_matrix[order(cell_clusters),]
-# pheatmap(test,cluster_rows = FALSE,cluster_cols=FALSE, annotation_row = cell_clusters, cellwidth = 5, cellheight = 5,fontsize = 8, main = "Example heatmap")
+
 
 
