@@ -1,4 +1,9 @@
 # generate output plots for Epiclomal
+# Change log:
+# MA 2017-04-14: 
+#   Made each file have its own path, replaced path_dir with out_dir
+#   Put all the results in out_dir
+#   Added a name for the plot to identify where the clustering is coming from
 
 #======================
 # libraries
@@ -15,26 +20,32 @@ parser <- ArgumentParser()
 
 parser$add_argument("--copy_number", type="integer", default=0, help="Set to 1 if you want to plot copy number data")
 parser$add_argument("--true_clusters", type="integer", default=1, help="Set to 1 if true cluster memberships are available")
-parser$add_argument("--path_directory", type="character", help="Path to working directory") 
+parser$add_argument("--out_directory", type="character", help="Path to output directory") 
 parser$add_argument("--methylation_file", type="character", help="Path to methylation data") 
 parser$add_argument("--copy_number_file", type="character", help="Path to copy number data if available")
 parser$add_argument("--regions_file", type="character",help="Path to region coordinates")
 parser$add_argument("--inferred_clusters_file", type="character", help="Path to inferred clusters")
 parser$add_argument("--true_clusters_file", type="character", help="Path to true clusters if available")
+parser$add_argument("--name", type="character", help="A name for the final plot")
 
 args <- parser$parse_args() 
 
 print(args)
 
-input_CpG_data_file <- paste0(args$path_directory,args$methylation_file)
-input_regions_file <- paste0(args$path_directory,args$regions_file)
-inferred_clusters_file <-  paste0(args$path_directory,args$inferred_clusters_file)
+out_dir <- args$out_directory
+dir.create(file.path(out_dir), showWarnings = FALSE)
+
+input_CpG_data_file <- args$methylation_file
+input_regions_file <- args$regions_file
+inferred_clusters_file <-  args$inferred_clusters_file
 
 if ( args$true_clusters == 1){
-true_clusters_file <- paste0(args$path_directory,args$true_clusters_file) }
+    true_clusters_file <- args$true_clusters_file
+}
 
 if ( args$copy_number == 1){
-input_CN_data_file <- paste0(args$path_directory,args$copy_number_file) }
+    input_CN_data_file <- args$copy_number_file 
+}
 
 #  input_CN_data_file <- "/Users/cdesouza/Documents/EPI-91/CN_data_most_variable_CGIs_xeno7_Epiclomal.tsv"
 #  input_CpG_data_file <- "/Users/cdesouza/Documents/EPI-91/most_var_CGIs_all_cells_input_Epiclomal_hg19_xeno7.tsv"
@@ -85,11 +96,11 @@ rm(tmp)
 
 # Copy number data
 if (args$copy_number == 1 ){
-tmp <- read.csv(input_CN_data_file,sep="\t",header=TRUE,check.names=FALSE)
-input_CN_data <- as.matrix(tmp[,-1])
-rownames(input_CN_data) <- tmp$cell_id
-colnames(input_CN_data) <- sapply(strsplit(colnames(input_CN_data),":"),function(x){return(x[1])}) 
-rm(tmp)
+    tmp <- read.csv(input_CN_data_file,sep="\t",header=TRUE,check.names=FALSE)
+    input_CN_data <- as.matrix(tmp[,-1])
+    rownames(input_CN_data) <- tmp$cell_id
+    colnames(input_CN_data) <- sapply(strsplit(colnames(input_CN_data),":"),function(x){return(x[1])}) 
+    rm(tmp)
 }
 
 # Region coordinates
@@ -99,7 +110,7 @@ colnames(input_regions) <- c("start","end") ## input_regions gives already the c
 rownames(input_regions) <- tmp$region_id
 rm(tmp)
 
-# inferred clusters from Epliclomal
+# inferred clusters from Epiclomal
 tmp <- read.csv(inferred_clusters_file,sep="\t",header=TRUE,check.names=FALSE)
 colnames(tmp) <- c("cell_id","inferred_clusters") 
 inferred_cell_clusters <- as.matrix(tmp[,2])
@@ -189,11 +200,14 @@ if (M <= 250) {
   }
 
   pheatmap(tmp,cluster_rows = FALSE,cluster_cols=FALSE, annotation_row =annotation_row, cellwidth = 5,
-           cellheight = 5,fontsize = 8, main = "CpG-based methylation data",gaps_row = index_gaps,fontsize_row=6,fontsize_col=4, annotation_names_row = FALSE,annotation_names_col= FALSE,
+           cellheight = 5,fontsize = 8, 
+           main = paste0("CpG-based methylation data for ", args$name),
+           gaps_row = index_gaps,fontsize_row=6,fontsize_col=4, 
+           annotation_names_row = FALSE,annotation_names_col= FALSE,
            #gaps_col=(input_regions[,2][1:(R-1)] + 1),
            show_colnames=FALSE,
            annotation_col=annotation_col,
-           filename = paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_CpG_based_PLOT.pdf"))
+           filename = paste0(out_dir,"/",args$name,"_CpG_based_PLOT.pdf"))
   rm(tmp)
 
   # ### attempt to plot hclust together
@@ -222,11 +236,14 @@ if (M > 250) {
     pheatmap(tmp,cluster_cols=FALSE, annotation_row = annotation_row,
              cluster_rows = FALSE,
              #cellwidth = 5, cellheight = 5,
-             fontsize = 8, main = "CpG based methylation data",gaps_row = index_gaps,fontsize_row=8,fontsize_col=4, annotation_names_row = TRUE,annotation_names_col= FALSE,
+             fontsize = 8, main = paste0("CpG based methylation data for ", args$name),
+             gaps_row = index_gaps,fontsize_row=8,fontsize_col=4, 
+             annotation_names_row = TRUE,annotation_names_col= FALSE,
              #gaps_col=(input_regions[,2][1:(R-1)] + 1),
              show_colnames=FALSE,
              annotation_col=annotation_col,
-             filename = paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_CpG_based_PLOT.pdf"))
+             filename = paste0(out_dir,"/",args$name,"_CpG_based_PLOT.pdf"))             
+#             filename = paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_CpG_based_PLOT.pdf"))
     rm(tmp)
 
   }
@@ -249,7 +266,8 @@ if (M > 250) {
     pheatmap(tmp,cluster_cols=FALSE, annotation_row = annotation_row,
              cluster_rows = FALSE,
              #cellwidth = 5, cellheight = 5,
-             fontsize = 8, main = "CpG based methylation data",gaps_row = index_gaps,fontsize_row=8,fontsize_col=4,
+             fontsize = 8, main = paste0("CpG based methylation data for ", args$name),
+             gaps_row = index_gaps,fontsize_row=8,fontsize_col=4,
              annotation_names_row = FALSE,
              #annotation_colors = ann_colors,
              #annotation_names_col= TRUE,
@@ -257,8 +275,8 @@ if (M > 250) {
              #annotation_col=annotation_col,
              annotation_legend = TRUE,
              #legend_breaks = c(0,1),legend_labels = c("unmeth","meth"),
+             filename = paste0(out_dir,"/",args$name,"_CpG_based_PLOT.pdf"))
              #filename = paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_CpG_based_PLOT.pdf"))
-             filename = paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_CpG_based_PLOT.png"))
     rm(tmp)
 
     print("plotting region based mean methylation data")
@@ -273,11 +291,13 @@ if (M > 250) {
            cluster_rows=FALSE,
            annotation_row = annotation_row,
            #cellwidth = 5,cellheight = 5,
-           fontsize = 8, main = "Region-based mean methylation fraction data",gaps_row = index_gaps,fontsize_row=8,fontsize_col=6,
+           fontsize = 8, main = paste0("Region-based mean methylation fraction data for ", args$name),
+           gaps_row = index_gaps,fontsize_row=8,fontsize_col=6,
            annotation_names_row = FALSE,
            #annotation_colors = ann_colors,
            border_color=NA,show_colnames=FALSE,
-           filename = paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_region_based_PLOT.png"))
+           filename = paste0(out_dir,"/",args$name,"_region_based_PLOT.pdf"))
+           #filename = paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_region_based_PLOT.png"))
            #filename = paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_region_based_PLOT.pdf"))
     rm(tmp)
 
@@ -310,11 +330,14 @@ if (M > 250) {
       pheatmap(tmp,cluster_rows = FALSE,cluster_cols=FALSE, 
                #annotation_row =annotation_row, 
                cellwidth = 5, cellheight = 5,
-               fontsize = 8, main = "CpG-based methylation data",gaps_row = index_gaps,fontsize_row=6,fontsize_col=4, annotation_names_row = FALSE,annotation_names_col= FALSE,
+               fontsize = 8, main = paste0("CpG-based methylation data for ", args$name),
+               gaps_row = index_gaps,fontsize_row=6,fontsize_col=4, 
+               annotation_names_row = FALSE,annotation_names_col= FALSE,
                show_colnames=FALSE,
                annotation_col=annotation_col,
                gaps_col =  (which(!duplicated(reg_id) == TRUE)[-1]-1),
-               filename = paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_subset_of_regions_CpG_based_PLOT.png"))
+               filename = paste0(out_dir,"/",args$name,"_subset_of_regions_CpG_based_PLOT.png"))
+               #filename = paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_subset_of_regions_CpG_based_PLOT.png"))
       rm(tmp)
       
     }
@@ -347,7 +370,8 @@ if (args$copy_number == 1 ){
            cellwidth = 6,cellheight = 6,
            fontsize = 8, main = "Copy number data",gaps_row = index_gaps,fontsize_row=6,fontsize_col=6, annotation_names_row = FALSE,
            #filename = paste0(sub(input_CN_data_file,pattern=".tsv",replacement=""),"_PLOT.pdf"))
-           filename = paste0(sub(input_CN_data_file,pattern=".tsv",replacement=""),"_PLOT.png"))
+           filename = paste0(out_dir,"/",args$name,"_PLOT.pdf"))
+           #filename = paste0(sub(input_CN_data_file,pattern=".tsv",replacement=""),"_PLOT.png"))
   rm(tmp)
   }
   
@@ -358,7 +382,8 @@ if (args$copy_number == 1 ){
              annotation_col=annotation_col_chr,
              #annotation_colors = ann_colors,
              #filename = paste0(sub(input_CN_data_file,pattern=".tsv",replacement=""),"_PLOT.pdf"))
-             filename = paste0(sub(input_CN_data_file,pattern=".tsv",replacement=""),"_noLines_PLOT.png"))
+             filename = paste0(out_dir,"/",args$name,"_noLines_PLOT.pdf"))
+             #filename = paste0(sub(input_CN_data_file,pattern=".tsv",replacement=""),"_noLines_PLOT.png"))
     rm(tmp)
   
   
