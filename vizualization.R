@@ -371,22 +371,21 @@ if (args$copy_number == 1 ){
   pheatmap(tmp,cluster_rows = FALSE,cluster_cols=FALSE, annotation_row = annotation_row, 
            #annotation_col = annotation_col_chr,
            cellwidth = 6,cellheight = 6,
-           fontsize = 8, main = "Copy number data",gaps_row = index_gaps,fontsize_row=6,fontsize_col=6, annotation_names_row = FALSE,
-           #filename = paste0(sub(input_CN_data_file,pattern=".tsv",replacement=""),"_PLOT.pdf"))
-           filename = paste0(out_dir,"/",args$name,"_PLOT.pdf"))
-           #filename = paste0(sub(input_CN_data_file,pattern=".tsv",replacement=""),"_PLOT.png"))
+           fontsize = 8, main = paste0("Copy number data for ", args$name),
+           gaps_row = index_gaps,fontsize_row=6,fontsize_col=6, annotation_names_row = FALSE,
+           filename = paste0(out_dir,"/",args$name,"_CN_PLOT.pdf"))
   rm(tmp)
   }
   
   
     tmp <- input_CN_data[order(inferred_cell_clusters),]
-    pheatmap(tmp,cluster_rows = FALSE,cluster_cols=FALSE, annotation_row = annotation_row,fontsize = 8, main = "Copy number data",gaps_row = index_gaps,fontsize_row=6,fontsize_col=4,
+    pheatmap(tmp,cluster_rows = FALSE,cluster_cols=FALSE, annotation_row = annotation_row,
+             fontsize = 8, main = paste0("Copy number data for ", args$name),
+             gaps_row = index_gaps,fontsize_row=6,fontsize_col=4,
              border_color=NA, annotation_names_row = FALSE,show_colnames=FALSE,
              annotation_col=annotation_col_chr,
              #annotation_colors = ann_colors,
-             #filename = paste0(sub(input_CN_data_file,pattern=".tsv",replacement=""),"_PLOT.pdf"))
-             filename = paste0(out_dir,"/",args$name,"_noLines_PLOT.pdf"))
-             #filename = paste0(sub(input_CN_data_file,pattern=".tsv",replacement=""),"_noLines_PLOT.png"))
+             filename = paste0(out_dir,"/",args$name,"_noLines_CN_PLOT.pdf"))
     rm(tmp)
   
   
