@@ -4,6 +4,7 @@
 #   Made each file have its own path, replaced path_dir with out_dir
 #   Put all the results in out_dir
 #   Added a name for the plot to identify where the clustering is coming from
+#   Added order_by_true argument
 
 #======================
 # libraries
@@ -26,6 +27,7 @@ parser$add_argument("--copy_number_file", type="character", help="Path to copy n
 parser$add_argument("--regions_file", type="character",help="Path to region coordinates")
 parser$add_argument("--inferred_clusters_file", type="character", help="Path to inferred clusters")
 parser$add_argument("--true_clusters_file", type="character", help="Path to true clusters if available")
+parser$add_argument("--order_by_true", type="integer", default=1, help="If 1, rows are ordered by the true clustering if given, else by the predicted")
 parser$add_argument("--name", type="character", help="A name for the final plot")
 
 args <- parser$parse_args() 
@@ -150,7 +152,7 @@ mean_meth_matrix <- t(apply(input_CpG_data,1,extract_mean_meth_per_cell,region_c
 # pheatmap plots
 #======================
 
-if(args$true_clusters == 1){
+if(args$true_clusters == 1 && args$order_by_true == 1){
   index <- 1:dim(true_cell_clusters)[1]
   index_gaps <- index[!duplicated(true_cell_clusters[order(true_cell_clusters),])] - 1 
   index_gaps <- index_gaps[which(index_gaps != 0)]  
@@ -162,6 +164,7 @@ if(args$true_clusters == 1){
 
 ## annotating the rows by clusters
 
+# MA: we want to add the true clusters annotation no matter whether we order by true or predicted
 if(args$true_clusters == 1){
   annotation_row <- cbind(inferred_cell_clusters,true_cell_clusters$true_clusters)
   colnames(annotation_row) <- c("inferred clusters", "true clusters")  
@@ -193,7 +196,7 @@ annotation_col$regions <- as.factor(annotation_col$regions)
 if (M <= 250) {
   print("plotting CpG based data")
 
-  if(args$true_clusters == 1){
+  if(args$true_clusters == 1 && args$order_by_true == 1){
     tmp <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
   } else{
     tmp <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
@@ -203,7 +206,7 @@ if (M <= 250) {
            cellheight = 5,fontsize = 8, 
            main = paste0("CpG-based methylation data for ", args$name),
            gaps_row = index_gaps,fontsize_row=6,fontsize_col=4, 
-           annotation_names_row = FALSE,annotation_names_col= FALSE,
+           annotation_names_row = FALSE, annotation_names_col= FALSE,
            #gaps_col=(input_regions[,2][1:(R-1)] + 1),
            show_colnames=FALSE,
            annotation_col=annotation_col,
@@ -227,7 +230,7 @@ if (M > 250) {
 
     print("plotting CpG based methylation data")
 
-    if(args$true_clusters == 1){
+    if(args$true_clusters == 1 && args$order_by_true == 1){
     tmp <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
     } else{
       tmp <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
@@ -251,7 +254,7 @@ if (M > 250) {
   if (R > 1){
 
     print("plotting CpG based methylation data")
-    if(args$true_clusters == 1){
+    if(args$true_clusters == 1 && args$order_by_true == 1){
       tmp <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
     } else{
       tmp <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
@@ -281,7 +284,7 @@ if (M > 250) {
 
     print("plotting region based mean methylation data")
 
-    if(args$true_clusters == 1){
+    if(args$true_clusters == 1 && args$order_by_true == 1){
     tmp <- mean_meth_matrix[order(as.integer(true_cell_clusters$true_clusters)),]
     } else{
     tmp <- mean_meth_matrix[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
@@ -321,7 +324,7 @@ if (M > 250) {
       annotation_col$regions <- as.factor(annotation_col$regions)
       
       
-      if(args$true_clusters == 1){
+      if(args$true_clusters == 1 && args$order_by_true == 1){
         tmp <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
       } else{
         tmp <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
