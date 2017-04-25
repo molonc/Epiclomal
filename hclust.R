@@ -35,6 +35,10 @@ input_regions_file <- paste0(args$path_directory,args$regions_file)
 # inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.7_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
 # true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.7_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
 
+# input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci5000_clones3_cells100_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.85_gpbrandom_dirpar1_1_nregs50_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv"
+# input_regions_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci5000_clones3_cells100_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.85_gpbrandom_dirpar1_1_nregs50_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
+# inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci5000_clones3_cells100_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.85_gpbrandom_dirpar1_1_nregs50_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
+# true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci5000_clones3_cells100_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.85_gpbrandom_dirpar1_1_nregs50_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
 
 #======================
 # auxiliar functions
@@ -130,7 +134,50 @@ M <- dim(input_CpG_data)[2] ## number of loci
     write.table(hcluster$order, file=paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_hclust_cell_order_region_based.tsv") , sep="\t", col.names=FALSE, quote=FALSE)
     save(hcluster, file=paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_hclust_R_object_region_based.Rdata"))
   
-         }   
+  }   
+
+### Tony's (PBAL manuscript) clustering approach 
+
+dist.pair <- function(v1,v2){
+  na.idx <- is.na(v1) | is.na(v2) 
+  v1a  <- v1[!na.idx]
+  v2a  <- v2[!na.idx]
+  l.na <- (sum(!na.idx)) ## = length(v1a) = length(v2a), the number of entries with data on both vectors
+  
+  d <- (sum(abs(v1a - v2a)) / l.na) ### this should be what dist() does! 
+  return(d)
+  
+}
+
+dist.PBAL <- function(d){ ### d is matrix where the rows correspond to cells and columns to CpGs
+  dist.data <- matrix(NA,nrow=nrow(d),ncol=nrow(d))
+  rownames(dist.data) <- rownames(d)
+  colnames(dist.data) <- rownames(d)
+  for (i in 1:nrow(d)){
+    for(j in 1:nrow(d)){
+      dist.data[i,j] <- dist.pair(v1=d[i,],v2=d[j,])
+    }
+  }
+  return(dist.data)
+}
+
+### from PBAL manuscript: unsupervised learning was done by calculating a Euclidean distance from each cell’s dissimilarity vector and clustered using Ward’s linkage method.
+
+print("Tony's approach - CpG based clustering")
+
+hcluster_T <- hclust(dist(dist.PBAL(d=input_CpG_data),method="euclidean"),method = "ward.D2")
+
+# defining some clusters
+mycl_T <- cutree(hcluster_T, k=1:args$max_k)
+
+possible_clusters_T <- cbind(rownames(input_CpG_data),mycl_T)
+possible_clusters_T <- as.data.frame(possible_clusters_T)
+colnames(possible_clusters_T) <- c("cell_id",paste0("num_clusters_",1:args$max_k))
+
+write.table(possible_clusters_T, file=paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_maxk_",args$max_k,"_PBALclust_clusters_CpG_based.tsv") , sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
+write.table(hcluster_T$order, file=paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_PBALclust_cell_order_CpG_based.tsv") , sep="\t", col.names=FALSE, quote=FALSE)
+save(hcluster_T, file=paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_PBALclust_R_object_CpG_based.Rdata"))
+
 
 
 
