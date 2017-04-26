@@ -91,8 +91,14 @@ M <- dim(input_CpG_data)[2] ## number of loci
     possible_clusters <- as.data.frame(possible_clusters)
     colnames(possible_clusters) <- c("cell_id",paste0("num_clusters_",1:args$max_k))
   
-    write.table(possible_clusters, file=paste0(outdir,"/hclust_clusters_CpG_based_maxk_",args$max_k,".tsv") , sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
-    write.table(hcluster$order, file=paste0(outdir,"/hclust_cell_order_CpG_based_maxk_",args$max_k,".tsv") , sep="\t", col.names=FALSE, quote=FALSE)
+    ofile <- paste0(outdir,"/hclust_clusters_CpG_based_maxk_",args$max_k,".tsv") 
+    write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
+    system(paste0("gzip --force ", ofile))
+    
+    ofile <- paste0(outdir,"/hclust_cell_order_CpG_based_maxk_",args$max_k,".tsv")
+    write.table(hcluster$order, file=ofile , sep="\t", col.names=FALSE, quote=FALSE)
+    system(paste0("gzip --force ", ofile))
+        
     #save(hcluster, file=paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_hclust_R_object_CpG_based.Rdata"))
 
    }
@@ -110,8 +116,14 @@ M <- dim(input_CpG_data)[2] ## number of loci
     possible_clusters <- as.data.frame(possible_clusters)
     colnames(possible_clusters) <- c("cell_id",paste0("num_clusters_",1:args$max_k))
     
-    write.table(possible_clusters, file=paste0(outdir,"/hclust_clusters_CpG_based_maxk_",args$max_k,".tsv") , sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
-    write.table(hcluster$order, file=paste0(outdir,"/hclust_cell_order_CpG_based_maxk_",args$max_k,".tsv") , sep="\t", col.names=FALSE, quote=FALSE)
+    ofile <- paste0(outdir,"/hclust_clusters_CpG_based_maxk_",args$max_k,".tsv") 
+    write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
+    system(paste0("gzip --force ", ofile))    
+    
+    ofile <- paste0(outdir,"/hclust_cell_order_CpG_based_maxk_",args$max_k,".tsv") 
+    write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
+    system(paste0("gzip --force ", ofile))    
+    
     # save(hcluster, file=paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_hclust_R_object_CpG_based.Rdata"))
 
     print("More than one region, region based hiearchical clustering")
@@ -132,8 +144,14 @@ M <- dim(input_CpG_data)[2] ## number of loci
     possible_clusters <- as.data.frame(possible_clusters)
     colnames(possible_clusters) <- c("cell_id",paste0("num_clusters_",1:args$max_k))
     
-    write.table(possible_clusters, file=paste0(outdir,"/hclust_clusters_region_based_maxk_",args$max_k,".tsv") , sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
-    write.table(hcluster$order, file=paste0(outdir,"/hclust_cell_order_region_based_maxk_",args$max_k,".tsv"), sep="\t", col.names=FALSE, quote=FALSE)
+    ofile <- paste0(outdir,"/hclust_clusters_region_based_maxk_",args$max_k,".tsv") 
+    write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
+    system(paste0("gzip --force ", ofile))
+    
+    ofile <- paste0(outdir,"/hclust_cell_order_region_based_maxk_",args$max_k,".tsv")
+    write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
+    system(paste0("gzip --force ", ofile))    
+    
     # save(hcluster, file=paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_hclust_R_object_region_based.Rdata"))
   
   }   
@@ -176,8 +194,14 @@ possible_clusters_T <- cbind(rownames(input_CpG_data),mycl_T)
 possible_clusters_T <- as.data.frame(possible_clusters_T)
 colnames(possible_clusters_T) <- c("cell_id",paste0("num_clusters_",1:args$max_k))
 
-write.table(possible_clusters_T, file=paste0(outdir,"/PBALclust_clusters_CpG_based_maxk_",args$max_k,".tsv") , sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
-write.table(hcluster_T$order, file=paste0(outdir,"/PBALclust_cell_order_CpG_based_maxk_",args$max_k,".tsv"), sep="\t", col.names=FALSE, quote=FALSE)
+ofile <- paste0(outdir,"/PBALclust_clusters_CpG_based_maxk_",args$max_k,".tsv") 
+write.table(possible_clusters_T, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
+system(paste0("gzip --force ", ofile))
+    
+ofile <- paste0(outdir,"/PBALclust_cell_order_CpG_based_maxk_",args$max_k,".tsv")
+write.table(hcluster_T$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
+system(paste0("gzip --force ", ofile))
+
 #save(hcluster_T, file=paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_PBALclust_R_object_CpG_based.Rdata"))
 
 
