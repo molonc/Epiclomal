@@ -20,6 +20,7 @@ parser$add_argument("--methylation_file", type="character", help="Path to methyl
 parser$add_argument("--copy_number_file", type="character", help="Path to copy number data if available")
 parser$add_argument("--regions_file", type="character",help="Path to region coordinates")
 parser$add_argument("--inferred_clusters_file", type="character", help="Path to inferred clusters")
+parser$add_argument("--cell_posterior_probabilities_file", type="character", help="Path to cell posterior probabilities of belonging to a cluster")
 parser$add_argument("--true_clusters_file", type="character", help="Path to true clusters if available")
 
 args <- parser$parse_args() 
@@ -29,6 +30,7 @@ print(args)
 input_CpG_data_file <- paste0(args$path_directory,args$methylation_file)
 input_regions_file <- paste0(args$path_directory,args$regions_file)
 inferred_clusters_file <-  paste0(args$path_directory,args$inferred_clusters_file)
+cell_posterior_probabilities_file <-  paste0(args$path_directory,args$cell_posterior_probabilities_file)
 
 if ( args$true_clusters == 1){
   true_clusters_file <- paste0(args$path_directory,args$true_clusters_file) }
@@ -36,10 +38,11 @@ if ( args$true_clusters == 1){
 if ( args$copy_number == 1){
   input_CN_data_file <- paste0(args$path_directory,args$copy_number_file) }
 
-#  input_CN_data_file <- "/Users/cdesouza/Documents/EPI-91/CN_data_most_variable_CGIs_xeno7_Epiclomal.tsv"
-#  input_CpG_data_file <- "/Users/cdesouza/Documents/EPI-91/most_var_CGIs_all_cells_input_Epiclomal_hg19_xeno7.tsv"
-#  input_regions_file <- "/Users/cdesouza/Documents/EPI-91/most_var_CGIs_regionIDs_input_Epiclomal_hg19_xeno7.tsv"
-#  inferred_clusters_file <- "/Users/cdesouza/Documents/EPI-91/result_Basic_CN_Epiclomal_100repeats_MAXK7_64.tsv"
+  #input_CN_data_file <- "/Users/cdesouza/Documents/EPI-91/CN_data_most_variable_CGIs_xeno7_Epiclomal.tsv"
+  #input_CpG_data_file <- "/Users/cdesouza/Documents/EPI-91/most_var_CGIs_all_cells_input_Epiclomal_hg19_xeno7.tsv"
+  #input_regions_file <- "/Users/cdesouza/Documents/EPI-91/most_var_CGIs_regionIDs_input_Epiclomal_hg19_xeno7.tsv"
+  #inferred_clusters_file <- "/Users/cdesouza/Documents/EPI-91/result_Basic_CN_Epiclomal_100repeats_MAXK7_64.tsv"
+  #cell_posterior_probabilities_file <- "/Users/cdesouza/Documents/EPI-91/result_Basic_CN_Epiclomal_100repeats_MAXK7_64_posterior.tsv"
 
 # input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv"
 # input_regions_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
@@ -112,6 +115,21 @@ if(sum(rownames(input_CpG_data) != rownames(inferred_cell_clusters)) > 0){
 }
 rm(tmp)
 
+
+# cell posterior probabilities
+tmp <- read.csv(cell_posterior_probabilities_file,sep="\t",header=TRUE,check.names=FALSE)
+cell_posterior_probabilities <- as.matrix(apply(tmp[,-1],1,max))
+colnames(tmp) <- c("cell_id","inferred_clusters") 
+rownames(cell_posterior_probabilities) <- tmp$cell_id
+cell_posterior_probabilities <- as.data.frame(cell_posterior_probabilities)
+colnames(cell_posterior_probabilities) <- "cell_posteriors"
+#tmp[47:49,] <- tmp[c(48,49,47),]
+if(sum(rownames(input_CpG_data) != rownames(cell_posterior_probabilities)) > 0){
+  stop("order of cell IDs doesn't match")
+}
+rm(tmp)
+
+
 if ( args$true_clusters == 1){
   tmp <- read.csv(true_clusters_file,sep="\t",header=TRUE,check.names=FALSE)
   colnames(tmp) <- c("cell_id","true_clusters") 
@@ -125,6 +143,9 @@ if ( args$true_clusters == 1){
   }
   rm(tmp)
 }
+
+
+
 
 
 #======================
@@ -159,8 +180,14 @@ if(args$true_clusters == 1){
   annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
   annotation_row$`true clusters` <- as.factor(annotation_row$`true clusters`)
 }else{
-  annotation_row <- inferred_cell_clusters
-  colnames(annotation_row) <-"inferred clusters"
+  #annotation_row <- inferred_cell_clusters
+  #colnames(annotation_row) <-"inferred clusters"
+  #annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
+  
+  ### adding posterior probabilities
+  annotation_row <- cbind(inferred_cell_clusters,cell_posterior_probabilities$cell_posteriors)
+  colnames(annotation_row) <- c("inferred clusters", "posterior")  
+  annotation_row$posterior <- as.factor(round(annotation_row$posterior,2)*100)
   annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
 }
 
