@@ -6,8 +6,8 @@
 suppressMessages(library(argparse))
 
 ### libraries to find the best number of clusters
-# suppressMessages(library(factoextra))
-# suppressMessages(library(NbClust))
+#suppressMessages(library(factoextra))
+suppressMessages(library(NbClust))
 
 #======================
 # arguments
@@ -31,10 +31,10 @@ input_CpG_data_file <- args$methylation_file
 input_regions_file <- args$regions_file
 
 
-# input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv"
-# input_regions_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
-# inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
-# true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
+# input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform_seed_2/data/data_incomplete.tsv"
+# input_regions_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform_seed_2/data/regions_file.tsv"
+# inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform_seed_2/data/true_clone_membership.tsv"
+# true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform_seed_2/data/true_clone_membership.tsv"
  
 # input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.7_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv"
 # input_regions_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.7_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
@@ -165,8 +165,8 @@ M <- dim(input_CpG_data)[2] ## number of loci
     #         method = "ward.D2", index = "all") 
     # 
     # ### not working for our data set, not sure why 
-    # # diss_matrix <- dist(input_CpG_data,method="euclidean",diag=FALSE)
-    # # NbClust(t(input_CpG_data), diss = diss_matrix,distance=NULL, min.nc=2, max.nc=6,,method = "complete",index = "all") 
+    # diss_matrix <- dist(input_CpG_data,method="euclidean",diag=FALSE)
+    # NbClust(input_CpG_data, diss = diss_matrix,distance=NULL, min.nc=2, max.nc=6,,method = "complete",index = "all") 
     # 
     # fviz_nbclust(input_CpG_data, hcut, method = "wss") +
     #   geom_vline(xintercept = 3, linetype = 2)
@@ -188,7 +188,9 @@ M <- dim(input_CpG_data)[2] ## number of loci
     system(paste0("gzip --force ", ofile))    
     
     # save(hcluster, file=paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_hclust_R_object_CpG_based.Rdata"))
-
+    
+    rm(hcluster)
+    
     print("More than one region, region based hiearchical clustering")
     
     #======================
@@ -200,20 +202,25 @@ M <- dim(input_CpG_data)[2] ## number of loci
 
     hcluster <- hclust(dist(mean_meth_matrix ,method="euclidean"),method = "complete")
     
-    ### finding the best number of clusters
-    # ### working in this case 
-    # diss_matrix <- dist(mean_meth_matrix,method="euclidean",diag=FALSE)
-    # NbClust(mean_meth_matrix, diss = diss_matrix,distance=NULL, min.nc=2, max.nc=6,,method = "complete",index = "all")
-    # 
-    # fviz_nbclust(input_CpG_data, hcut, method = "wss") +
-    #   geom_vline(xintercept = 3, linetype = 2)
-    
     # defining some clusters
     mycl <- cutree(hcluster, k=1:args$max_k)
     
     possible_clusters <- cbind(rownames(input_CpG_data),mycl)
     possible_clusters <- as.data.frame(possible_clusters)
     colnames(possible_clusters) <- c("cell_id",paste0("num_clusters_",1:args$max_k))
+    
+    ### finding the best number of clusters
+    # ### working in this case 
+    diss_matrix <- dist(mean_meth_matrix,method="euclidean",diag=FALSE)
+    hcluster_Nb <- NbClust(mean_meth_matrix, diss = diss_matrix,distance=NULL, min.nc=2, max.nc=args$max_k,method = "complete",index = "ch")
+    best_cluster <- hcluster_Nb$Best.partition
+    
+    possible_clusters <- cbind(possible_clusters,best_cluster)
+    colnames(possible_clusters) <- c(colnames(possible_clusters)[1:(dim(possible_clusters)[2]-1)],paste0("best_cluster_",hcluster_Nb$Best.nc[1]))
+    
+    # fviz_nbclust(input_CpG_data, hcut, method = "wss") +
+    #   geom_vline(xintercept = 3, linetype = 2)
+    
     
     ofile <- paste0(outdir,"/hclust_clusters_region_based_maxk_",args$max_k,".tsv") 
     write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
@@ -256,7 +263,9 @@ dist.PBAL <- function(d){ ### d is matrix where the rows correspond to cells and
 
 print("Tony's approach - CpG based clustering")
 
-hcluster_T <- hclust(dist(dist.PBAL(d=input_CpG_data),method="euclidean"),method = "ward.D2")
+dist_PBAL <- dist.PBAL(d=input_CpG_data)
+
+hcluster_T <- hclust(dist(dist_PBAL,method="euclidean"),method = "ward.D2")
 
 # ### Choosing number of clusters
 # ### working in this case
@@ -271,6 +280,16 @@ mycl_T <- cutree(hcluster_T, k=1:args$max_k)
 possible_clusters_T <- cbind(rownames(input_CpG_data),mycl_T)
 possible_clusters_T <- as.data.frame(possible_clusters_T)
 colnames(possible_clusters_T) <- c("cell_id",paste0("num_clusters_",1:args$max_k))
+
+
+### finding the best number of clusters
+# ### working in this case 
+diss_matrix_T <- dist(dist_PBAL,method="euclidean")
+hcluster_Nb_T <- NbClust(dist_PBAL, diss = diss_matrix,distance=NULL, min.nc=2, max.nc=args$max_k,method = "ward.D2",index = "ch")
+best_cluster_T <- hcluster_Nb$Best.partition
+
+possible_clusters_T <- cbind(possible_clusters_T,best_cluster_T)
+colnames(possible_clusters_T) <- c(colnames(possible_clusters_T)[1:(dim(possible_clusters_T)[2]-1)],paste0("best_cluster_",hcluster_Nb_T$Best.nc[1]))
 
 ofile <- paste0(outdir,"/PBALclust_clusters_CpG_based_maxk_",args$max_k,".tsv") 
 write.table(possible_clusters_T, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
