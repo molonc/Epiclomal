@@ -57,7 +57,7 @@ class RegionGeMM(BasicGeMM):
     def _region_data_matrix(self, data_type, X):
     # Here in the regions class I will fill up to 0 the remaining values for each region
     # TO DO: maybe this reshaping can be done more efficiently 
-        matrix = np.empty((self.N, self.R[data_type], self.maxL[data_type]))
+        matrix = np.empty((self.N, self.R[data_type], int(self.maxL[data_type])))
         matrix[:] = np.NAN
         for n in range(self.N):
             for r in range(self.R[data_type]):

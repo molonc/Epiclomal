@@ -134,7 +134,7 @@ def load_data(args, include_regions=False):
         # data[data_type] = _load_data_frame(config['data'][data_type]['file'])
         if (data_type == 'meth'):
             data[data_type] = _load_data_frame(data_filename)
-        if (data_type == 'cn' or copynumber_filename is not None):
+        if (data_type == 'cn'):
             data[data_type] = _load_data_frame(copynumber_filename)                    
         if (include_regions):
             regions[data_type] = _load_regions_frame(regions_filename)
