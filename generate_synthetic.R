@@ -37,6 +37,9 @@ parser$add_argument("--region_nonequal", type="character", default="uniform", he
 
 parser$add_argument("--output_dir", type="character", default="output", help="Entire or just the beginning of the output directory file ")
 parser$add_argument("--given_dir_complete", type="integer", default=0, help="If this is 0, it creates a long output dir name with the input parameters, if it's 1, the output dir is output_dir ")
+
+parser$add_argument("--generate_bulk", type="character", default="yes", help="If yes, it generates bulk data by combining the complete data from all cells")
+
 # writes: 6 files 
 # 1: all input parameters 
 # 2. region coordinates 
@@ -388,6 +391,19 @@ if (args$verbose) {
 }    
 if (args$saveall)
     write_data_file (x_data_matrix, paste0(output_dir, "/data_complete", ".tsv"))
+
+if(args$generate_bulk =="yes"){
+ print("Generating bulk sample") 
+   
+  meth_reads <- apply(x_data_matrix,2,function(x){sum(x==1)})
+  unmeth_reads <- args$num_cells - meth_reads
+  position <- 1:M
+  
+  bulk_data <- cbind(position,meth_reads,unmeth_reads)
+  print(bulk_data)
+  write.table(bulk_data, paste0(output_dir, "/bulk_data", ".tsv") , sep="\t", col.names=TRUE,row.names=FALSE, quote=FALSE, append=TRUE)    
+  system(paste0("gzip --force ",paste0(output_dir, "/bulk_data", ".tsv")))   
+  }
 
 
 # ================================
