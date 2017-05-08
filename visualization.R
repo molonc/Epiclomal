@@ -38,11 +38,11 @@ if ( args$true_clusters == 1){
 if ( args$copy_number == 1){
   input_CN_data_file <- paste0(args$path_directory,args$copy_number_file) }
 
-  input_CN_data_file <- "/Users/cdesouza/Documents/EPI-91/CN_data_most_variable_CGIs_xeno7_Epiclomal.tsv"
-  input_CpG_data_file <- "/Users/cdesouza/Documents/EPI-91/most_var_CGIs_all_cells_input_Epiclomal_hg19_xeno7.tsv"
-  input_regions_file <- "/Users/cdesouza/Documents/EPI-91/most_var_CGIs_regionIDs_input_Epiclomal_hg19_xeno7.tsv"
-  inferred_clusters_file <- "/Users/cdesouza/Documents/EPI-91/result_Basic_CN_Epiclomal_100repeats_MAXK7_64.tsv"
-  cell_posterior_probabilities_file <- "/Users/cdesouza/Documents/EPI-91/result_Basic_CN_Epiclomal_100repeats_MAXK7_64_posterior_fake.tsv"
+#  input_CN_data_file <- "/Users/cdesouza/Documents/EPI-91/CN_data_most_variable_CGIs_xeno7_Epiclomal.tsv"
+#  input_CpG_data_file <- "/Users/cdesouza/Documents/EPI-91/most_var_CGIs_all_cells_input_Epiclomal_hg19_xeno7.tsv"
+#  input_regions_file <- "/Users/cdesouza/Documents/EPI-91/most_var_CGIs_regionIDs_input_Epiclomal_hg19_xeno7.tsv"
+#  inferred_clusters_file <- "/Users/cdesouza/Documents/EPI-91/result_Basic_CN_Epiclomal_100repeats_MAXK7_64.tsv"
+#  cell_posterior_probabilities_file <- "/Users/cdesouza/Documents/EPI-91/result_Basic_CN_Epiclomal_100repeats_MAXK7_64_posterior_fake.tsv"
 
 # input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv"
 # input_regions_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
@@ -74,7 +74,6 @@ extract_mean_meth_per_cell <- function(cell_data,region_coord){
   mean_meth[is.na(mean_meth)] <- NA
   return(mean_meth)
 }  
-
 
 #======================
 # loading the data
@@ -116,18 +115,17 @@ if(sum(rownames(input_CpG_data) != rownames(inferred_cell_clusters)) > 0){
 rm(tmp)
 
 
-# cell posterior probabilities
-tmp <- read.csv(cell_posterior_probabilities_file,sep="\t",header=TRUE,check.names=FALSE)
-cell_posterior_probabilities <- as.matrix(apply(tmp[,-1],1,max))
-colnames(tmp) <- c("cell_id","inferred_clusters") 
-rownames(cell_posterior_probabilities) <- tmp$cell_id
-cell_posterior_probabilities <- as.data.frame(cell_posterior_probabilities)
-colnames(cell_posterior_probabilities) <- "cell_posteriors"
-#tmp[47:49,] <- tmp[c(48,49,47),]
-if(sum(rownames(input_CpG_data) != rownames(cell_posterior_probabilities)) > 0){
-  stop("order of cell IDs doesn't match")
-}
-rm(tmp)
+# # cell posterior probabilities
+# tmp <- read.csv(cell_posterior_probabilities_file,sep="\t",header=TRUE,check.names=FALSE)
+# cell_posterior_probabilities <- as.matrix(apply(tmp[,-1],1,max)) ### check the format of this file
+# colnames(tmp) <- c("cell_id","inferred_clusters") 
+# rownames(cell_posterior_probabilities) <- tmp$cell_id
+# cell_posterior_probabilities <- as.data.frame(cell_posterior_probabilities)
+# colnames(cell_posterior_probabilities) <- "cell_posteriors"
+# if(sum(rownames(input_CpG_data) != rownames(cell_posterior_probabilities)) > 0){
+#   stop("order of cell IDs doesn't match")
+# }
+# rm(tmp)
 
 
 if ( args$true_clusters == 1){
@@ -143,10 +141,6 @@ if ( args$true_clusters == 1){
   }
   rm(tmp)
 }
-
-
-
-
 
 #======================
 # extracting the mean methylation for each region in each cell 
@@ -180,24 +174,17 @@ if(args$true_clusters == 1){
   annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
   annotation_row$`true clusters` <- as.factor(annotation_row$`true clusters`)
 }else{
-  #annotation_row <- inferred_cell_clusters
-  #colnames(annotation_row) <-"inferred clusters"
-  #annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
-  
-  ### adding posterior probabilities
-  annotation_row <- cbind(inferred_cell_clusters,cell_posterior_probabilities$cell_posteriors)
-  colnames(annotation_row) <- c("inferred clusters", "posterior")  
-  
-  
-  #create.posterior.annotation <- function(p){
-  #splits <- seq(from=0,to=1,by=.1)
-  #}
-  
-  annotation_row$posterior <- as.factor(round(annotation_row$posterior,2)*100)
+  annotation_row <- inferred_cell_clusters
+  colnames(annotation_row) <-"inferred clusters"
   annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
+  
+  # ### adding posterior probabilities
+  # annotation_row <- cbind(inferred_cell_clusters,cell_posterior_probabilities$cell_posteriors)
+  # colnames(annotation_row) <- c("inferred clusters", "posterior")  
+  # annotation_row$posterior <- as.factor(round(annotation_row$posterior,2))
+  # annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
+  
 }
-
-
 
 R <- dim(input_regions)[1] ## number of regions
 M <- dim(input_CpG_data)[2] ## number of loci
@@ -283,16 +270,15 @@ if (M > 250) {
     
     ## including the cell posterior probabilities in shades of grey
     #colnames(annotation_row) <- "inferred_clusters"
-    annotation_row$posterior <- paste0("post_", annotation_row$posterior)
-    ann_colors = list(posterior = c(post_100="#111111", post_95="#333333",post_70="#666666", post_50="#777777", post_33="#888888", post_25="#999999" ))
-    
+    #annotation_row$posterior <- paste0("post_", annotation_row$posterior) ### still need to make this more general
+    #ann_colors = list(posterior = c(post_100="#111111", post_95="#333333",post_70="#666666", post_50="#777777", post_33="#888888", post_25="#999999" ))
     
     pheatmap(tmp,cluster_cols=FALSE, annotation_row = annotation_row,
              cluster_rows = FALSE,
              #cellwidth = 5, cellheight = 5,
              fontsize = 8, main = "CpG based methylation data",gaps_row = index_gaps,fontsize_row=8,fontsize_col=4,
              annotation_names_row = FALSE,
-             annotation_colors = ann_colors,
+             #annotation_colors = ann_colors, ### this has to be uncommented if we want to use shades of grey for the posterior probabilities
              #annotation_names_col= TRUE,
              show_colnames=FALSE,
              #annotation_col=annotation_col,
@@ -312,12 +298,13 @@ if (M > 250) {
     
     pheatmap(tmp,cluster_cols=FALSE,
              cluster_rows=FALSE,
+             show_colnames=FALSE,
              annotation_row = annotation_row,
              #cellwidth = 5,cellheight = 5,
              fontsize = 8, main = "Region-based mean methylation fraction data",gaps_row = index_gaps,fontsize_row=8,fontsize_col=6,
              annotation_names_row = FALSE,
-             annotation_colors = ann_colors,
-             border_color=NA,show_colnames=FALSE,
+             #annotation_colors = ann_colors,
+             border_color=NA,
              filename = paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_region_based_PLOT.png"))
     #filename = paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_region_based_PLOT.pdf"))
     rm(tmp)
