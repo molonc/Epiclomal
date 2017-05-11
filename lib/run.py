@@ -77,10 +77,6 @@ def run_model(mtype, args):
         
     model.fit(convergence_tolerance=args.convergence_tolerance, num_iters=args.max_num_iters, debug=False)
     
-    # TO REMOVE THIS
-    if args.lower_bound_file is not None:
-        write_lower_bound(model, args.lower_bound_file)
-
     if args.out_dir is not None:
         if not os.path.exists(args.out_dir):
             os.makedirs(args.out_dir)
@@ -100,7 +96,7 @@ def run_model(mtype, args):
     
 def load_data(args, include_regions=False):
     yaml_filename = args.config_file
-    data_filename = args.data_file
+    meth_filename = args.methylation_file
     regions_filename = args.regions_file
     copynumber_filename = args.copynumber_file
     initial_clusters_data = None
@@ -133,9 +129,10 @@ def load_data(args, include_regions=False):
     for data_type in config['data']:
         # data[data_type] = _load_data_frame(config['data'][data_type]['file'])
         if (data_type == 'meth'):
-            data[data_type] = _load_data_frame(data_filename)
+            data[data_type] = _load_data_frame(meth_filename)
         if (data_type == 'cn'):
-            data[data_type] = _load_data_frame(copynumber_filename)                    
+            data[data_type] = _load_data_frame(copynumber_filename) 
+                               
         if (include_regions):
             regions[data_type] = _load_regions_frame(regions_filename)
         else:
@@ -143,9 +140,14 @@ def load_data(args, include_regions=False):
         
         priors['gamma'][data_type] = np.array(config['data'][data_type]['gamma_prior'])
         
-        priors['beta'][data_type] = np.array(config['data'][data_type]['beta_prior'])
-        # normalize
-        priors['beta'][data_type] = priors['beta'][data_type] / priors['beta'][data_type].sum()
+        if (args.bulk_file != None):
+            # If the bulk reads file is given, there will be a different parameter for each locus
+            priors['beta'][data_type] = _load_bulk_frame(args.bulk_file)
+        else:
+            priors['beta'][data_type] = np.array(config['data'][data_type]['beta_prior'])
+        
+        # NOTE: we don't need to normalize because these are parameters of a Beta/Dirichlet distribution        
+        # priors['beta'][data_type] = priors['beta'][data_type] / priors['beta'][data_type].sum()
         
         cell_ids.append(data[data_type].index)
         
@@ -170,7 +172,7 @@ def load_data(args, include_regions=False):
     
     for data_type in event_ids:
         print 'Number of {0} events: {1}'.format(data_type, len(event_ids[data_type]))
-        print 'Beta prior of {0} events: {1}'.format(data_type, priors['beta'][data_type])
+        # print 'Beta prior of {0} events: {1}'.format(data_type, priors['beta'][data_type])
         print 'Gamma prior of {0} events: {1}'.format(data_type, priors['gamma'][data_type])
         #print 'Data: \n', data[data_type]
         #print 'Regions: \n', regions[data_type] 
@@ -197,6 +199,12 @@ def _load_regions_frame(file_name):
     df = pd.read_csv(file_name, compression='gzip', index_col='region_id', sep='\t')
     return df
 
+def _load_bulk_frame(file_name):
+    # Assume the header of the bulk file is:
+    # position        meth_reads      unmeth_reads
+    print 'Loading bulk file {0}.'.format(file_name)
+    df = pd.read_csv(file_name, compression='gzip', index_col='position', sep='\t')
+    return df
 
 def load_samples(cell_ids, file_name):
     if file_name is not None:
@@ -236,8 +244,10 @@ def write_cluster_MAP(cell_ids, pi_star, out_dir):
     df = pd.DataFrame(pi_star)
     for index, row in df.iterrows():
         max_index, max_value = max(enumerate(row), key=operator.itemgetter(1))
-        labels_pred.append(max_index)
-    df = pd.DataFrame(np.transpose(labels_pred), index=cell_ids)
+        labels_pred.append([max_index, max_value])
+        
+    print labels_pred
+    df = pd.DataFrame(labels_pred, index=cell_ids)
     with gzip.GzipFile(file_name, 'w') as fh:
         df.to_csv(fh, index_label='cell_id', sep='\t')          
         
@@ -317,8 +327,6 @@ def write_genotype_posteriors(event_ids, G, out_dir):
 
 def write_params(model, out_dir, event_ids, cpu_time):
     file_name = os.path.join(out_dir, 'params.yaml')
-
-              #'lower_bound' : float(model.lower_bound[-1]),
     
     params = {
               'lower_bound' : int(model.lower_bound[-1]),
@@ -346,8 +354,3 @@ def write_params(model, out_dir, event_ids, cpu_time):
         
 ##########################        
         
-def write_lower_bound(model, out_file):
-    with open(out_file, 'w') as fh:
-        result = {'lower_bound' : float(model.lower_bound[-1]), 'converged' : model.converged}
-        
-        yaml.dump(result, fh, default_flow_style=False)

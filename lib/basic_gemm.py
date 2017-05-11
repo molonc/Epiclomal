@@ -26,7 +26,7 @@ class BasicGeMM(object):
         
         self.K = len(alpha_prior)               # max number of clusters
         
-        print self.K, ' max number of clusters'
+        print self.K, ' max number of clusters'        
         
         self.N = X[X.keys()[0]].shape[0]        # number of cells
                 
@@ -36,9 +36,7 @@ class BasicGeMM(object):
         
         self._init_alpha_star()  
         # MA: this just initializes with 1 for every clone. if 4 clones, it'll be [1 1 1 1]  
-        
-        self.beta_prior = beta_prior
-        
+                
         self.data_types = X.keys()
     
         # I am actually implementing it as a one region, that way we can extend to regions more easily
@@ -54,14 +52,17 @@ class BasicGeMM(object):
         
         self.gamma_star = {}
         
-        self.beta_star = {}        
+        self.beta_prior = {} 
+        self.include_bulk = {}      # true if bulk is used as prior
+        
+        self.beta_star = {}
         
         self.log_mu_star = {}
         
         for data_type in self.data_types:
             if X[data_type].shape[0] != self.N:
                 raise Exception('All data types must have the same number of rows (cells).')
-                    
+                                        
             self.M[data_type] = X[data_type].shape[1]
             # M is the number of loci            
             
@@ -84,7 +85,11 @@ class BasicGeMM(object):
             # the second matrix is I(Xnm=1) and in this case (2 states) it is the same as the input matrix, and with 0 instead of NaNs
             
             self._init_gamma_star(data_type)
-            # This just initializes gamma_star with gamma_prior            
+            # This just initializes gamma_star with gamma_prior     
+            
+            self._init_beta_prior(data_type, beta_prior)
+            # This just initializes beta_prior, one vector of size S if bulk is not used, 
+            #   or if bulk is used as prior, a vector of size S for each locus, matrix RxmaxLxS                             
             
             self._init_beta_star(data_type)
             # This just initializes beta_star for each cluster k with beta_prior, matrix KxS, now KxRxS     
@@ -136,12 +141,43 @@ class BasicGeMM(object):
     def _init_gamma_star(self, data_type):
         self.gamma_star[data_type] = self.gamma_prior[data_type].copy()
 
+
+    def _init_beta_prior(self, data_type, beta_prior):
+        if (len(beta_prior[data_type]) == self.S[data_type]):
+            # not including bulk as prior
+            self.include_bulk[data_type] = False 
+            self.beta_prior[data_type] = beta_prior[data_type]                        
+        else:
+            # yes including bulk as prior
+            self.include_bulk[data_type] = True    
+            # beta_prior will be a matrix of size RxmaxLxS
+            self.beta_prior[data_type] = np.zeros((self.R[data_type], int(self.maxL[data_type]), self.S[data_type]))
+            
+            # this should be done differently in the regions class
+            # NOTE: I am adding 1 to all the bulk reads to avoid 0 values. This is equivalent to adding a very small extra prior
+            self.beta_prior[data_type] = 1 + beta_prior[data_type].values.reshape(self.R[data_type], int(self.maxL[data_type]), self.S[data_type])         
+            
+#             i = 0
+#             for r in range(self.R[data_type]):
+#                 for l in range(self.maxL[data_type]):                
+#                     self.beta_prior[data_type][r][l] = beta_prior[data_type][i].copy()
+#                     i = i+1
+
+
     def _init_beta_star(self, data_type):
-    # MA: this has to be a matrix of size KxS, now it is KxRxS
-        self.beta_star[data_type] = np.zeros((self.K, self.R[data_type], self.S[data_type]))
-        for k in range(self.K):
-            for r in range(self.R[data_type]):
-                self.beta_star[data_type][k][r] = self.beta_prior[data_type].copy()
+        if (self.include_bulk[data_type]):
+            # MA: this has to be a matrix of size KxS, with bulk it is KxRxmaxLxS            
+            self.beta_star[data_type] = np.zeros((self.K, self.R[data_type], int(self.maxL[data_type]), self.S[data_type]))
+            for k in range(self.K):
+                 self.beta_star[data_type][k] = self.beta_prior[data_type].copy()        
+        else:            
+            # MA: this has to be a matrix of size KxS, without bulk it is KxRxS
+            self.beta_star[data_type] = np.zeros((self.K, self.R[data_type], self.S[data_type]))
+            for k in range(self.K):
+                for r in range(self.R[data_type]):
+                    self.beta_star[data_type][k][r] = self.beta_prior[data_type].copy()            
+
+            
             
     def _init_alpha_star(self):
         self.alpha_star = {}
@@ -155,6 +191,7 @@ class BasicGeMM(object):
     def get_e_log_mu(self, data_type):
         # computes expectation(log(mu)) using the digamma function
         # I tested this, and it returns K rows, as if I had a for loop
+        # NOTE: the values of self.beta_star[data_type] shouldn't be 0, otherwise it returns inf
         return compute_e_log_dirichlet(self.beta_star[data_type])                
         
     def get_e_log_pi(self):
@@ -269,10 +306,15 @@ class BasicGeMM(object):
                          
         # KxS
         # Here I am just transposing the matrix
-        e_log_mu = np.einsum('krs -> skr',self.get_e_log_mu(data_type))       
+        if (self.include_bulk[data_type]):
+            e_log_mu = np.einsum('krls -> skrl',self.get_e_log_mu(data_type))   
+            # Here we just need a sum, not einsum
+            log_mu_star = e_log_mu[:, :, :, :] + log_mu_star                
+        else:
+            e_log_mu = np.einsum('krs -> skr',self.get_e_log_mu(data_type))       
+            log_mu_star = e_log_mu[:, :, :, np.newaxis] + log_mu_star      
        
-        # Here we just need a sum, not einsum
-        log_mu_star = e_log_mu[:, :, :, np.newaxis] + log_mu_star
+
        
         # SxKxM, now SxKxRxmaxL
         self.log_mu_star[data_type] = log_space_normalise(log_mu_star, axis=0)      
@@ -338,19 +380,31 @@ class BasicGeMM(object):
         # MA: added this
         for data_type in self.data_types:
             prior = self.beta_prior[data_type]
+                    
             newterm = self._get_beta_star_data_term(data_type)
             
-            # prior is of size [1,S], newterm is of size [K,S]. I just have to do a simple sum, einsum doesn't do the right thing
-            self.beta_star[data_type] = prior + newterm
+            # # prior is of size [1,S], newterm is of size [K,S]. I just have to do a simple sum, einsum doesn't do the right thing
+            # With bulk, prior is of size [R,maxL,S] and newterm is of size [S,K,R,maxL]
+            # self.beta_star[data_type] = np.einsum('krls, krls', prior[np.newaxis,:,:,:] + newterm[:,:,:,:])
+            
+            if (self.include_bulk[data_type]):
+                for k in range(self.K):
+                    self.beta_star[data_type][k] = prior + newterm[k]
+            else:
+                self.beta_star[data_type] = prior + newterm                    
 
                     
     def _get_beta_star_data_term(self, data_type):
         # MA: added this 
-        mu_star = self.get_mu_star(data_type)        # SxKxM
-        # MA: use for loops instead of einsum so we can easily extend to regions
-        # NO: it is very slow
-        return np.einsum('skrl -> krs', mu_star[:, :, :, :]) 
-            
+        mu_star = self.get_mu_star(data_type)        # SxKxR or SxKxRxmaxL
+        
+        # Now beta_star goes over l too
+        if (self.include_bulk[data_type]):
+            return np.einsum('skrl -> krls', mu_star[:, :, :, :]) 
+        else:
+            return np.einsum('skrl -> krs', mu_star[:, :, :, :]) 
+
+        # NOTE: If I use for loops instead of einsum it is very slow            
 #         term = np.zeros((self.K,self.S[data_type]))
 #         for s in range(self.S[data_type]):
 #             for k in range(self.K):
@@ -467,11 +521,14 @@ class BasicGeMM(object):
         e_log_p = 0
         
         for data_type in self.data_types:                    
-            mu_star = self._get_beta_star_data_term(data_type)  # size KxS, \sum_m E(I(Gkm=s)), now size KxRxS
+            mu_star = self._get_beta_star_data_term(data_type)  # size KxS, \sum_m E(I(Gkm=s)), now size KxRxS, with bulk size KxRxmaxLxS
             e_log_mu = self.get_e_log_mu(data_type)  # size KxS, now KxRxS
 
             # This below is \sum_m E(I(Gkm=s))Elog mu_ks     (term 3 in the joint)
-            e_log_p += np.einsum('krs,krs', mu_star, e_log_mu)
+            if (self.include_bulk[data_type]):
+                e_log_p += np.einsum('krls,krls', mu_star, e_log_mu)
+            else:
+                e_log_p += np.einsum('krs,krs', mu_star, e_log_mu)    
 
         return e_log_p        
 
@@ -497,12 +554,18 @@ class BasicGeMM(object):
     def _compute_e_log_p_term6(self):
         
         e_log_p = 0        
-        for data_type in self.data_types:
-            for k in range(self.K):
-                for r in range(self.R[data_type]):
-                    e_log_p += compute_e_log_p_dirichlet(self.beta_star[data_type][k][r], self.beta_prior[data_type])   # term 6
-                 # This above computes E log Dirichlet(beta_star, beta_zero)
         
+        for data_type in self.data_types:
+            if (self.include_bulk[data_type]):        
+                for k in range(self.K):
+                    for r in range(self.R[data_type]):
+                        for l in range(self.maxL[data_type]):                
+                            e_log_p += compute_e_log_p_dirichlet(self.beta_star[data_type][k][r][l], self.beta_prior[data_type][r][l])   # term 6
+                     # This above computes E log Dirichlet(beta_star, beta_zero)
+            else:
+                for k in range(self.K):
+                    for r in range(self.R[data_type]):            
+                        e_log_p += compute_e_log_p_dirichlet(self.beta_star[data_type][k][r], self.beta_prior[data_type])   # term 6
         return e_log_p                                       
                     
     ####################                    
@@ -560,11 +623,18 @@ class BasicGeMM(object):
         
         for data_type in self.data_types:
         # ADDED r regions
-                sum = 0 
+            sum = 0 
+            if (self.include_bulk[data_type]):
                 for k in range(self.K):
                     for r in range(self.R[data_type]):
-                        x = self.beta_star[data_type][k,r]
-                        sum += compute_e_log_q_dirichlet(x)
+                        for l in range(self.maxL[data_type]):
+                            x = self.beta_star[data_type][k][r][l]
+                            sum += compute_e_log_q_dirichlet(x)
+            else:
+                for k in range(self.K):
+                    for r in range(self.R[data_type]):
+                        x = self.beta_star[data_type][k][r]
+                        sum += compute_e_log_q_dirichlet(x)                                                            
         
         return sum
 

@@ -25,7 +25,7 @@ analysis_parser.add_argument('--K', default=None,
 analysis_parser.add_argument('--config_file', required=True,
                             help='''Path to YAML format configuration file.''')
 
-analysis_parser.add_argument('--data_file', required=True,
+analysis_parser.add_argument('--methylation_file', required=True,
                             help='''Path to methylation data input file.''')
                             
 analysis_parser.add_argument('--copynumber_file', default=None,
@@ -37,8 +37,8 @@ analysis_parser.add_argument('--regions_file', default=None,
 analysis_parser.add_argument('--initial_clusters_file', default=None,
                             help='''Start from these clusters instead of random clusters.''')                            
 
-analysis_parser.add_argument('--lower_bound_file', default=None,
-                             help='''Path of file where lower bound convergence will be written.''')
+analysis_parser.add_argument('--bulk_file', default=None,
+                            help='''A file with 3 columns: locus, #methylated reads, #unmethylated reads. The beta prior will be initialized with these values''')
 
 analysis_parser.add_argument('--out_dir', default=None,
                             help='''Path where output files will be written.''')
