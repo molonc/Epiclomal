@@ -46,10 +46,10 @@ input_regions_file <- args$regions_file
 # inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci5000_clones3_cells100_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.85_gpbrandom_dirpar1_1_nregs50_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
 # true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci5000_clones3_cells100_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.85_gpbrandom_dirpar1_1_nregs50_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
 
-# input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells50_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.95_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv"
-# input_regions_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells50_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.95_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
-# inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells50_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.95_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
-# true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells50_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.95_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
+ input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells50_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.95_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv"
+ input_regions_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells50_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.95_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
+ inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells50_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.95_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
+ true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells50_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.95_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
 
 
 #======================
@@ -154,6 +154,12 @@ M <- dim(input_CpG_data)[2] ## number of loci
     # tmp = as.matrix(tmp)
     # plot(hclust(dist(tmp)))
     
+    pairwisedist <- dist(input_CpG_data,method="euclidean")
+    print(sum(is.na(pairwisedist) == TRUE))
+    
+    if(sum(is.na(pairwisedist)==TRUE) == 0){
+    
+    
     hcluster <- hclust(dist(input_CpG_data,method="euclidean"),method = "complete")
     
     # ### finding optimal number of clusters
@@ -190,6 +196,15 @@ M <- dim(input_CpG_data)[2] ## number of loci
     # save(hcluster, file=paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_hclust_R_object_CpG_based.Rdata"))
     
     rm(hcluster)
+    
+    }
+    
+    
+    if(sum(is.na(pairwisedist)==TRUE) > 0){
+      print("some pairs of cells have no CpG with data in common")
+      
+    }
+    
     
     print("More than one region, region based hiearchical clustering")
     
@@ -232,7 +247,14 @@ M <- dim(input_CpG_data)[2] ## number of loci
     
     # save(hcluster, file=paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_hclust_R_object_region_based.Rdata"))
   
-  }   
+    
+    
+    
+      
+
+ }
+
+  
 
 ### Tony's (PBAL manuscript) clustering approach 
 
