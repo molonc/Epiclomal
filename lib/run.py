@@ -12,6 +12,8 @@ import pandas as pd
 import yaml
 import time
 import operator
+import csv
+import os.path
 
 from lib.basic_gemm import BasicGeMM
 from lib.basic_miss_gemm import BasicMissGeMM
@@ -122,9 +124,9 @@ def load_data(args, include_regions=False):
     regions = {}
     
     if (args.initial_clusters_file != None):
-        initial_clusters_data = _load_initial_clusters_frame(args.initial_clusters_file)
+        initial_clusters_data = _load_initial_clusters_frame(args.initial_clusters_file, args.repeat_id)
 
-    print initial_clusters_data
+    # print initial_clusters_data
 
     for data_type in config['data']:
         # data[data_type] = _load_data_frame(config['data'][data_type]['file'])
@@ -188,9 +190,23 @@ def _load_data_frame(file_name):
     df = pd.read_csv(file_name, compression='gzip', index_col='cell_id', sep='\t')
     return df
     
-def _load_initial_clusters_frame(file_name):
+def _load_initial_clusters_frame(file_name, repeat_id):
+    # IF the file doesn't exist, return None
+    if (os.path.isfile(file_name) == False):
+        print "Initial clusters file was given, but it doesn't exist, ignore."
+        return None
+    # First check if the number of columns in the file is > repeat_id
+    with gzip.open(file_name, 'r') as file:
+        reader = list(csv.reader(file, delimiter='\t'))
+        numcols = len(reader[0])
+    print 'Num columns in initial_clusters_file is ', numcols, ', repeat_id is ', repeat_id
+    # Make repeat_id bigger by 1, because in kronos repeat_id starts from 0
+    repeat_id = repeat_id+1
+    if (repeat_id >= numcols):
+        print 'Using random initialization'
+        return None
     print 'Loading initial clusters file {0}.'.format(file_name)
-    df = pd.read_csv(file_name, compression='gzip', index_col='cell_id', sep='\t')
+    df = pd.read_csv(file_name, compression='gzip', index_col=0, sep='\t', usecols=[0,int(repeat_id)])
     return df    
 
 def _load_regions_frame(file_name):

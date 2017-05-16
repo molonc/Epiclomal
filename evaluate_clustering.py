@@ -13,7 +13,7 @@ parser.add_argument('--predicted_clusters_file', required=True,
                     help='The file with the epiclomal predicted clusters')
 parser.add_argument('--clusters_are_probabilities', default=True,
                     help='Set to True if the epiclomal_clusters_file is a posterior, False if it is a point estimate')
-parser.add_argument('--num_clusters_for_PE', default=2,
+parser.add_argument('--column', default=2, type=int,
                     help='Default is the second column, or set which column to consider')
                     
                     
@@ -35,8 +35,8 @@ if args.clusters_are_probabilities is True:
         max_index, max_value = max(enumerate(row), key=operator.itemgetter(1))
         labels_pred.append(max_index)
 else:
-    # print "Picking the specified PE column"
-    labels_pred = pred_clusters['num_clusters_'+args.num_clusters_for_PE]            
+    # select the last column 
+    labels_pred = pred_clusters.iloc[:,args.column]
 # print labels_pred
 
 # now read the true clusters file
