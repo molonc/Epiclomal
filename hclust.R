@@ -46,10 +46,10 @@ input_regions_file <- args$regions_file
 # inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci5000_clones3_cells100_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.85_gpbrandom_dirpar1_1_nregs50_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
 # true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci5000_clones3_cells100_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.85_gpbrandom_dirpar1_1_nregs50_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
 
- input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells50_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.95_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv"
- input_regions_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells50_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.95_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
- inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells50_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.95_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
- true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells50_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.95_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
+# input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells50_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.95_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv"
+# input_regions_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells50_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.95_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
+# inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells50_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.95_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
+# true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells50_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.95_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
 
 
 #======================
@@ -84,6 +84,9 @@ rm(tmp)
 R <- dim(input_regions)[1] ## number of regions
 M <- dim(input_CpG_data)[2] ## number of loci
 
+#print(R)
+#print(M)
+
 #======================
 # hiearchical clustering considering Euclidean distances and complete linkage 
 #======================
@@ -91,6 +94,13 @@ M <- dim(input_CpG_data)[2] ## number of loci
   if (R == 1){
 
     print("One region, CpG based hiearchical clustering")
+    
+    pairwisedist <- dist(input_CpG_data,method="euclidean")
+    
+    if(sum(is.na(pairwisedist)==TRUE) == 0){
+      
+    hclust_CpG_crash <- 0
+    write.table(hclust_CpG_crash,file=paste0(outdir,"/hclust_CpG_crash.tsv"),row.names=FALSE,col.names=FALSE)
 
     hcluster <- hclust(dist(input_CpG_data,method="euclidean"),method = "complete")
     
@@ -110,6 +120,16 @@ M <- dim(input_CpG_data)[2] ## number of loci
     system(paste0("gzip --force ", ofile))
         
     #save(hcluster, file=paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_hclust_R_object_CpG_based.Rdata"))
+    
+    }
+    
+    if(sum(is.na(pairwisedist)==TRUE) > 0){
+      print("some pairs of cells have no CpG with data in common")
+      
+      hclust_CpG_crash <- 1
+      write.table(hclust_CpG_crash,file=paste0(outdir,"/hclust_CpG_crash.tsv"),row.names=FALSE,col.names=FALSE)
+      # system(paste0("gzip --force ", paste0(outdir,"/hclust_crash.tsv"))) 
+    }
 
    }
 
@@ -155,30 +175,15 @@ M <- dim(input_CpG_data)[2] ## number of loci
     # plot(hclust(dist(tmp)))
     
     pairwisedist <- dist(input_CpG_data,method="euclidean")
-    print(sum(is.na(pairwisedist) == TRUE))
+    #print(sum(is.na(pairwisedist) == TRUE))
     
     if(sum(is.na(pairwisedist)==TRUE) == 0){
     
+      hclust_CpG_crash <- 0
+      write.table(hclust_CpG_crash,file=paste0(outdir,"/hclust_CpG_crash.tsv"),row.names=FALSE,col.names=FALSE)
     
     hcluster <- hclust(dist(input_CpG_data,method="euclidean"),method = "complete")
     
-    # ### finding optimal number of clusters
-    
-    # ### example using the iris data set
-    # data<-iris[,-c(5)]
-    # diss_matrix<- dist(data, method = "euclidean", diag=FALSE)
-    # NbClust(data, diss=diss_matrix, distance = NULL, min.nc=2, max.nc=6, 
-    #         method = "ward.D2", index = "all") 
-    # 
-    # ### not working for our data set, not sure why 
-    # diss_matrix <- dist(input_CpG_data,method="euclidean",diag=FALSE)
-    # NbClust(input_CpG_data, diss = diss_matrix,distance=NULL, min.nc=2, max.nc=6,,method = "complete",index = "all") 
-    # 
-    # fviz_nbclust(input_CpG_data, hcut, method = "wss") +
-    #   geom_vline(xintercept = 3, linetype = 2)
-    
-    
-    # defining some clusters
     mycl <- cutree(hcluster, k=1:args$max_k)
     
     possible_clusters <- cbind(rownames(input_CpG_data),mycl)
@@ -193,16 +198,15 @@ M <- dim(input_CpG_data)[2] ## number of loci
     write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
     system(paste0("gzip --force ", ofile))    
     
-    # save(hcluster, file=paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_hclust_R_object_CpG_based.Rdata"))
-    
     rm(hcluster)
     
     }
     
-    
     if(sum(is.na(pairwisedist)==TRUE) > 0){
       print("some pairs of cells have no CpG with data in common")
       
+      hclust_CpG_crash <- 1
+      write.table(hclust_CpG_crash,file=paste0(outdir,"/hclust_CpG_crash.tsv"),row.names=FALSE,col.names=FALSE)
     }
     
     
@@ -215,6 +219,13 @@ M <- dim(input_CpG_data)[2] ## number of loci
     
     mean_meth_matrix <- t(apply(input_CpG_data,1,extract_mean_meth_per_cell,region_coord=input_regions))
 
+    pairwisedist_region <- dist(mean_meth_matrix ,method="euclidean")
+    
+    if(sum(is.na(pairwisedist_region)==TRUE) == 0){
+      
+    hclust_region_crash <- 0
+    write.table(hclust_region_crash,file=paste0(outdir,"/hclust_region_crash.tsv"),row.names=FALSE,col.names=FALSE)
+      
     hcluster <- hclust(dist(mean_meth_matrix ,method="euclidean"),method = "complete")
     
     # defining some clusters
@@ -233,10 +244,6 @@ M <- dim(input_CpG_data)[2] ## number of loci
     possible_clusters <- cbind(possible_clusters,best_cluster)
     colnames(possible_clusters) <- c(colnames(possible_clusters)[1:(dim(possible_clusters)[2]-1)],paste0("best_cluster_",hcluster_Nb$Best.nc[1]))
     
-    # fviz_nbclust(input_CpG_data, hcut, method = "wss") +
-    #   geom_vline(xintercept = 3, linetype = 2)
-    
-    
     ofile <- paste0(outdir,"/hclust_clusters_region_based_maxk_",args$max_k,".tsv") 
     write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
     system(paste0("gzip --force ", ofile))
@@ -244,19 +251,21 @@ M <- dim(input_CpG_data)[2] ## number of loci
     ofile <- paste0(outdir,"/hclust_cell_order_region_based_maxk_",args$max_k,".tsv")
     write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
     system(paste0("gzip --force ", ofile))    
-    
-    # save(hcluster, file=paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_hclust_R_object_region_based.Rdata"))
   
+    }
     
-    
-    
-      
+    if(sum(is.na(pairwisedist_region)==TRUE) > 0){
+      print("some pairs of cells have no region with data in common")
+      hclust_region_crash <- 1
+      write.table(hclust_region_crash,file=paste0(outdir,"/hclust_region_crash.tsv"),row.names=FALSE,col.names=FALSE)
+    }
 
  }
 
   
-
-### Tony's (PBAL manuscript) clustering approach 
+###################################################
+### Tony's (PBAL manuscript) clustering approach ##
+###################################################
 
 dist.pair <- function(v1,v2){
   na.idx <- is.na(v1) | is.na(v2) 
@@ -287,14 +296,13 @@ print("Tony's approach - CpG based clustering")
 
 dist_PBAL <- dist.PBAL(d=input_CpG_data)
 
-hcluster_T <- hclust(dist(dist_PBAL,method="euclidean"),method = "ward.D2")
 
-# ### Choosing number of clusters
-# ### working in this case
-# diss_matrix <- dist(dist.PBAL(d=input_CpG_data),method="euclidean",diag=FALSE)
-# NbClust(dist.PBAL(d=input_CpG_data), diss = diss_matrix,distance=NULL, min.nc=2, max.nc=6,,method = "complete",index = "ch")
-# fviz_nbclust(input_CpG_data, hcut, method = "wss") +
-# geom_vline(xintercept = 3, linetype = 2)
+if(sum(is.na(dist(dist_PBAL,method="euclidean"))) == 0){
+
+  PBAL_crash <- 0
+  write.table(PBAL_crash,file=paste0(outdir,"/PBAL_crash.tsv"),row.names=FALSE,col.names=FALSE)
+  
+hcluster_T <- hclust(dist(dist_PBAL,method="euclidean"),method = "ward.D2")
 
 # defining some clusters
 mycl_T <- cutree(hcluster_T, k=1:args$max_k)
@@ -303,15 +311,14 @@ possible_clusters_T <- cbind(rownames(input_CpG_data),mycl_T)
 possible_clusters_T <- as.data.frame(possible_clusters_T)
 colnames(possible_clusters_T) <- c("cell_id",paste0("num_clusters_",1:args$max_k))
 
-
 ### finding the best number of clusters
-# ### working in this case 
-diss_matrix_T <- dist(dist_PBAL,method="euclidean")
-hcluster_Nb_T <- NbClust(dist_PBAL, diss = diss_matrix,distance=NULL, min.nc=2, max.nc=args$max_k,method = "ward.D2",index = "ch")
-best_cluster_T <- hcluster_Nb$Best.partition
+# ### working on this case, not working yet 
+#diss_matrix_T <- dist(dist_PBAL,method="euclidean")
+#hcluster_Nb_T <- NbClust(dist_PBAL, diss = diss_matrix_T,distance=NULL, min.nc=2, max.nc=args$max_k,method = "ward.D2",index = "ch")
+#best_cluster_T <- hcluster_Nb$Best.partition
 
-possible_clusters_T <- cbind(possible_clusters_T,best_cluster_T)
-colnames(possible_clusters_T) <- c(colnames(possible_clusters_T)[1:(dim(possible_clusters_T)[2]-1)],paste0("best_cluster_",hcluster_Nb_T$Best.nc[1]))
+#possible_clusters_T <- cbind(possible_clusters_T,best_cluster_T)
+#colnames(possible_clusters_T) <- c(colnames(possible_clusters_T)[1:(dim(possible_clusters_T)[2]-1)],paste0("best_cluster_",hcluster_Nb_T$Best.nc[1]))
 
 ofile <- paste0(outdir,"/PBALclust_clusters_CpG_based_maxk_",args$max_k,".tsv") 
 write.table(possible_clusters_T, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
@@ -321,8 +328,11 @@ ofile <- paste0(outdir,"/PBALclust_cell_order_CpG_based_maxk_",args$max_k,".tsv"
 write.table(hcluster_T$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
 system(paste0("gzip --force ", ofile))
 
-#save(hcluster_T, file=paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_PBALclust_R_object_CpG_based.Rdata"))
+}
 
-
+if(sum(is.na(dist(dist_PBAL,method="euclidean"))) > 0){
+  
+  PBAL_crash <- 1
+  write.table(PBAL_crash,file=paste0(outdir,"/PBAL_crash.tsv"),row.names=FALSE,col.names=FALSE)}
 
 
