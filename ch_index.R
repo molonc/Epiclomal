@@ -20,7 +20,7 @@ hcluster <- hclust(dist(x,method="euclidean"),method = "complete")
 # defining some clusters
 mycl <- cutree(hcluster, k=2:10)
 
-res<-NbClust(x, distance = "euclidean", min.nc=2, max.nc=8, 
+res <- NbClust(x, distance = "euclidean", min.nc=2, max.nc=8, 
              method = "complete", index = "ch")
 res$All.index
 res$Best.nc
