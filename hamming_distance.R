@@ -31,8 +31,8 @@ true_epigenotypes_file <- args$true_epigenotype_file
 estimated_Z_file <- args$estimated_membership_file
 estimated_epigenotypes_file <- args$estimated_epigenotype_file
 
-#estimate_Z_file <- "~/Documents/hamming_distance/true_clone_membership.tsv"
-#estimate_epigenotypes_file <- "~/Documents/hamming_distance/true_clone_epigenotypes.tsv"
+#estimated_Z_file <- "~/Documents/hamming_distance/true_clone_membership.tsv"
+#estimated_epigenotypes_file <- "~/Documents/hamming_distance/true_clone_epigenotypes.tsv"
 #true_Z_file <- "~/Documents/hamming_distance/true_clone_membership.tsv"
 #true_epigenotypes_file <- "~/Documents/hamming_distance/true_clone_epigenotypes.tsv"
 
@@ -40,7 +40,7 @@ true_Z <- read.csv(true_Z_file,sep='\t')
 true_epi <- read.csv(true_epigenotypes_file,sep='\t',header=TRUE)
 
 true_epi.tmp <- as.matrix(true_epi[,-1])
-data_true <- (t(sapply(true_Z[,2],function(x){return(true_epi.tmp[x,])}))) 
+data_true <- (t(sapply(true_Z[,2],function(x){return(true_epi.tmp[x,])}))) ### obtaining the true epigenotype for each cell
 
 estimate_Z <- read.csv(estimated_Z_file,sep='\t')
 estimate_epi <- read.csv(estimated_epigenotypes_file,sep='\t',header=TRUE)
@@ -77,6 +77,6 @@ print(hd_stats)
 #colnames(hd_stats) <- c("median","IQR")
 
 
-write.table(hd_stats,file=paste0(outdir,"/hamming_distance.tsv"),sep="\t",row.names=FALSE)
+write.table(hd_stats,file=paste0(outdir,"/hamming_distance_stats.tsv"),sep="\t",row.names=FALSE)
 
 
