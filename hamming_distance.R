@@ -13,7 +13,7 @@ suppressMessages(library(argparse))
 # create parser object
 parser <- ArgumentParser()
 
-parser$add_argument("--output_directory", type="character", help="Path to the output directory") 
+parser$add_argument("--output_file", type="character", help="Path to the output file") 
 parser$add_argument("--true_epigenotype_file", type="character", help="Path to true epigenotypes") 
 parser$add_argument("--true_membership_file", type="character", help="Path to true cell membership") 
 parser$add_argument("--estimated_epigenotype_file", type="character",help="Path to estimated epigenotypes")
@@ -23,7 +23,7 @@ args <- parser$parse_args()
 
 print(args)
 
-outdir <- args$output_directory
+outfile <- args$output_file
 
 true_Z_file <- args$true_membership_file
 true_epigenotypes_file <- args$true_epigenotype_file
@@ -77,6 +77,6 @@ print(hd_stats)
 #colnames(hd_stats) <- c("median","IQR")
 
 
-write.table(hd_stats,file=paste0(outdir,"/hamming_distance_stats.tsv"),sep="\t",row.names=FALSE)
+write.table (hd_stats, file=outfile, sep="\t", row.names=FALSE)
 
 
