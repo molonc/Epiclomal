@@ -20,6 +20,8 @@ parser$add_argument("--output_directory", type="character", help="Path to the ou
 parser$add_argument("--methylation_file", type="character", help="Path to methylation data") 
 parser$add_argument("--regions_file", type="character",help="Path to region coordinates")
 parser$add_argument("--max_k", type="integer",default=5, help="maximum number of clusters to be considered when cutting the tree") 
+parser$add_argument("--include_true_clone_membership",default="no", type="character",help="yes or no; for analysis of real data it should be no")
+parser$add_argument("--true_clone_membership_file", type="character",help="Path to true clone membership file")
 
 args <- parser$parse_args() 
 
@@ -29,7 +31,7 @@ outdir <- args$output_directory
 dir.create(file.path(outdir), showWarnings = FALSE)
 input_CpG_data_file <- args$methylation_file
 input_regions_file <- args$regions_file
-
+true_clusters_file <- args$true_clone_membership_file
 
 # input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform_seed_2/data/data_incomplete.tsv"
 # input_regions_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform_seed_2/data/regions_file.tsv"
@@ -107,10 +109,24 @@ M <- dim(input_CpG_data)[2] ## number of loci
     # defining some clusters
     mycl <- cutree(hcluster, k=1:args$max_k)
     
-    possible_clusters <- cbind(rownames(input_CpG_data),mycl)
-    possible_clusters <- as.data.frame(possible_clusters)
-    colnames(possible_clusters) <- c("cell_id",paste0("num_clusters_",1:args$max_k))
+    if (args$include_true_clone_membership == "yes"){
+      
+      # true clone cell membership
+      tmp <- read.csv(true_clusters_file,sep="\t",header=TRUE,check.names=FALSE)
+      true_membership <- as.matrix(tmp[,-1])
+      rm(tmp)  
+      
+      possible_clusters <- cbind(rownames(input_CpG_data),true_membership,mycl)
+      possible_clusters <- as.data.frame(possible_clusters)
+      colnames(possible_clusters) <- c("cell_id","true_membership",paste0("num_clusters_",1:args$max_k))
+    } else{
+      possible_clusters <- cbind(rownames(input_CpG_data),mycl)
+      possible_clusters <- as.data.frame(possible_clusters)
+      colnames(possible_clusters) <- c("cell_id",paste0("num_clusters_",1:args$max_k))
+    }
   
+    print(possible_clusters)
+    
     ofile <- paste0(outdir,"/hclust_clusters_CpG_based_maxk_",args$max_k,".tsv") 
     write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
     system(paste0("gzip --force ", ofile))
@@ -123,6 +139,8 @@ M <- dim(input_CpG_data)[2] ## number of loci
     
     }
     
+  
+    
     if(sum(is.na(pairwisedist)==TRUE) > 0){
       print("some pairs of cells have no CpG with data in common")
       
@@ -132,6 +150,8 @@ M <- dim(input_CpG_data)[2] ## number of loci
     }
 
    }
+
+
 
   if (R > 1){
 
@@ -186,9 +206,23 @@ M <- dim(input_CpG_data)[2] ## number of loci
     
     mycl <- cutree(hcluster, k=1:args$max_k)
     
-    possible_clusters <- cbind(rownames(input_CpG_data),mycl)
-    possible_clusters <- as.data.frame(possible_clusters)
-    colnames(possible_clusters) <- c("cell_id",paste0("num_clusters_",1:args$max_k))
+    if (args$include_true_clone_membership == "yes"){
+      
+      # true clone cell membership
+      tmp <- read.csv(true_clusters_file,sep="\t",header=TRUE,check.names=FALSE)
+      true_membership <- as.matrix(tmp[,-1])
+      rm(tmp)  
+      
+      possible_clusters <- cbind(rownames(input_CpG_data),true_membership,mycl)
+      possible_clusters <- as.data.frame(possible_clusters)
+      colnames(possible_clusters) <- c("cell_id","true_membership",paste0("num_clusters_",1:args$max_k))
+    } else{
+      possible_clusters <- cbind(rownames(input_CpG_data),mycl)
+      possible_clusters <- as.data.frame(possible_clusters)
+      colnames(possible_clusters) <- c("cell_id",paste0("num_clusters_",1:args$max_k))
+    }
+    
+    #print(possible_clusters)
     
     ofile <- paste0(outdir,"/hclust_clusters_CpG_based_maxk_",args$max_k,".tsv") 
     write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
@@ -231,9 +265,21 @@ M <- dim(input_CpG_data)[2] ## number of loci
     # defining some clusters
     mycl <- cutree(hcluster, k=1:args$max_k)
     
-    possible_clusters <- cbind(rownames(input_CpG_data),mycl)
-    possible_clusters <- as.data.frame(possible_clusters)
-    colnames(possible_clusters) <- c("cell_id",paste0("num_clusters_",1:args$max_k))
+    if (args$include_true_clone_membership == "yes"){
+      
+      # true clone cell membership
+      tmp <- read.csv(true_clusters_file,sep="\t",header=TRUE,check.names=FALSE)
+      true_membership <- as.matrix(tmp[,-1])
+      rm(tmp)  
+      
+      possible_clusters <- cbind(rownames(input_CpG_data),true_membership,mycl)
+      possible_clusters <- as.data.frame(possible_clusters)
+      colnames(possible_clusters) <- c("cell_id","true_membership",paste0("num_clusters_",1:args$max_k))
+    } else{
+      possible_clusters <- cbind(rownames(input_CpG_data),mycl)
+      possible_clusters <- as.data.frame(possible_clusters)
+      colnames(possible_clusters) <- c("cell_id",paste0("num_clusters_",1:args$max_k))
+    }
     
     ### finding the best number of clusters
     # ### working in this case 
@@ -267,7 +313,7 @@ M <- dim(input_CpG_data)[2] ## number of loci
      
     possible_clusters <- cbind(possible_clusters,best_cluster)
     colnames(possible_clusters) <- c(colnames(possible_clusters)[1:(dim(possible_clusters)[2]-1)],paste0("best_cluster_",hcluster_Nb$Best.nc[1]))
-
+  
     ofile <- paste0(outdir,"/hclust_clusters_region_based_maxk_",args$max_k,".tsv")
     write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
     system(paste0("gzip --force ", ofile))
@@ -320,7 +366,6 @@ dist.PBAL <- function(d){ ### d is matrix where the rows correspond to cells and
 print("Tony's approach - CpG based clustering")
 
 dist_PBAL <- dist.PBAL(d=input_CpG_data)
-
 
 if(sum(is.na(dist(dist_PBAL,method="euclidean"))) == 0){
 
