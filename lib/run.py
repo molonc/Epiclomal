@@ -46,6 +46,9 @@ def run_region_miss_gemm_model(args):
 
 def run_model(mtype, args):
 
+
+    np.set_printoptions(threshold='nan')
+
     t0 = time.clock()
     if args.seed is not None:
         np.random.seed(args.seed)
@@ -70,6 +73,7 @@ def run_model(mtype, args):
         impute = True
                        
     cell_ids, data, event_ids, priors, regions, initial_clusters = load_data (args, include_regions)
+    # event_ids is "meth" etc.
     model = className(priors['gamma'],
                       priors['alpha'],
                       priors['beta'],
@@ -77,7 +81,7 @@ def run_model(mtype, args):
                       regions,
                       initial_clusters)                                                                                                       
         
-    model.fit(convergence_tolerance=args.convergence_tolerance, num_iters=args.max_num_iters, debug=False)
+    model.fit(convergence_tolerance=args.convergence_tolerance, num_iters=args.max_num_iters, debug=False)    
     
     if args.out_dir is not None:
         if not os.path.exists(args.out_dir):
@@ -87,10 +91,12 @@ def run_model(mtype, args):
         # TO DO: I have to write the unregion function for this to work
         #if (impute):
         #    write_imputed_data_MAP(cell_ids, model, args.out_dir)
-            
-            
-        # to correct this function    
-        # write_genotype_MAP(event_ids, model, args.out_dir) 
+                      
+        write_genotype_posteriors(model, args.out_dir) 
+        write_genotype_MAP(model, args.out_dir)         
+        
+        # function inherited from SCG which doesn't work right now
+        # write_genotype_posteriors(event_ids, model.get_mu_star(), args.out_dir)         
             
         write_params(model, args.out_dir, event_ids, time.clock() - t0)          
         
@@ -187,7 +193,7 @@ def load_data(args, include_regions=False):
 
 def _load_data_frame(file_name):
     print 'Loading data file {0}.'.format(file_name)
-    df = pd.read_csv(file_name, compression='gzip', index_col='cell_id', sep='\t')
+    df = pd.read_csv(file_name, compression='gzip', index_col='cell_id', sep='\t')    
     return df
     
 def _load_initial_clusters_frame(file_name, repeat_id):
@@ -295,49 +301,58 @@ def write_double_cluster_posteriors(cell_ids, model, out_dir):
 
 ##########################
 
-def write_genotype_MAP(event_ids, model, out_dir):
-# TO DO: this is not working properly, to rewrite!!
-# this has to be rewritten in a matrix format
-    # Here I have to obtain the chosen clusters from clusters_MAP, and write the genotype for those
-    file_name = os.path.join(out_dir, 'genotype_MAP.tsv.gz')
+def write_genotype_posteriors(model, out_dir):
+# Updated on 20 July 2017
+    file_name = os.path.join(out_dir, 'genotype_posteriors.tsv.gz')
     
     for data_type in model.data_types:
-        print 'mu star\n', model.get_mu_star(data_type)
-        geno_matrix = model.unregion_mu_star(data_type)
-        
-        print 'Geno matrix\n', geno_matrix
-        df = pd.DataFrame(geno_matrix, index=event_ids)        
+        u_mu_star = model.unregion_mu_star(data_type)             
+        df = pd.DataFrame(u_mu_star[0], index=range(u_mu_star.shape[1]))
   
         with gzip.GzipFile(file_name, 'w') as fh:
-            df.to_csv(fh, index=False, sep='\t')
+            df.to_csv(fh, index_label='cluster_id', sep='\t')
 
 ##########################
 
-def write_genotype_posteriors(event_ids, G, out_dir):
-# G is actually mu_star, the fitted parameters of G
-# this has to be rewritten in a matrix format
-    file_name = os.path.join(out_dir, 'genotype_posteriors.tsv.gz')
+def write_genotype_MAP(model, out_dir):
+# Updated on 20 July 2017
+    file_name = os.path.join(out_dir, 'genotype_MAP.tsv.gz')
     
-    G_out = []
-    
-    for data_type in event_ids:
-        for i, df in enumerate(G[data_type]):
-            df = pd.DataFrame(df, columns=event_ids[data_type])
-            
-            df = df.stack().reset_index()
-            
-            df.columns = 'cluster_id', 'event_id', 'probability'
-            
-            df.insert(1, 'event_type', data_type)
-            
-            df.insert(3, 'event_value', i)
-            
-            G_out.append(df)
-    
-    G_out = pd.concat(G_out)
+    for data_type in model.data_types:
+        u_mu_star = model.unregion_mu_star(data_type)             
+        map_mu_star = np.argmax(u_mu_star, axis=0)
+        df = pd.DataFrame(map_mu_star, index=range(u_mu_star.shape[1]))
   
-    with gzip.GzipFile(file_name, 'w') as fh:
-        G_out.to_csv(fh, index=False, sep='\t')
+        with gzip.GzipFile(file_name, 'w') as fh:
+            df.to_csv(fh, index_label='cluster_id', sep='\t')
+
+##########################
+
+# def write_genotype_posteriors(event_ids, G, out_dir):
+# # G is actually mu_star, the fitted parameters of G
+# # this has to be rewritten in a matrix format
+#     file_name = os.path.join(out_dir, 'genotype_posteriors.tsv.gz')
+#     
+#     G_out = []
+#     
+#     for data_type in event_ids:
+#         for i, df in enumerate(G[data_type]):
+#             df = pd.DataFrame(df, columns=event_ids[data_type])
+#             
+#             df = df.stack().reset_index()
+#             
+#             df.columns = 'cluster_id', 'event_id', 'probability'
+#             
+#             df.insert(1, 'event_type', data_type)
+#             
+#             df.insert(3, 'event_value', i)
+#             
+#             G_out.append(df)
+#     
+#     G_out = pd.concat(G_out)
+#   
+#     with gzip.GzipFile(file_name, 'w') as fh:
+#         G_out.to_csv(fh, index=False, sep='\t')
 
 ##########################
 
@@ -349,21 +364,22 @@ def write_params(model, out_dir, event_ids, cpu_time):
               'converged' : model.converged
               }
     
-    params['alpha'] = {}
+    params['alpha_star'] = {}
     
-    params['alpha'] = [float(x) for x in model.alpha_star]
+    #params['alpha_star'] = [float(x) for x in model.alpha_star]
+    params['alpha_star'] = model.alpha_star.tolist()
     
-    params['gamma'] = {}
+    params['gamma_star'] = {}
+    params['beta_star'] = {}    
     
     params['CPU_time'] = int(cpu_time)
     
     for data_type in model.gamma_star:
-        params['gamma'][data_type] = [[float(x) for x in row] for row in model.gamma_star[data_type]]
-    
-    
-    # Do I have to change here??
-    if hasattr(model, 'alpha'):
-        params['alpha'] = [float(x) for x in model.alpha]
+        # params['gamma_star'][data_type] = [[float(x) for x in row] for row in model.gamma_star[data_type]]
+        params['gamma_star'][data_type] = model.gamma_star[data_type].tolist()
+    for data_type in model.beta_star:        
+        # params['beta_star'][data_type] = [float(x) for x in model.beta_star[data_type]]
+        params['beta_star'][data_type] = model.beta_star[data_type].reshape(model.K, model.S[data_type]).tolist()
 
     with open(file_name, 'w') as fh:
         yaml.dump(params, fh, default_flow_style=False)

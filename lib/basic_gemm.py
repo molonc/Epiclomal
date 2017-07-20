@@ -122,10 +122,12 @@ class BasicGeMM(object):
         return matrix.reshape(self.N, self.M[data_type])
     
     def unregion_mu_star(self, data_type):
-    # transform data back from regioned (index rl) to unregioned (index m)    
+    # transform data back from regioned (index rl) to unregioned (index m)        
         mu_star = self.get_mu_star(data_type)
         states = range(self.S[data_type])
-        return np.argmax(mu_star.reshape(self.K, self.M[data_type], len(states)), axis=2)    
+        # this also takes the argmax of mu_star
+        # return np.argmax(mu_star.reshape(self.K, self.M[data_type], len(states)), axis=2)    
+        return mu_star.reshape(len(states), self.K, self.M[data_type])
     
     def _get_indicator_X(self, data_type, X):
     # for every position that is not missing in X, return 0 if it has state s or 1 otherwise

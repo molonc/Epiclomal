@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #=======================================================================================================================
-# Epicaller, probabilistic model for clustering and imputing single-cell methylation data
+# Epiclomal, probabilistic model for clustering and imputing single-cell methylation data
 # Author : Mirela Andronescu
 #=======================================================================================================================
 from lib.run import run_basic_gemm_model, run_basic_miss_gemm_model, run_region_gemm_model, run_region_miss_gemm_model
