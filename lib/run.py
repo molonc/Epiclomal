@@ -379,7 +379,13 @@ def write_params(model, out_dir, event_ids, cpu_time):
         params['gamma_star'][data_type] = model.gamma_star[data_type].tolist()
     for data_type in model.beta_star:        
         # params['beta_star'][data_type] = [float(x) for x in model.beta_star[data_type]]
-        params['beta_star'][data_type] = model.beta_star[data_type].reshape(model.K, model.S[data_type]).tolist()
+        params['beta_star'][data_type] = model.beta_star[data_type].tolist()        
+        
+        # I'm not reshaping any more, bulk and region have larger beta_stars
+        #if model.include_bulk[data_type]:
+        #    params['beta_star'][data_type] = model.beta_star[data_type].reshape(model.K, model.S[data_type]).tolist()
+        #else:
+        #    params['beta_star'][data_type] = model.beta_star[data_type].reshape(model.K, model.S[data_type]).tolist()
 
     with open(file_name, 'w') as fh:
         yaml.dump(params, fh, default_flow_style=False)
