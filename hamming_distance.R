@@ -10,16 +10,16 @@ suppressMessages(library(argparse))
 # arguments
 #======================
 
-# create parser object
-parser <- ArgumentParser()
-
-parser$add_argument("--output_file", type="character", help="Path to the output file") 
-parser$add_argument("--true_epigenotype_file", type="character", help="Path to true epigenotypes") 
-parser$add_argument("--true_membership_file", type="character", help="Path to true cell membership") 
-parser$add_argument("--estimated_epigenotype_file", type="character",help="Path to estimated epigenotypes")
-parser$add_argument("--estimated_membership_file", type="character", help="Path to estimated cell membership") 
-
-args <- parser$parse_args() 
+if (!exists("args"))    {
+    # create parser object
+    parser <- ArgumentParser()
+    parser$add_argument("--output_file", type="character", help="Path to the output file") 
+    parser$add_argument("--true_epigenotype_file", type="character", help="Path to true epigenotypes") 
+    parser$add_argument("--true_membership_file", type="character", help="Path to true cell membership") 
+    parser$add_argument("--estimated_epigenotype_file", type="character",help="Path to estimated epigenotypes")
+    parser$add_argument("--estimated_membership_file", type="character", help="Path to estimated cell membership") 
+    args <- parser$parse_args() 
+}
 
 print(args)
 
