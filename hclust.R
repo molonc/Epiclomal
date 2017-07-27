@@ -33,6 +33,12 @@ input_CpG_data_file <- args$methylation_file
 input_regions_file <- args$regions_file
 true_clusters_file <- args$true_clone_membership_file
 
+ # input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv"
+ # input_regions_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
+ # inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
+ # true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
+ #  outdir <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data"
+
 # input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform_seed_2/data/data_incomplete.tsv"
 # input_regions_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform_seed_2/data/regions_file.tsv"
 # inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform_seed_2/data/true_clone_membership.tsv"
@@ -199,8 +205,8 @@ M <- dim(input_CpG_data)[2] ## number of loci
     
     if(sum(is.na(pairwisedist)==TRUE) == 0){
     
-      hclust_CpG_crash <- 0
-      write.table(hclust_CpG_crash,file=paste0(outdir,"/hclust_CpG_crash.tsv"),row.names=FALSE,col.names=FALSE)
+    hclust_CpG_crash <- 0
+    write.table(hclust_CpG_crash,file=paste0(outdir,"/hclust_CpG_crash.tsv"),row.names=FALSE,col.names=FALSE)
     
     hcluster <- hclust(dist(input_CpG_data,method="euclidean"),method = "complete")
     
@@ -223,6 +229,48 @@ M <- dim(input_CpG_data)[2] ## number of loci
     }
     
     #print(possible_clusters)
+    
+    
+    # diss_matrix <- dist(input_CpG_data,method="euclidean",diag=FALSE)
+    # 
+    # t <- try(NbClust(input_CpG_data, diss = diss_matrix,distance=NULL, min.nc=2, max.nc=args$max_k,method = "complete",index = "ch"))
+    # if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
+    #   print("can't use ch index") 
+    #   error_ch_index <- 1 }
+    # else { 
+    #   error_ch_index <- 0
+    #   hcluster_Nb <- NbClust(mean_meth_matrix, diss = diss_matrix,distance=NULL, min.nc=2, max.nc=args$max_k,method = "complete",index = "ch")}
+    # 
+    # if(error_ch_index == 1){
+    #   write.table(error_ch_index,file=paste0(outdir,"/hclust_region_chIndex_crash.tsv"),row.names=FALSE,col.names=FALSE)
+    #   
+    #   ofile <- paste0(outdir,"/hclust_clusters_region_based_maxk_",args$max_k,".tsv")
+    #   write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
+    #   system(paste0("gzip --force ", ofile))
+    #   
+    #   ofile <- paste0(outdir,"/hclust_cell_order_region_based_maxk_",args$max_k,".tsv")
+    #   write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
+    #   system(paste0("gzip --force ", ofile))
+    # }
+    # 
+    # if(error_ch_index == 0){
+    #   
+    #   write.table(error_ch_index,file=paste0(outdir,"/hclust_region_chIndex_crash.tsv"),row.names=FALSE,col.names=FALSE)
+    #   
+    #   best_cluster <- hcluster_Nb$Best.partition
+    #   
+    #   possible_clusters <- cbind(possible_clusters,best_cluster)
+    #   colnames(possible_clusters) <- c(colnames(possible_clusters)[1:(dim(possible_clusters)[2]-1)],paste0("best_cluster_",hcluster_Nb$Best.nc[1]))
+    #   
+    #   ofile <- paste0(outdir,"/hclust_clusters_region_based_maxk_",args$max_k,".tsv")
+    #   write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
+    #   system(paste0("gzip --force ", ofile))
+    #   
+    #   ofile <- paste0(outdir,"/hclust_cell_order_region_based_maxk_",args$max_k,".tsv")
+    #   write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
+    #   system(paste0("gzip --force ", ofile))
+    #   
+    # }
     
     ofile <- paste0(outdir,"/hclust_clusters_CpG_based_maxk_",args$max_k,".tsv") 
     write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
