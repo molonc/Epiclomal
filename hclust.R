@@ -20,8 +20,8 @@ parser$add_argument("--output_directory", type="character", help="Path to the ou
 parser$add_argument("--methylation_file", type="character", help="Path to methylation data") 
 parser$add_argument("--regions_file", type="character",help="Path to region coordinates")
 parser$add_argument("--max_k", type="integer",default=5, help="maximum number of clusters to be considered when cutting the tree") 
-parser$add_argument("--include_true_clone_membership",default="no", type="character",help="yes or no; for analysis of real data it should be no")
-parser$add_argument("--true_clone_membership_file", type="character",help="Path to true clone membership file")
+#parser$add_argument("--include_true_clone_membership",default="no", type="character",help="yes or no; for analysis of real data it should be no")
+parser$add_argument("--true_clone_membership_file", default=NULL, type="character",help="Path to true clone membership file")
 
 args <- parser$parse_args() 
 
@@ -115,7 +115,7 @@ M <- dim(input_CpG_data)[2] ## number of loci
     # defining some clusters
     mycl <- cutree(hcluster, k=1:args$max_k)
     
-    if (args$include_true_clone_membership == "yes"){
+    if (!is.null(args$true_clone_membership_file)){
       
       # true clone cell membership
       tmp <- read.csv(true_clusters_file,sep="\t",header=TRUE,check.names=FALSE)
@@ -212,7 +212,7 @@ M <- dim(input_CpG_data)[2] ## number of loci
     
     mycl <- cutree(hcluster, k=1:args$max_k)
     
-    if (args$include_true_clone_membership == "yes"){
+    if (!is.null(args$true_clone_membership_file)){
       
       # true clone cell membership
       tmp <- read.csv(true_clusters_file,sep="\t",header=TRUE,check.names=FALSE)
@@ -313,7 +313,7 @@ M <- dim(input_CpG_data)[2] ## number of loci
     # defining some clusters
     mycl <- cutree(hcluster, k=1:args$max_k)
     
-    if (args$include_true_clone_membership == "yes"){
+    if (!is.null(args$true_clone_membership_file)){
       
       # true clone cell membership
       tmp <- read.csv(true_clusters_file,sep="\t",header=TRUE,check.names=FALSE)
