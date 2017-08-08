@@ -70,7 +70,6 @@ extract_mean_meth_per_cell <- function(cell_data,region_coord){
   return(mean_meth)
 }  
 
-
 #======================
 # loading the data
 #======================
@@ -90,6 +89,9 @@ rm(tmp)
 
 R <- dim(input_regions)[1] ## number of regions
 M <- dim(input_CpG_data)[2] ## number of loci
+
+Max_K <- min((dim(input_CpG_data)[1]-1),args$max_k)
+print(Max_K)
 
 #print(R)
 #print(M)
@@ -112,7 +114,7 @@ if (R == 1){
     hcluster <- hclust(pairwisedist,method = "complete")
     
     # defining some clusters
-    mycl <- cutree(hcluster, k=1:args$max_k)
+    mycl <- cutree(hcluster, k=1:Max_K)
     
     if  (!is.null(args$true_clone_membership_file)){
       
@@ -123,31 +125,31 @@ if (R == 1){
       
       possible_clusters <- cbind(rownames(input_CpG_data),true_membership,mycl)
       possible_clusters <- as.data.frame(possible_clusters)
-      colnames(possible_clusters) <- c("cell_id","true_membership",paste0("num_clusters_",1:args$max_k))
+      colnames(possible_clusters) <- c("cell_id","true_membership",paste0("num_clusters_",1:Max_K))
     } else{
       possible_clusters <- cbind(rownames(input_CpG_data),mycl)
       possible_clusters <- as.data.frame(possible_clusters)
-      colnames(possible_clusters) <- c("cell_id",paste0("num_clusters_",1:args$max_k))
+      colnames(possible_clusters) <- c("cell_id",paste0("num_clusters_",1:Max_K))
     }
     
     #print(possible_clusters)
     
-    t <- try(NbClust(input_CpG_data, diss = pairwisedist,distance=NULL, min.nc=2, max.nc=args$max_k,method = "complete",index = "cindex"))
+    t <- try(NbClust(input_CpG_data, diss = pairwisedist,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "cindex"))
     if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
       print("can't find a best partition")
       error_ch_index <- 1 }
     else {
       error_ch_index <- 0
-      hcluster_Nb <- NbClust(input_CpG_data, diss = pairwisedist,distance=NULL, min.nc=2, max.nc=args$max_k,method = "complete",index = "cindex")
+      hcluster_Nb <- NbClust(input_CpG_data, diss = pairwisedist,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "cindex")
       print(hcluster_Nb)}
     if(error_ch_index == 1){
       write.table(error_ch_index,file=paste0(outdir,"/hclust_CpGbased_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
       
-      ofile <- paste0(outdir,"/hclust_clusters_CpG_based_maxk_",args$max_k,".tsv")
+      ofile <- paste0(outdir,"/hclust_clusters_CpG_based_maxk_",Max_K,".tsv")
       write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
       system(paste0("gzip --force ", ofile))
       
-      ofile <- paste0(outdir,"/hclust_cell_order_CpG_based_maxk_",args$max_k,".tsv")
+      ofile <- paste0(outdir,"/hclust_cell_order_CpG_based_maxk_",Max_K,".tsv")
       write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
       system(paste0("gzip --force ", ofile))
     }
@@ -161,20 +163,20 @@ if (R == 1){
       possible_clusters <- cbind(possible_clusters,best_cluster)
       colnames(possible_clusters) <- c(colnames(possible_clusters)[1:(dim(possible_clusters)[2]-1)],paste0("best_cluster_",hcluster_Nb$Best.nc[1]))
       
-      ofile <- paste0(outdir,"/hclust_clusters_CpG_based_maxk_",args$max_k,".tsv") 
+      ofile <- paste0(outdir,"/hclust_clusters_CpG_based_maxk_",Max_K,".tsv") 
       write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
       system(paste0("gzip --force ", ofile))    
       
-      ofile <- paste0(outdir,"/hclust_cell_order_CpG_based_maxk_",args$max_k,".tsv") 
+      ofile <- paste0(outdir,"/hclust_cell_order_CpG_based_maxk_",Max_K,".tsv") 
       write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
       system(paste0("gzip --force ", ofile))    
       
       
     }
     
+    rm(possible_clusters)
+    
   }
-  
-  
   
   if(sum(is.na(pairwisedist)==TRUE) > 0){
     print("some pairs of cells have no CpG with data in common")
@@ -238,7 +240,7 @@ if (R > 1){
     
     hcluster <- hclust(pairwisedist,method = "complete")
     
-    mycl <- cutree(hcluster, k=1:args$max_k)
+    mycl <- cutree(hcluster, k=1:Max_K)
     
     if  (!is.null(args$true_clone_membership_file)){
       
@@ -249,11 +251,11 @@ if (R > 1){
       
       possible_clusters <- cbind(rownames(input_CpG_data),true_membership,mycl)
       possible_clusters <- as.data.frame(possible_clusters)
-      colnames(possible_clusters) <- c("cell_id","true_membership",paste0("num_clusters_",1:args$max_k))
+      colnames(possible_clusters) <- c("cell_id","true_membership",paste0("num_clusters_",1:Max_K))
     } else{
       possible_clusters <- cbind(rownames(input_CpG_data),mycl)
       possible_clusters <- as.data.frame(possible_clusters)
-      colnames(possible_clusters) <- c("cell_id",paste0("num_clusters_",1:args$max_k))
+      colnames(possible_clusters) <- c("cell_id",paste0("num_clusters_",1:Max_K))
     }
     
     
@@ -261,22 +263,22 @@ if (R > 1){
     #cl <- kmeans(input_CpG_data,3)
     #intCriteria(traj=input_CpG_data,part=as.integer(cl$cluster),crit="Silhouette") ### it doesn't work because the entries of input_CpG_data are zeros and ones
     
-    t <- try(NbClust(input_CpG_data, diss = pairwisedist,distance=NULL, min.nc=2, max.nc=args$max_k,method = "complete",index = "cindex"))
+    t <- try(NbClust(input_CpG_data, diss = pairwisedist,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "cindex"))
     if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
       print("can't find a best partition")
       error_ch_index <- 1 }
     else {
       error_ch_index <- 0
-      hcluster_Nb <- NbClust(input_CpG_data, diss = pairwisedist,distance=NULL, min.nc=2, max.nc=args$max_k,method = "complete",index = "cindex")
+      hcluster_Nb <- NbClust(input_CpG_data, diss = pairwisedist,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "cindex")
       print(hcluster_Nb)}
     if(error_ch_index == 1){
       write.table(error_ch_index,file=paste0(outdir,"/hclust_CpGbased_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
       
-      ofile <- paste0(outdir,"/hclust_clusters_CpG_based_maxk_",args$max_k,".tsv")
+      ofile <- paste0(outdir,"/hclust_clusters_CpG_based_maxk_",Max_K,".tsv")
       write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
       system(paste0("gzip --force ", ofile))
       
-      ofile <- paste0(outdir,"/hclust_cell_order_CpG_based_maxk_",args$max_k,".tsv")
+      ofile <- paste0(outdir,"/hclust_cell_order_CpG_based_maxk_",Max_K,".tsv")
       write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
       system(paste0("gzip --force ", ofile))
     }
@@ -290,11 +292,11 @@ if (R > 1){
       possible_clusters <- cbind(possible_clusters,best_cluster)
       colnames(possible_clusters) <- c(colnames(possible_clusters)[1:(dim(possible_clusters)[2]-1)],paste0("best_cluster_",hcluster_Nb$Best.nc[1]))
       
-      ofile <- paste0(outdir,"/hclust_clusters_CpG_based_maxk_",args$max_k,".tsv") 
+      ofile <- paste0(outdir,"/hclust_clusters_CpG_based_maxk_",Max_K,".tsv") 
       write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
       system(paste0("gzip --force ", ofile))    
       
-      ofile <- paste0(outdir,"/hclust_cell_order_CpG_based_maxk_",args$max_k,".tsv") 
+      ofile <- paste0(outdir,"/hclust_cell_order_CpG_based_maxk_",Max_K,".tsv") 
       write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
       system(paste0("gzip --force ", ofile))    
       
@@ -333,7 +335,7 @@ if (R > 1){
     hcluster <- hclust(pairwisedist_region,method = "complete")
     
     # defining some clusters
-    mycl <- cutree(hcluster, k=1:args$max_k)
+    mycl <- cutree(hcluster, k=1:Max_K)
     
     if  (!is.null(args$true_clone_membership_file)){
       
@@ -344,35 +346,35 @@ if (R > 1){
       
       possible_clusters <- cbind(rownames(input_CpG_data),true_membership,mycl)
       possible_clusters <- as.data.frame(possible_clusters)
-      colnames(possible_clusters) <- c("cell_id","true_membership",paste0("num_clusters_",1:args$max_k))
+      colnames(possible_clusters) <- c("cell_id","true_membership",paste0("num_clusters_",1:Max_K))
     } else{
       possible_clusters <- cbind(rownames(input_CpG_data),mycl)
       possible_clusters <- as.data.frame(possible_clusters)
-      colnames(possible_clusters) <- c("cell_id",paste0("num_clusters_",1:args$max_k))
+      colnames(possible_clusters) <- c("cell_id",paste0("num_clusters_",1:Max_K))
     }
     
     ### finding the best number of clusters
     # ### working in this case 
     #diss_matrix <- dist(mean_meth_matrix,method="euclidean",diag=FALSE)
     
-    ## t <- try(NbClust(mean_meth_matrix, diss = diss_matrix,distance=NULL, min.nc=2, max.nc=args$max_k,method = "complete",index = "ch"))
-    t <- try(NbClust(mean_meth_matrix, diss = pairwisedist_region, distance=NULL, min.nc=2, max.nc=args$max_k,method = "complete",index = "ch")) ### changing to cindex as cindex also works for CpG based clustering
+    ## t <- try(NbClust(mean_meth_matrix, diss = diss_matrix,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "ch"))
+    t <- try(NbClust(mean_meth_matrix, diss = pairwisedist_region, distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "ch")) ### changing to cindex as cindex also works for CpG based clustering
     if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
       print("can't use ch index") 
       error_ch_index <- 1 }
     else { 
       error_ch_index <- 0
-      hcluster_Nb <- NbClust(mean_meth_matrix, diss = pairwisedist_region,distance=NULL, min.nc=2, max.nc=args$max_k,method = "complete",index = "ch")
+      hcluster_Nb <- NbClust(mean_meth_matrix, diss = pairwisedist_region,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "ch")
     print(hcluster_Nb)}
     
     if(error_ch_index == 1){
       write.table(error_ch_index,file=paste0(outdir,"/hclust_region_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
       
-      ofile <- paste0(outdir,"/hclust_clusters_region_based_maxk_",args$max_k,".tsv")
+      ofile <- paste0(outdir,"/hclust_clusters_region_based_maxk_",Max_K,".tsv")
       write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
       system(paste0("gzip --force ", ofile))
       
-      ofile <- paste0(outdir,"/hclust_cell_order_region_based_maxk_",args$max_k,".tsv")
+      ofile <- paste0(outdir,"/hclust_cell_order_region_based_maxk_",Max_K,".tsv")
       write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
       system(paste0("gzip --force ", ofile))
     }
@@ -386,15 +388,18 @@ if (R > 1){
       possible_clusters <- cbind(possible_clusters,best_cluster)
       colnames(possible_clusters) <- c(colnames(possible_clusters)[1:(dim(possible_clusters)[2]-1)],paste0("best_cluster_",hcluster_Nb$Best.nc[1]))
       
-      ofile <- paste0(outdir,"/hclust_clusters_region_based_maxk_",args$max_k,".tsv")
+      ofile <- paste0(outdir,"/hclust_clusters_region_based_maxk_",Max_K,".tsv")
       write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
       system(paste0("gzip --force ", ofile))
       
-      ofile <- paste0(outdir,"/hclust_cell_order_region_based_maxk_",args$max_k,".tsv")
+      ofile <- paste0(outdir,"/hclust_cell_order_region_based_maxk_",Max_K,".tsv")
       write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
       system(paste0("gzip --force ", ofile))
       
     }
+    
+    rm(possible_clusters)
+    
   }
   
   if(sum(is.na(pairwisedist_region)==TRUE) > 0){
@@ -449,31 +454,43 @@ if(sum(is.na(diss_matrix_T)) == 0){
   hcluster_T <- hclust(diss_matrix_T,method = "ward.D2")
   
   # defining some clusters
-  mycl_T <- cutree(hcluster_T, k=1:args$max_k)
+  mycl_T <- cutree(hcluster_T, k=1:Max_K)
   
-  possible_clusters_T <- cbind(rownames(input_CpG_data),mycl_T)
-  possible_clusters_T <- as.data.frame(possible_clusters_T)
-  colnames(possible_clusters_T) <- c("cell_id",paste0("num_clusters_",1:args$max_k))
+  if  (!is.null(args$true_clone_membership_file)){
+    
+    # true clone cell membership
+    tmp <- read.csv(true_clusters_file,sep="\t",header=TRUE,check.names=FALSE)
+    true_membership <- as.matrix(tmp[,-1])
+    rm(tmp)  
+    
+    possible_clusters_T <- cbind(rownames(input_CpG_data),true_membership,mycl_T)
+    possible_clusters_T <- as.data.frame(possible_clusters_T)
+    colnames(possible_clusters_T) <- c("cell_id","true_membership",paste0("num_clusters_",1:Max_K))
+  } else{
+    possible_clusters_T <- cbind(rownames(input_CpG_data),mycl_T)
+    possible_clusters_T <- as.data.frame(possible_clusters_T)
+    colnames(possible_clusters_T) <- c("cell_id",paste0("num_clusters_",1:Max_K))
+  }
   
-  ## t <- try(NbClust(mean_meth_matrix, diss = diss_matrix,distance=NULL, min.nc=2, max.nc=args$max_k,method = "complete",index = "cindex"))
-  t <- try(NbClust(dist_PBAL, diss = diss_matrix_T,distance=NULL, min.nc=2, max.nc=args$max_k,method = "ward.D2",index = "ch")) ### changing to cindex as cindex also works for CpG based clustering
+  ## t <- try(NbClust(mean_meth_matrix, diss = diss_matrix,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "cindex"))
+  t <- try(NbClust(dist_PBAL, diss = diss_matrix_T,distance=NULL, min.nc=2, max.nc=Max_K,method = "ward.D2",index = "ch")) ### changing to cindex as cindex also works for CpG based clustering
   if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
     print("can't find best partition") 
     error_ch_index <- 1 }
   else { 
     error_ch_index <- 0
-    hcluster_Nb_T <- NbClust(dist_PBAL, diss = diss_matrix_T,distance=NULL, min.nc=2, max.nc=args$max_k,method = "ward.D2",index = "ch")
+    hcluster_Nb_T <- NbClust(dist_PBAL, diss = diss_matrix_T,distance=NULL, min.nc=2, max.nc=Max_K,method = "ward.D2",index = "ch")
     print(hcluster_Nb_T)
   }
   
   if(error_ch_index == 1){
     write.table(error_ch_index,file=paste0(outdir,"/PBALclust_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
     
-    ofile <- paste0(outdir,"/PBALclust_clusters_CpG_based_maxk_",args$max_k,".tsv") 
+    ofile <- paste0(outdir,"/PBALclust_clusters_CpG_based_maxk_",Max_K,".tsv") 
     write.table(possible_clusters_T, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
     system(paste0("gzip --force ", ofile))
     
-    ofile <- paste0(outdir,"/PBALclust_cell_order_CpG_based_maxk_",args$max_k,".tsv")
+    ofile <- paste0(outdir,"/PBALclust_cell_order_CpG_based_maxk_",Max_K,".tsv")
     write.table(hcluster_T$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
     system(paste0("gzip --force ", ofile))
   }
@@ -487,11 +504,11 @@ if(sum(is.na(diss_matrix_T)) == 0){
     possible_clusters_T <- cbind(possible_clusters_T,best_cluster)
     colnames(possible_clusters_T) <- c(colnames(possible_clusters_T)[1:(dim(possible_clusters_T)[2]-1)],paste0("best_cluster_",hcluster_Nb_T$Best.nc[1]))
     
-    ofile <- paste0(outdir,"/PBALclust_clusters_CpG_based_maxk_",args$max_k,".tsv") 
+    ofile <- paste0(outdir,"/PBALclust_clusters_CpG_based_maxk_",Max_K,".tsv") 
     write.table(possible_clusters_T, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
     system(paste0("gzip --force ", ofile))
     
-    ofile <- paste0(outdir,"/PBALclust_cell_order_CpG_based_maxk_",args$max_k,".tsv")
+    ofile <- paste0(outdir,"/PBALclust_cell_order_CpG_based_maxk_",Max_K,".tsv")
     write.table(hcluster_T$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
     system(paste0("gzip --force ", ofile))
     
