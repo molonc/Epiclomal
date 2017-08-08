@@ -138,8 +138,8 @@ if (R == 1){
       error_ch_index <- 1 }
     else {
       error_ch_index <- 0
-      hcluster_Nb <- NbClust(input_CpG_data, diss = pairwisedist,distance=NULL, min.nc=2, max.nc=args$max_k,method = "complete",index = "cindex")}
-      print(hcluster_Nb)
+      hcluster_Nb <- NbClust(input_CpG_data, diss = pairwisedist,distance=NULL, min.nc=2, max.nc=args$max_k,method = "complete",index = "cindex")
+      print(hcluster_Nb)}
     if(error_ch_index == 1){
       write.table(error_ch_index,file=paste0(outdir,"/hclust_CpGbased_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
       
@@ -267,8 +267,8 @@ if (R > 1){
       error_ch_index <- 1 }
     else {
       error_ch_index <- 0
-      hcluster_Nb <- NbClust(input_CpG_data, diss = pairwisedist,distance=NULL, min.nc=2, max.nc=args$max_k,method = "complete",index = "cindex")}
-    print(hcluster_Nb)
+      hcluster_Nb <- NbClust(input_CpG_data, diss = pairwisedist,distance=NULL, min.nc=2, max.nc=args$max_k,method = "complete",index = "cindex")
+      print(hcluster_Nb)}
     if(error_ch_index == 1){
       write.table(error_ch_index,file=paste0(outdir,"/hclust_CpGbased_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
       
@@ -362,8 +362,9 @@ if (R > 1){
       error_ch_index <- 1 }
     else { 
       error_ch_index <- 0
-      hcluster_Nb <- NbClust(mean_meth_matrix, diss = pairwisedist_region,distance=NULL, min.nc=2, max.nc=args$max_k,method = "complete",index = "ch")}
-    print(hcluster_Nb)
+      hcluster_Nb <- NbClust(mean_meth_matrix, diss = pairwisedist_region,distance=NULL, min.nc=2, max.nc=args$max_k,method = "complete",index = "ch")
+    print(hcluster_Nb)}
+    
     if(error_ch_index == 1){
       write.table(error_ch_index,file=paste0(outdir,"/hclust_region_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
       
