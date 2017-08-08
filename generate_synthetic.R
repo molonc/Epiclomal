@@ -38,7 +38,7 @@ parser$add_argument("--region_nonequal", type="character", default="uniform", he
 parser$add_argument("--output_dir", type="character", default="output", help="Entire or just the beginning of the output directory file ")
 parser$add_argument("--given_dir_complete", type="integer", default=0, help="If this is 0, it creates a long output dir name with the input parameters, if it's 1, the output dir is output_dir ")
 
-parser$add_argument("--generate_bulk", type="character", default="yes", help="If yes, it generates bulk data by combining the complete data from all cells")
+parser$add_argument("--bulk_depth", type="integer", default=60, help="Number of cells that will be used to generate bulk methylation levels. If zero no bulk data will be saved.")
 
 # writes: 6 files 
 # 1: all input parameters 
@@ -392,11 +392,15 @@ if (args$verbose) {
 if (args$saveall)
     write_data_file (x_data_matrix, paste0(output_dir, "/data_complete", ".tsv"))
 
-if(args$generate_bulk =="yes"){
- print("Generating bulk sample") 
-   
-  meth_reads <- apply(x_data_matrix,2,function(x){sum(x==1)})
-  unmeth_reads <- args$num_cells - meth_reads
+if( args$bulk_depth != 0 ){
+ print("Generating bulk methylation levels to be used as priors for Epiclomal") 
+  
+  Z <- sample(1:K,size=args$bulk_depth,prob=clone_prev,replace = TRUE) 
+  
+  x_data_bulk <- t(sapply(Z,xobs.function,epsilon=error_prob,genotype_matrix=genotype_matrix))
+  
+  meth_reads <- apply(x_data_bulk,2,function(x){sum(x==1)})
+  unmeth_reads <- args$bulk_depth - meth_reads
   position <- 1:M
   
   bulk_data <- cbind(position,meth_reads,unmeth_reads)
