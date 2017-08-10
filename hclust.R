@@ -191,130 +191,130 @@ if (R == 1){
 
 if (R > 1){
   
-  print("More than one region, CpG based hiearchical clustering")
-  
-  # ### if 95% of the data is missing there is a high chance that for some pairs of cells there won't be any CpG site with data on both cells 
-  # ### and, therefore, we won't be able to calculate obtain a hierarchical clustering as the distance/dissimilarity matrix has to be complete
+  # print("More than one region, CpG based hiearchical clustering")
   # 
-  # ### verifying how many pairs of cells don't have any CpG site with data on both cells
+  # # ### if 95% of the data is missing there is a high chance that for some pairs of cells there won't be any CpG site with data on both cells 
+  # # ### and, therefore, we won't be able to calculate obtain a hierarchical clustering as the distance/dissimilarity matrix has to be complete
+  # # 
+  # # ### verifying how many pairs of cells don't have any CpG site with data on both cells
+  # # 
+  # # commom.CpGs.pair <- function(v1,v2){
+  # #   na.idx <- is.na(v1) | is.na(v2) 
+  # #   v1a  <- v1[!na.idx]
+  # #   v2a  <- v2[!na.idx]
+  # #   l.na <- (sum(!na.idx)) ## = length(v1a) = length(v2a), the number of entries with data on both vectors
+  # #   return(l.na)
+  # #   
+  # # }
+  # # 
+  # # commom.CpGs.all <- function(d){ ### d is matrix where the rows correspond to cells and columns to CpGs
+  # #   dist.data <- matrix(NA,nrow=nrow(d),ncol=nrow(d))
+  # #   rownames(dist.data) <- rownames(d)
+  # #   colnames(dist.data) <- rownames(d)
+  # #   for (i in 1:nrow(d)){
+  # #     for(j in 1:nrow(d)){
+  # #       dist.data[i,j] <- commom.CpGs.pair(v1=d[i,],v2=d[j,])
+  # #     }
+  # #   }
+  # #   return(dist.data)
+  # # }
+  # # 
+  # # tmp = commom.CpGs.all(d=input_CpG_data)
+  # # sum(tmp == 0)
+  # # rm(tmp)
+  # # ### In one example when 95% of the data is missing 8% of cell pairs had no CpG with data on both of them
   # 
-  # commom.CpGs.pair <- function(v1,v2){
-  #   na.idx <- is.na(v1) | is.na(v2) 
-  #   v1a  <- v1[!na.idx]
-  #   v2a  <- v2[!na.idx]
-  #   l.na <- (sum(!na.idx)) ## = length(v1a) = length(v2a), the number of entries with data on both vectors
-  #   return(l.na)
+  # ### there is also the option of doing as Tony did: calculating a dist matrix and then applying hclust on dist of dist,
+  # ### which is still something I didn't know people do, but it seems they do...
+  # # tmp = dist(input_CpG_data,method="euclidean")
+  # # tmp = as.matrix(tmp)
+  # # plot(hclust(dist(tmp)))
+  # 
+  # pairwisedist <- dist(input_CpG_data,method="euclidean")
+  # print(sum(is.na(pairwisedist) == TRUE))
+  # 
+  # if(sum(is.na(pairwisedist)==TRUE) == 0){
+  #   
+  #   hclust_CpG_crash <- 0
+  #   write.table(hclust_CpG_crash,file=paste0(outdir,"/hclust_CpG_crash.tsv"),row.names=FALSE,col.names=FALSE)
+  #   
+  #   hcluster <- hclust(pairwisedist,method = "complete")
+  #   
+  #   mycl <- cutree(hcluster, k=1:Max_K)
+  #   
+  #   if  (!is.null(args$true_clone_membership_file)){
+  #     
+  #     # true clone cell membership
+  #     tmp <- read.csv(true_clusters_file,sep="\t",header=TRUE,check.names=FALSE)
+  #     true_membership <- as.matrix(tmp[,-1])
+  #     rm(tmp)  
+  #     
+  #     possible_clusters <- cbind(rownames(input_CpG_data),true_membership,mycl)
+  #     possible_clusters <- as.data.frame(possible_clusters)
+  #     colnames(possible_clusters) <- c("cell_id","true_membership",paste0("num_clusters_",1:Max_K))
+  #   } else{
+  #     possible_clusters <- cbind(rownames(input_CpG_data),mycl)
+  #     possible_clusters <- as.data.frame(possible_clusters)
+  #     colnames(possible_clusters) <- c("cell_id",paste0("num_clusters_",1:Max_K))
+  #   }
+  #   
+  #   
+  #   ### using package clusterCrit
+  #   #cl <- kmeans(input_CpG_data,3)
+  #   #intCriteria(traj=input_CpG_data,part=as.integer(cl$cluster),crit="Silhouette") ### it doesn't work because the entries of input_CpG_data are zeros and ones
+  #   
+  #   t <- try(NbClust(input_CpG_data, diss = pairwisedist,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "cindex"))
+  #   if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
+  #     print("can't find a best partition")
+  #     error_ch_index <- 1 }
+  #   else {
+  #     error_ch_index <- 0
+  #     hcluster_Nb <- NbClust(input_CpG_data, diss = pairwisedist,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "cindex")
+  #     print(hcluster_Nb)}
+  #   if(error_ch_index == 1){
+  #     write.table(error_ch_index,file=paste0(outdir,"/hclust_CpGbased_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
+  #     
+  #     ofile <- paste0(outdir,"/hclust_clusters_CpG_based_maxk_",Max_K,".tsv")
+  #     write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
+  #     system(paste0("gzip --force ", ofile))
+  #     
+  #     ofile <- paste0(outdir,"/hclust_cell_order_CpG_based_maxk_",Max_K,".tsv")
+  #     write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
+  #     system(paste0("gzip --force ", ofile))
+  #   }
+  #   
+  #   if(error_ch_index == 0){
+  #     
+  #     write.table(error_ch_index,file=paste0(outdir,"/hclust_CpGbased_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
+  #     
+  #     best_cluster <- hcluster_Nb$Best.partition
+  #     
+  #     possible_clusters <- cbind(possible_clusters,best_cluster)
+  #     colnames(possible_clusters) <- c(colnames(possible_clusters)[1:(dim(possible_clusters)[2]-1)],paste0("best_cluster_",hcluster_Nb$Best.nc[1]))
+  #     
+  #     ofile <- paste0(outdir,"/hclust_clusters_CpG_based_maxk_",Max_K,".tsv") 
+  #     write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
+  #     system(paste0("gzip --force ", ofile))    
+  #     
+  #     ofile <- paste0(outdir,"/hclust_cell_order_CpG_based_maxk_",Max_K,".tsv") 
+  #     write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
+  #     system(paste0("gzip --force ", ofile))    
+  #     
+  #     rm(hcluster_Nb)
+  #     
+  #   }
+  #   
+  #   rm(hcluster)
   #   
   # }
   # 
-  # commom.CpGs.all <- function(d){ ### d is matrix where the rows correspond to cells and columns to CpGs
-  #   dist.data <- matrix(NA,nrow=nrow(d),ncol=nrow(d))
-  #   rownames(dist.data) <- rownames(d)
-  #   colnames(dist.data) <- rownames(d)
-  #   for (i in 1:nrow(d)){
-  #     for(j in 1:nrow(d)){
-  #       dist.data[i,j] <- commom.CpGs.pair(v1=d[i,],v2=d[j,])
-  #     }
-  #   }
-  #   return(dist.data)
+  # if(sum(is.na(pairwisedist)==TRUE) > 0){
+  #   print("some pairs of cells have no CpG with data in common")
+  #   
+  #   hclust_CpG_crash <- 1
+  #   write.table(hclust_CpG_crash,file=paste0(outdir,"/hclust_CpG_crash.tsv"),row.names=FALSE,col.names=FALSE)
   # }
   # 
-  # tmp = commom.CpGs.all(d=input_CpG_data)
-  # sum(tmp == 0)
-  # rm(tmp)
-  # ### In one example when 95% of the data is missing 8% of cell pairs had no CpG with data on both of them
-  
-  ### there is also the option of doing as Tony did: calculating a dist matrix and then applying hclust on dist of dist,
-  ### which is still something I didn't know people do, but it seems they do...
-  # tmp = dist(input_CpG_data,method="euclidean")
-  # tmp = as.matrix(tmp)
-  # plot(hclust(dist(tmp)))
-  
-  pairwisedist <- dist(input_CpG_data,method="euclidean")
-  print(sum(is.na(pairwisedist) == TRUE))
-  
-  if(sum(is.na(pairwisedist)==TRUE) == 0){
-    
-    hclust_CpG_crash <- 0
-    write.table(hclust_CpG_crash,file=paste0(outdir,"/hclust_CpG_crash.tsv"),row.names=FALSE,col.names=FALSE)
-    
-    hcluster <- hclust(pairwisedist,method = "complete")
-    
-    mycl <- cutree(hcluster, k=1:Max_K)
-    
-    if  (!is.null(args$true_clone_membership_file)){
-      
-      # true clone cell membership
-      tmp <- read.csv(true_clusters_file,sep="\t",header=TRUE,check.names=FALSE)
-      true_membership <- as.matrix(tmp[,-1])
-      rm(tmp)  
-      
-      possible_clusters <- cbind(rownames(input_CpG_data),true_membership,mycl)
-      possible_clusters <- as.data.frame(possible_clusters)
-      colnames(possible_clusters) <- c("cell_id","true_membership",paste0("num_clusters_",1:Max_K))
-    } else{
-      possible_clusters <- cbind(rownames(input_CpG_data),mycl)
-      possible_clusters <- as.data.frame(possible_clusters)
-      colnames(possible_clusters) <- c("cell_id",paste0("num_clusters_",1:Max_K))
-    }
-    
-    
-    ### using package clusterCrit
-    #cl <- kmeans(input_CpG_data,3)
-    #intCriteria(traj=input_CpG_data,part=as.integer(cl$cluster),crit="Silhouette") ### it doesn't work because the entries of input_CpG_data are zeros and ones
-    
-    t <- try(NbClust(input_CpG_data, diss = pairwisedist,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "cindex"))
-    if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
-      print("can't find a best partition")
-      error_ch_index <- 1 }
-    else {
-      error_ch_index <- 0
-      hcluster_Nb <- NbClust(input_CpG_data, diss = pairwisedist,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "cindex")
-      print(hcluster_Nb)}
-    if(error_ch_index == 1){
-      write.table(error_ch_index,file=paste0(outdir,"/hclust_CpGbased_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
-      
-      ofile <- paste0(outdir,"/hclust_clusters_CpG_based_maxk_",Max_K,".tsv")
-      write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
-      system(paste0("gzip --force ", ofile))
-      
-      ofile <- paste0(outdir,"/hclust_cell_order_CpG_based_maxk_",Max_K,".tsv")
-      write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
-      system(paste0("gzip --force ", ofile))
-    }
-    
-    if(error_ch_index == 0){
-      
-      write.table(error_ch_index,file=paste0(outdir,"/hclust_CpGbased_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
-      
-      best_cluster <- hcluster_Nb$Best.partition
-      
-      possible_clusters <- cbind(possible_clusters,best_cluster)
-      colnames(possible_clusters) <- c(colnames(possible_clusters)[1:(dim(possible_clusters)[2]-1)],paste0("best_cluster_",hcluster_Nb$Best.nc[1]))
-      
-      ofile <- paste0(outdir,"/hclust_clusters_CpG_based_maxk_",Max_K,".tsv") 
-      write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
-      system(paste0("gzip --force ", ofile))    
-      
-      ofile <- paste0(outdir,"/hclust_cell_order_CpG_based_maxk_",Max_K,".tsv") 
-      write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
-      system(paste0("gzip --force ", ofile))    
-      
-      rm(hcluster_Nb)
-      
-    }
-    
-    rm(hcluster)
-    
-  }
-  
-  if(sum(is.na(pairwisedist)==TRUE) > 0){
-    print("some pairs of cells have no CpG with data in common")
-    
-    hclust_CpG_crash <- 1
-    write.table(hclust_CpG_crash,file=paste0(outdir,"/hclust_CpG_crash.tsv"),row.names=FALSE,col.names=FALSE)
-  }
-  
   
   print("More than one region, region based hiearchical clustering")
   
