@@ -8,30 +8,42 @@
 # libraries
 #======================
 library(pheatmap)
-suppressMessages(library(argparse))
 
 #======================
 # arguments
 #======================
 
-# create parser object
-parser <- ArgumentParser()
+# MA: adding this if in order to be able to call this script from another R script with args as arguments
+if (!exists("args$out_directory"))
+{
+    print ("Using argparse")
+} else {
+    print ("Using args")
+}
+print(length(args))
 
-parser$add_argument("--copy_number", type="integer", default=0, help="Set to 1 if you want to plot copy number data")
-parser$add_argument("--true_clusters", type="integer", default=1, help="Set to 1 if true cluster memberships are available")
-parser$add_argument("--out_directory", type="character", help="Path to output directory") 
-parser$add_argument("--methylation_file", type="character", help="Path to methylation data") 
-parser$add_argument("--copy_number_file", type="character", help="Path to copy number data if available")
-parser$add_argument("--regions_file", type="character",help="Path to region coordinates")
-parser$add_argument("--inferred_clusters_file", type="character", help="Path to inferred clusters. The third column has posterior probabilities.")
-# MA: the inferred_clusters_file may have a thurd column with the posterior probabilities
-# parser$add_argument("--cell_posterior_probabilities_file", type="character", help="Path to cell posterior probabilities of belonging to a cluster")
+# MA NOTE: This is not working if I run it through argparse, TOFIX
+if (!exists("args"))    {
+    suppressMessages(library(argparse))
+    # create parser object
+    parser <- ArgumentParser()
 
-parser$add_argument("--true_clusters_file", type="character", help="Path to true clusters if available")
-parser$add_argument("--order_by_true", type="integer", default=1, help="If 1, rows are ordered by the true clustering if given, else by the predicted")
-parser$add_argument("--name", type="character", help="A name for the final plot")
+    parser$add_argument("--copy_number", type="integer", default=0, help="Set to 1 if you want to plot copy number data")
+    parser$add_argument("--true_clusters", type="integer", default=1, help="Set to 1 if true cluster memberships are available")
+    parser$add_argument("--out_directory", type="character", help="Path to output directory") 
+    parser$add_argument("--methylation_file", type="character", help="Path to methylation data") 
+    parser$add_argument("--copy_number_file", type="character", help="Path to copy number data if available")
+    parser$add_argument("--regions_file", type="character",help="Path to region coordinates")
+    parser$add_argument("--inferred_clusters_file", type="character", help="Path to inferred clusters. The third column has posterior probabilities.")
+    # MA: the inferred_clusters_file may have a thurd column with the posterior probabilities
+    # parser$add_argument("--cell_posterior_probabilities_file", type="character", help="Path to cell posterior probabilities of belonging to a cluster")
 
-args <- parser$parse_args() 
+    parser$add_argument("--true_clusters_file", type="character", help="Path to true clusters if available")
+    parser$add_argument("--order_by_true", type="integer", default=1, help="If 1, rows are ordered by the true clustering if given, else by the predicted")
+    parser$add_argument("--name", type="character", help="A name for the final plot")
+
+    args <- parser$parse_args() 
+}
 
 print(args)
 

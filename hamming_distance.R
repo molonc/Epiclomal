@@ -1,16 +1,19 @@
 
-#======================
-# libraries
-#======================
 
-suppressMessages(library(argparse))
-
-
+# MA: adding this if in order to be able to call this script from another R script with args as arguments
+if (!exists("args$output_file"))
+{
+    print ("Using argparse")
+} else {
+    print ("Using args")
+}
 #======================
 # arguments
 #======================
 
+# MA NOTE: This is not working if I run it through argparse, TOFIX
 if (!exists("args"))    {
+    suppressMessages(library(argparse))
     # create parser object
     parser <- ArgumentParser()
     parser$add_argument("--output_file", type="character", help="Path to the output file") 
