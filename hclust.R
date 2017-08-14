@@ -521,4 +521,22 @@ if(sum(is.na(diss_matrix_T)) > 0){
   write.table(PBAL_crash,file=paste0(outdir,"/PBAL_crash.tsv"),row.names=FALSE,col.names=FALSE)}
 
 
+# MA: added another file at the end with all the columns from hclust regions and pbal (except the first 2 columns of pbal cell_id and clusters_1
+# Note: I am unzipping so I zip again after, I should not zip earlier, TODO
 
+hfile <- paste0(outdir,"/hclust_clusters_region_based_maxk_",Max_K,".tsv")
+pfile <- paste0(outdir,"/PBALclust_clusters_CpG_based_maxk_",Max_K,".tsv")
+outfile <- paste0(outdir, "/hclust_region_PBAL_CpG_clusters_maxk_",Max_K,".tsv")
+print (paste0("Hfile ", hfile))
+print (paste0("Pfile ", pfile))
+print (paste0("Outfile ", outfile))
+system (paste0 ("gunzip ", hfile,".gz"))
+system (paste0 ("gunzip ", pfile,".gz"))
+tempfile <- paste0(outdir,"/PBALclust_temp_maxk_",Max_K,".tsv")
+system (paste0 ("cut -f3- ", pfile, " > ", tempfile))
+command <- paste0 ("paste ", hfile, " ", tempfile, " > ", outfile)
+system(command)
+system (paste0("rm ", tempfile))
+system (paste0("gzip --force ", hfile))
+system (paste0("gzip --force ", pfile))
+system (paste0("gzip --force ", outfile))
