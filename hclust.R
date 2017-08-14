@@ -523,6 +523,7 @@ if(sum(is.na(diss_matrix_T)) > 0){
 
 # MA: added another file at the end with all the columns from hclust regions and pbal (except the first 2 columns of pbal cell_id and clusters_1
 # Note: I am unzipping so I zip again after, I should not zip earlier, TODO
+# TODO: skip the best column, this file will be used only for initialization, not for evaluation
 
 hfile <- paste0(outdir,"/hclust_clusters_region_based_maxk_",Max_K,".tsv")
 pfile <- paste0(outdir,"/PBALclust_clusters_CpG_based_maxk_",Max_K,".tsv")
