@@ -405,7 +405,9 @@ if( args$bulk_depth != 0 ){
   position <- 1:M
   
   bulk_data <- cbind(position,meth_reads,unmeth_reads)
-  print(bulk_data)
+  if (args$verbose) {
+    print(bulk_data)
+  }
   write.table(bulk_data, paste0(output_dir, "/bulk_data", ".tsv") , sep="\t", col.names=TRUE,row.names=FALSE, quote=FALSE, append=TRUE)    
   system(paste0("gzip --force ",paste0(output_dir, "/bulk_data", ".tsv")))   
   }
