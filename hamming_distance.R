@@ -1,30 +1,19 @@
 
-
-# MA: adding this if in order to be able to call this script from another R script with args as arguments
-if (!exists("args$output_file"))
-{
-    print ("Using argparse")
-} else {
-    print ("Using args")
-}
 #======================
 # arguments
 #======================
 
-# MA NOTE: This is not working if I run it through argparse, TOFIX
-if (!exists("args"))    {
-    suppressMessages(library(argparse))
-    # create parser object
-    parser <- ArgumentParser()
-    parser$add_argument("--output_file", type="character", help="Path to the output file") 
-    parser$add_argument("--true_epigenotype_file", type="character", help="Path to true epigenotypes") 
-    parser$add_argument("--true_membership_file", type="character", help="Path to true cell membership") 
-    parser$add_argument("--estimated_epigenotype_file", type="character",help="Path to estimated epigenotypes")
-    parser$add_argument("--estimated_membership_file", type="character", help="Path to estimated cell membership") 
-    args <- parser$parse_args() 
-}
+suppressMessages(library(argparse))
+# create parser object
+parser <- ArgumentParser()
+parser$add_argument("--output_file", type="character", help="Path to the output file") 
+parser$add_argument("--true_epigenotype_file", type="character", help="Path to true epigenotypes") 
+parser$add_argument("--true_membership_file", type="character", help="Path to true cell membership") 
+parser$add_argument("--estimated_epigenotype_file", type="character",help="Path to estimated epigenotypes")
+parser$add_argument("--estimated_membership_file", type="character", help="Path to estimated cell membership") 
+args <- parser$parse_args() 
 
-print(args)
+# print(args)
 
 outfile <- args$output_file
 
