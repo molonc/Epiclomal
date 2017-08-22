@@ -35,7 +35,7 @@ outdir <- args$output_dir
 
 pdf(paste0(outdir,"/plot_aveVmeasure_basic_VS_region.pdf"),height=7,width=9)
 tmp <- cbind(summary_table$Avg_Vmeasure_basic,summary_table$Avg_Vmeasure_region)
-matplot(summary_table[,1],tmp,lty=1,type='l',lwd=2,col=c(2,4),ylab="Average cell-based mean hamming distance",xlab=colnames(summary_table)[1],cex.axis=1.2,cex.lab=1.2,xaxt="n",ylim=c(0,1))
+matplot(summary_table[,1],tmp,lty=1,type='l',lwd=2,col=c(2,4),ylab="Average V-measure",xlab=colnames(summary_table)[1],cex.axis=1.2,cex.lab=1.2,xaxt="n",ylim=c(0,1))
 axis(1, summary_table[,1])
 legend("bottomright",c("Basic","Region"),bty="n",col=c(2,4),lty=c(1,1),lwd=c(2,2),cex=.8)
 dev.off()
@@ -149,7 +149,7 @@ big_Vmeasure_df$VAR <- factor(big_Vmeasure_df$VAR,levels=variable)
 
 pvmeasure <- ggplot(big_Vmeasure_df, aes(x=method, y=Vmeasure,fill=method)) +
   geom_boxplot() + facet_grid(~VAR) +
-  labs(x=" ", y = "Cell-based mean hamming distance") +
+  labs(x=" ", y = "V-measure") +
   theme(axis.text.x  = element_text(angle=0, vjust=0.5, size=12, colour= "black"), axis.text.y  = element_text(size=15, colour= "black"),
         #panel.background = element_rect(fill="white",colour = 'black'), 
         axis.title.y =element_text(size=15), axis.title.x=element_text(size=15),
