@@ -102,7 +102,7 @@ if (args$num_regions == 1){
   } 
 
 if (args$num_regions > 1){
-  #print("number of regions greater than 1")
+  print("number of regions greater than 1")
 
 if (args$region_size_type=="equal"){
   region_sizes <- rmultinom(1,size=M,p=rep(1/(args$num_regions),args$num_regions))
@@ -113,6 +113,7 @@ if (args$region_size_type=="equal"){
         reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) ) }
   }
 }
+
 
 if (args$region_size_type=="nonequal"){
     if(args$region_nonequal=="uniform"){
