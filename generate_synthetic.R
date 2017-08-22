@@ -17,6 +17,8 @@ parser <- ArgumentParser()
 # specify our desired options
 # by default ArgumentParser will add a help option
 
+parser$add_argument("--read_size", type="character",default="10_2", help="mean and std dev for the number of CpGs per read when generating data considering a read-based approach") 
+
 parser$add_argument("--num_loci", type="integer", default=100, help="Number of loci") 
 parser$add_argument("--num_clones", type="integer", default=3, help="Number of clones")
 parser$add_argument("--num_cells", type="integer", default=10, help="Number of cells")
@@ -56,6 +58,7 @@ parser$add_argument("--saveall", type="integer", default=1, help="Set to 1 if yo
 
 args <- parser$parse_args() 
 
+print(args)
 
 #####################
 # other parameters ##
@@ -418,6 +421,8 @@ if( args$bulk_depth != 0 ){
 ### Step 4: Now adding missingness
 ###########
 
+if (is.null(args$read_size)){
+
 print ("ADDING MISSINGNESS")
 
 miss_indices <- sample(1:(args$num_cells*args$num_loci),size=rbinom(1,size=(args$num_cells*args$num_loci),prob=args$missing_probability), replace=F)
@@ -435,6 +440,84 @@ write_data_file (x_data_matrix, paste0(output_dir, "/data_incomplete", ".tsv"))
 if (args$verbose) {
   print ("The end")
 } 
+}
+
+if (!is.null(args$read_size)){
+ 
+  print("adding missingness on a per read basis") 
+  
+  mean_read_size = as.double(unlist(strsplit(args$read_size, split="_")))[1]
+  sd_read_size = as.double(unlist(strsplit(args$read_size, split="_")))[2]
+  
+  print(mean_read_size)
+  print(sd_read_size)
+
+  #x_data_matrix <- t(replicate(rbinom(1000,1,0.5),n=10))
+  
+  x_data_new <- matrix(NA,nrow=dim(x_data_matrix)[1],ncol=dim(x_data_matrix)[2])
+  
+  #obs_prob = 1 - args$missing_probability
+  
+  #obs_prob = 1 - miss_prob
+  #set.seed(96)
+  ideal_obs <- rbinom(1,size=(dim(x_data_matrix)[1]*dim(x_data_matrix)[2]),prob=(1-args$missing_probability))
+  
+  obs_indices <- sample(1:(dim(x_data_matrix)[1]*dim(x_data_matrix)[2]),size=ideal_obs,replace=F)
+  
+  #obs_indices <- sample(1:(dim(x_data_matrix)[1]*dim(x_data_matrix)[2]),size=rbinom(1,size=((dim(x_data_matrix)[1]*dim(x_data_matrix)[2])),prob=obs_prob/10),replace=F)
+  
+  total_obs <- 0
+  i <- 0
+  print(ideal_obs)
+  
+  while( total_obs < ideal_obs) {
+    
+    read_length <- round(rnorm(1,mean=mean_read_size,sd=sd_read_size))
+   
+    #read_length <- round(rnorm(1,mean=10,sd=2))
+    #print(read_length)
+    i <- i+1
+    #print(i)
+    #print((obs_indices[i]:(obs_indices[i]+ read_length)))
+    
+    if( (ideal_obs - total_obs) > read_length  ){
+    
+    x_data_new[(obs_indices[i]:(obs_indices[i]+ read_length ))] <- x_data_matrix[(obs_indices[i]:(obs_indices[i]+ read_length))]
+    }else{
+      
+      x_data_new[(obs_indices[i]:(obs_indices[i]+ ((ideal_obs - total_obs)-1) ))] <- x_data_matrix[(obs_indices[i]:(obs_indices[i]+  ((ideal_obs - total_obs)-1) ))]
+      
+    }
+    
+    total_obs <- sum(!is.na(x_data_new))
+  
+    #print(total_obs)
+     
+  }
+  
+  x_data_new <- matrix(x_data_new[1:(dim(x_data_matrix)[1]*dim(x_data_matrix)[2])],nrow=dim(x_data_matrix)[1],ncol=dim(x_data_matrix)[2],byrow=TRUE)
+  #print(dim(x_data_new))
+  print(sum(!is.na(x_data_new)))
+  print(ideal_obs)
+  print(sum(!is.na(x_data_new)) == ideal_obs )     
+  
+  x_data_new[is.na(x_data_new)] <- ""
+  
+  
+  
+  if (args$verbose) {
+    print ("Data with missing observations: ")
+    print(x_data_new)
+  }    
+  
+  write_data_file (x_data_new, paste0(output_dir, "/data_incomplete", ".tsv"))
+  
+  if (args$verbose) {
+    print ("The end")
+  } 
+   
+}
+
 
 #Rprof ( NULL ) ; print ( summaryRprof ( tf )  )
 

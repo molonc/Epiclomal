@@ -38,17 +38,17 @@ print(args)
 out_dir <- args$out_directory
 dir.create(file.path(out_dir), showWarnings = FALSE)
 
-input_CpG_data_file <- paste0(args$path_directory,args$methylation_file)
-input_regions_file <- paste0(args$path_directory,args$regions_file)
-inferred_clusters_file <-  paste0(args$path_directory,args$inferred_clusters_file)
+input_CpG_data_file <- args$methylation_file
+input_regions_file <- args$regions_file
+inferred_clusters_file <- args$inferred_clusters_file
 
 #cell_posterior_probabilities_file <-  paste0(args$path_directory,args$cell_posterior_probabilities_file)
 
 if ( args$true_clusters == 1){
-  true_clusters_file <- paste0(args$path_directory,args$true_clusters_file) }
+  true_clusters_file <- args$true_clusters_file }
 
 if ( args$copy_number == 1){
-  input_CN_data_file <- paste0(args$path_directory,args$copy_number_file) }
+  input_CN_data_file <- args$copy_number_file }
 
 #  input_CN_data_file <- "/Users/cdesouza/Documents/EPI-91/CN_data_most_variable_CGIs_xeno7_Epiclomal.tsv"
 #  input_CpG_data_file <- "/Users/cdesouza/Documents/EPI-91/most_var_CGIs_all_cells_input_Epiclomal_hg19_xeno7.tsv"
@@ -75,6 +75,13 @@ if ( args$copy_number == 1){
 # input_regions_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci5000_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs100_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
 # inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci5000_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs100_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
 # true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci5000_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs100_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
+
+ #input_CpG_data_file <- /Users/cdesouza/Documents/synthetic_data/output_loci800_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0.9_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv
+ #input_regions_file <- /Users/cdesouza/Documents/synthetic_data/output_loci800_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0.9_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data/regions_file.tsv
+ #inferred_clusters_file <- /Users/cdesouza/Documents/synthetic_data/output_loci800_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0.9_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv
+ #true_clusters_file <- /Users/cdesouza/Documents/synthetic_data/output_loci800_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0.9_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv
+
+
 
 
 #======================
