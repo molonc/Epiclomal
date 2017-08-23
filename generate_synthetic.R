@@ -17,7 +17,7 @@ parser <- ArgumentParser()
 # specify our desired options
 # by default ArgumentParser will add a help option
 
-parser$add_argument("--read_size", type="character",default="10_2", help="mean and std dev for the number of CpGs per read when generating data considering a read-based approach") 
+parser$add_argument("--read_size", type="character", help="mean and std dev for the number of CpGs per read when generating data considering a read-based approach") 
 
 parser$add_argument("--num_loci", type="integer", default=100, help="Number of loci") 
 parser$add_argument("--num_clones", type="integer", default=3, help="Number of clones")
