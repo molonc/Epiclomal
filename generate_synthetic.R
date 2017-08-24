@@ -462,7 +462,10 @@ if( args$bulk_depth != 0 ){
   
   total_obs <- 0
   i <- 0
-  print(ideal_obs)
+  
+  if (args$verbose) {
+    print(ideal_obs)
+  }    
   
   while ( total_obs < ideal_obs) {
     
@@ -483,9 +486,11 @@ if( args$bulk_depth != 0 ){
   
   x_data_new <- matrix(vect_data_new[1:(dim(x_data_matrix)[1]*dim(x_data_matrix)[2])],nrow=dim(x_data_matrix)[1],ncol=dim(x_data_matrix)[2],byrow=TRUE)
   
-  print(sum(!is.na(x_data_new)))
-  print(ideal_obs)
-  print(sum(!is.na(x_data_new)) == ideal_obs )     
+  if (args$verbose) {
+    print(sum(!is.na(x_data_new)))
+    print(ideal_obs)
+    print(sum(!is.na(x_data_new)) == ideal_obs )     
+  }  
   
   x_data_new[is.na(x_data_new)] <- ""
   
