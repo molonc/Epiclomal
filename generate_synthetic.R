@@ -466,12 +466,12 @@ if (!is.null(args$read_size)){
   obs_indices <- sample(1:(dim(x_data_matrix)[1]*dim(x_data_matrix)[2]),size=ideal_obs,replace=F)
   
   #obs_indices <- sample(1:(dim(x_data_matrix)[1]*dim(x_data_matrix)[2]),size=rbinom(1,size=((dim(x_data_matrix)[1]*dim(x_data_matrix)[2])),prob=obs_prob/10),replace=F)
-  
+  Transp_x_data_new <- rep(NA,(dim(x_data_matrix)[1]*dim(x_data_matrix)[2]))
   total_obs <- 0
   i <- 0
   print(ideal_obs)
   
-  while( total_obs < ideal_obs) {
+  while ( total_obs < ideal_obs) {
     
     read_length <- round(rnorm(1,mean=mean_read_size,sd=sd_read_size))
    
@@ -482,21 +482,19 @@ if (!is.null(args$read_size)){
     #print((obs_indices[i]:(obs_indices[i]+ read_length)))
     
     if( (ideal_obs - total_obs) > read_length  ){
-    
-    x_data_new[(obs_indices[i]:(obs_indices[i]+ read_length ))] <- x_data_matrix[(obs_indices[i]:(obs_indices[i]+ read_length))]
+    Transp_x_data_new[(obs_indices[i]:(obs_indices[i]+(read_length-1)))] <- t(x_data_matrix)[(obs_indices[i]:(obs_indices[i]+ (read_length-1)))]
     }else{
-      
-      x_data_new[(obs_indices[i]:(obs_indices[i]+ ((ideal_obs - total_obs)-1) ))] <- x_data_matrix[(obs_indices[i]:(obs_indices[i]+  ((ideal_obs - total_obs)-1) ))]
+      Transp_x_data_new[(obs_indices[i]:(obs_indices[i]+ ((ideal_obs - total_obs)-1) ))] <- t(x_data_matrix)[(obs_indices[i]:(obs_indices[i]+  ((ideal_obs - total_obs)-1) ))]
       
     }
     
-    total_obs <- sum(!is.na(x_data_new))
+    total_obs <- sum(!is.na(Transp_x_data_new))
   
-    #print(total_obs)
+    print(total_obs)
      
   }
   
-  x_data_new <- matrix(x_data_new[1:(dim(x_data_matrix)[1]*dim(x_data_matrix)[2])],nrow=dim(x_data_matrix)[1],ncol=dim(x_data_matrix)[2],byrow=TRUE)
+  x_data_new <- matrix(Transp_x_data_new,nrow=dim(x_data_matrix)[1],ncol=dim(x_data_matrix)[2],byrow=TRUE)
   #print(dim(x_data_new))
   print(sum(!is.na(x_data_new)))
   print(ideal_obs)
