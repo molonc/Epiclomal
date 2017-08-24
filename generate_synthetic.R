@@ -35,8 +35,7 @@ parser$add_argument("--genotype_prob", type="character", default="random", help=
 parser$add_argument("--dirichlet_param_genotype_prob", type="character", default="1_1" , help="Dirichlet parameters to generate the genotype probabilities for each region r and clone k") 
 
 parser$add_argument("--num_regions", type="double", default=5, help="Number of regions")  
-parser$add_argument("--region_size_type", type="character", default="equal", help="Equal or nonequal")
-parser$add_argument("--region_nonequal", type="character", default="uniform", help="Uniform or nonuniform")
+parser$add_argument("--region_size_type", type="character", default="multinomial_equal", help="uniform, multinomial_equal or multinomial_nonequal (currently this has hard-coded probabilities)")
 
 parser$add_argument("--output_dir", type="character", default="output", help="Entire or just the beginning of the output directory file ")
 parser$add_argument("--given_dir_complete", type="integer", default=0, help="If this is 0, it creates a long output dir name with the input parameters, if it's 1, the output dir is output_dir ")
@@ -104,54 +103,49 @@ if (args$num_regions == 1){
   #print("number of regions equal to 1")
   } 
 
-if (args$num_regions > 1){
-  print("number of regions greater than 1")
+if (args$num_regions > 1) {
+    print("number of regions greater than 1")
 
-if (args$region_size_type=="equal"){
-  region_sizes <- rmultinom(1,size=M,p=rep(1/(args$num_regions),args$num_regions))
-  reg_coord <- NULL
-  for(r in 1:args$num_regions){
-    if(r==1){
-      reg_coord <- rbind(reg_coord,c(1 , region_sizes[r]))} else{
-        reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) ) }
-  }
-}
-
-
-if (args$region_size_type=="nonequal"){
-    if(args$region_nonequal=="uniform"){
-        breaks_unif <- c(0,sort(round(runif(args$num_regions-1,min=0,max=M))),M)
-        while(sum(duplicated(breaks_unif))!=0){
-            print("generating regions again")
+    if (args$region_size_type=="multinomial_equal") {
+      region_sizes <- rmultinom(1,size=M,p=rep(1/(args$num_regions),args$num_regions))
+      reg_coord <- NULL
+      for(r in 1:args$num_regions){
+        if(r==1){
+          reg_coord <- rbind(reg_coord,c(1 , region_sizes[r]))} else{
+            reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) ) }
+      }    
+    } else if (args$region_size_type=="uniform"){
             breaks_unif <- c(0,sort(round(runif(args$num_regions-1,min=0,max=M))),M)
-        }
-        region_sizes <- diff(breaks_unif)
-        reg_coord <- NULL
-        for(r in 1:args$num_regions){
-            reg_coord <- rbind(reg_coord,c(breaks_unif[r]+1,breaks_unif[r+1])) 
-        }
-    }
+            while(sum(duplicated(breaks_unif))!=0){
+                print("generating regions again")
+                breaks_unif <- c(0,sort(round(runif(args$num_regions-1,min=0,max=M))),M)
+            }
+            region_sizes <- diff(breaks_unif)
+            reg_coord <- NULL
+            for(r in 1:args$num_regions){
+                reg_coord <- rbind(reg_coord,c(breaks_unif[r]+1,breaks_unif[r+1])) 
+            }
+    } else if(args$region_size_type=="multinomial_nonequal") {
+            #print("nonuniform")
+            p_reg <- rep(c(0.1,0.2,0.5,0.1,0.1),args$num_regions/5)
+            region_sizes <- rmultinom(1,size=M,p=p_reg) ### unbalanced sizes  
   
-    if(args$region_nonequal=="nonuniform"){
-        #print("nonuniform")
-        p_reg <- rep(c(0.1,0.2,0.5,0.1,0.1),args$num_regions/5)
-        region_sizes <- rmultinom(1,size=M,p=p_reg) ### unbalanced sizes  
-  
-        ### when R is big we will need a dirichlet if you want some control on which regions to be big or small
-        ### Example for R=500
-        #p_reg <- t(rdirichlet(1, alpha=c(rep(1,100),rep(4,100),rep(50,100),rep(8,100),rep(6,100))))
+            ### when R is big we will need a dirichlet if you want some control on which regions to be big or small
+            ### Example for R=500
+            #p_reg <- t(rdirichlet(1, alpha=c(rep(1,100),rep(4,100),rep(50,100),rep(8,100),rep(6,100))))
     
-        reg_coord <- NULL
-        for(r in 1:R){
-            if(r==1){
-                reg_coord <- rbind(reg_coord,c(1 , region_sizes[r]))
-            } 
-            else{
-                reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) ) 
-              }
-          }    
-      }
-  }
+            reg_coord <- NULL
+            for(r in 1:R){
+                if(r==1){
+                    reg_coord <- rbind(reg_coord,c(1 , region_sizes[r]))
+                } 
+                else{
+                    reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) ) 
+                  }
+              }    
+    } else {
+        stop("region_size_type has to be multinomial_equal, uniform or multinomial_nonequal")
+    }
 }
 
 
