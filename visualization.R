@@ -23,7 +23,7 @@ parser$add_argument("--out_directory", type="character", help="Path to output di
 parser$add_argument("--methylation_file", type="character", help="Path to methylation data") 
 parser$add_argument("--copy_number_file", type="character", help="Path to copy number data if available")
 parser$add_argument("--regions_file", type="character",help="Path to region coordinates")
-parser$add_argument("--inferred_clusters_file", type="character", help="Path to inferred clusters. The third column has posterior probabilities.")
+parser$add_argument("--inferred_clusters_file", type="character", help="Path to inferred clusters if available. The third column has posterior probabilities.")
 # MA: the inferred_clusters_file may have a thurd column with the posterior probabilities
 # parser$add_argument("--cell_posterior_probabilities_file", type="character", help="Path to cell posterior probabilities of belonging to a cluster")
 
@@ -120,18 +120,20 @@ colnames(input_regions) <- c("start","end") ## input_regions gives already the c
 rownames(input_regions) <- tmp$region_id
 rm(tmp)
 
-# inferred clusters from Epliclomal
-tmp <- read.csv(inferred_clusters_file,sep="\t",header=TRUE,check.names=FALSE)
-colnames(tmp) <- c("cell_id","inferred_clusters") 
-inferred_cell_clusters <- as.matrix(tmp[,2])
-rownames(inferred_cell_clusters) <- tmp$cell_id
-inferred_cell_clusters <- as.data.frame(inferred_cell_clusters)
-colnames(inferred_cell_clusters) <- "inferred_clusters"
-#tmp[47:49,] <- tmp[c(48,49,47),]
-if(sum(rownames(input_CpG_data) != rownames(inferred_cell_clusters)) > 0){
-  stop("order of cell IDs doesn't match")
-}
-rm(tmp)
+# inferred clusters from Epiclomal, if available
+if ( !is.null(args$inferred_clusters_file)) {
+    tmp <- read.csv(inferred_clusters_file,sep="\t",header=TRUE,check.names=FALSE)
+    colnames(tmp) <- c("cell_id","inferred_clusters") 
+    inferred_cell_clusters <- as.matrix(tmp[,2])
+    rownames(inferred_cell_clusters) <- tmp$cell_id
+    inferred_cell_clusters <- as.data.frame(inferred_cell_clusters)
+    colnames(inferred_cell_clusters) <- "inferred_clusters"
+    #tmp[47:49,] <- tmp[c(48,49,47),]
+    if(sum(rownames(input_CpG_data) != rownames(inferred_cell_clusters)) > 0){
+      stop("order of cell IDs doesn't match")
+    }
+    rm(tmp)
+}    
 
 
 # # cell posterior probabilities
@@ -179,7 +181,7 @@ if(args$true_clusters == 1 && args$order_by_true == 1){
   index <- 1:dim(true_cell_clusters)[1]
   index_gaps <- index[!duplicated(true_cell_clusters[order(true_cell_clusters),])] - 1 
   index_gaps <- index_gaps[which(index_gaps != 0)]  
-} else{
+} else if (!is.null(args$inferred_clusters_file)) {
   index <- 1:dim(inferred_cell_clusters)[1]
   index_gaps <- index[!duplicated(inferred_cell_clusters[order(inferred_cell_clusters),])] - 1 
   index_gaps <- index_gaps[which(index_gaps != 0)]
@@ -189,10 +191,16 @@ if(args$true_clusters == 1 && args$order_by_true == 1){
 
 # MA: we want to add the true clusters annotation no matter whether we order by true or predicted
 if(args$true_clusters == 1){
-  annotation_row <- cbind(inferred_cell_clusters,true_cell_clusters$true_clusters)
-  colnames(annotation_row) <- c("inferred clusters", "true clusters")  
-  annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
-  annotation_row$`true clusters` <- as.factor(annotation_row$`true clusters`)
+    if (!is.null(args$inferred_clusters_file)) {
+        annotation_row <- cbind(inferred_cell_clusters,true_cell_clusters$true_clusters)
+        colnames(annotation_row) <- c("inferred clusters", "true clusters")  
+        annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
+        annotation_row$`true clusters` <- as.factor(annotation_row$`true clusters`)
+    } else {
+        annotation_row <- true_cell_clusters$true_clusters
+        colnames(annotation_row) <- "true clusters"
+        annotation_row$`true clusters` <- as.factor(annotation_row$`true clusters`)    
+    }        
 }else{
   annotation_row <- inferred_cell_clusters
   colnames(annotation_row) <-"inferred clusters"
@@ -226,7 +234,7 @@ if (M <= 250) {
   
   if(args$true_clusters == 1 && args$order_by_true == 1){
     tmp <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
-  } else{
+  } else if (!is.null(args$inferred_clusters_file)) {
     tmp <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
   }
            
@@ -261,7 +269,7 @@ if (M > 250) {
     
     if(args$true_clusters == 1 && args$order_by_true == 1){
       tmp <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
-    } else{
+    } else if (!is.null(args$inferred_clusters_file)) {
       tmp <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
     }
              
@@ -285,7 +293,7 @@ if (M > 250) {
     print("plotting CpG based methylation data")
     if(args$true_clusters == 1 && args$order_by_true == 1){
       tmp <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
-    } else{
+    } else if (!is.null(args$inferred_clusters_file)) {
       tmp <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
     }
     
@@ -320,7 +328,7 @@ if (M > 250) {
     
     if(args$true_clusters == 1 && args$order_by_true == 1){
       tmp <- mean_meth_matrix[order(as.integer(true_cell_clusters$true_clusters)),]
-    } else{
+    } else if (!is.null(args$inferred_clusters_file)) {
       tmp <- mean_meth_matrix[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
     }
              
@@ -360,7 +368,7 @@ if (M > 250) {
       
       if(args$true_clusters == 1 && args$order_by_true == 1){
         tmp <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
-      } else{
+      } else if (!is.null(args$inferred_clusters_file)) {
         tmp <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
       }
                

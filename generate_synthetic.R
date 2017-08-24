@@ -41,7 +41,10 @@ parser$add_argument("--region_nonequal", type="character", default="uniform", he
 parser$add_argument("--output_dir", type="character", default="output", help="Entire or just the beginning of the output directory file ")
 parser$add_argument("--given_dir_complete", type="integer", default=0, help="If this is 0, it creates a long output dir name with the input parameters, if it's 1, the output dir is output_dir ")
 
+parser$add_argument("--visualization_software", type="character", default=NULL, help="If this is given, use this visualization software to plot the data")
+
 parser$add_argument("--bulk_depth", type="integer", default=60, help="Number of cells that will be used to generate bulk methylation levels. If zero no bulk data will be saved.")
+
 
 # writes: 6 files 
 # 1: all input parameters 
@@ -500,7 +503,8 @@ if( args$bulk_depth != 0 ){
     print(x_data_new)
   }    
   
-  write_data_file (x_data_new, paste0(output_dir, "/data_incomplete", ".tsv"))
+  meth_file <- paste0(output_dir, "/data_incomplete", ".tsv")
+  write_data_file (x_data_new, meth_file)
   
   if (args$verbose) {
     print ("The end")
@@ -512,3 +516,18 @@ if( args$bulk_depth != 0 ){
 #Rprof ( NULL ) ; print ( summaryRprof ( tf )  )
 
 
+if (!is.null(args$visualization_software)) {
+    print("PLOTTING GENERATED DATA")
+    visline <- paste0("--copy_number=0 --out_directory=", output_dir, 
+                    " --methylation_file=", paste0(meth_file,".gz"), 
+                    " --regions_file=", paste0(reg_file,".gz"), 
+                    " --true_clusters=1 --order_by_true=1 --name=data",
+                    " --true_clusters_file=", paste0(clone_file,".gz"),
+                    " --inferred_clusters_file=", paste0(clone_file,".gz"))
+    # TO DO: allow inferred_clusters_file to be NULL. For now just using true.       
+        
+    command <- paste0 ("Rscript ", args$visualization_software, " ", visline)
+    print(command)
+    system(command)
+}        
+        
