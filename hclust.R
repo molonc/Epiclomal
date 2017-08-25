@@ -8,6 +8,7 @@ suppressMessages(library(argparse))
 ### libraries to find the best number of clusters
 #suppressMessages(library(factoextra))
 suppressMessages(library(NbClust))
+suppressMessages(library(pheatmap))
 
 #======================
 # arguments
@@ -20,7 +21,6 @@ parser$add_argument("--output_directory", type="character", help="Path to the ou
 parser$add_argument("--methylation_file", type="character", help="Path to methylation data") 
 parser$add_argument("--regions_file", type="character",help="Path to region coordinates")
 parser$add_argument("--max_k", type="integer",default=5, help="maximum number of clusters to be considered when cutting the tree") 
-#parser$add_argument("--include_true_clone_membership",default="no", type="character",help="yes or no; for analysis of real data it should be no")
 parser$add_argument("--true_clone_membership_file", type="character",help="Path to true clone membership file")
 
 args <- parser$parse_args() 
@@ -334,6 +334,13 @@ if (R > 1){
     
     hcluster <- hclust(pairwisedist_region,method = "complete")
     
+    pheatmap(mean_meth_matrix,cluster_rows = TRUE,cluster_cols=FALSE, cellwidth = 8,
+             cellheight = 8,fontsize = 8, 
+             clustering_distance_rows = "euclidean",
+             clustering_method = "complete",
+             main = paste0("Region-based hclust"),
+             filename = paste0(outdir,"/Region_based_hclust_PLOT.pdf"))
+    
     # defining some clusters
     mycl <- cutree(hcluster, k=1:Max_K)
     
@@ -347,6 +354,8 @@ if (R > 1){
       possible_clusters <- cbind(rownames(input_CpG_data),true_membership,mycl)
       possible_clusters <- as.data.frame(possible_clusters)
       colnames(possible_clusters) <- c("cell_id","true_membership",paste0("num_clusters_",1:Max_K))
+    
+      
     } else{
       possible_clusters <- cbind(rownames(input_CpG_data),mycl)
       possible_clusters <- as.data.frame(possible_clusters)
@@ -452,6 +461,13 @@ if(sum(is.na(diss_matrix_T)) == 0){
   write.table(PBAL_crash,file=paste0(outdir,"/PBAL_crash.tsv"),row.names=FALSE,col.names=FALSE)
   
   hcluster_T <- hclust(diss_matrix_T,method = "ward.D2")
+  
+  pheatmap(dist_PBAL,cluster_rows = TRUE,cluster_cols=TRUE, cellwidth = 8,
+           cellheight = 8,fontsize = 8, 
+           clustering_distance_rows = "euclidean",
+           clustering_method = "ward.D2",
+           main = paste0("PBAL approach"),
+           filename = paste0(outdir,"/PBAL_hclust_PLOT.pdf"))
   
   # defining some clusters
   mycl_T <- cutree(hcluster_T, k=1:Max_K)
