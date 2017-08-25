@@ -125,7 +125,7 @@ class BasicGeMM(object):
     # transform data back from regioned (index rl) to unregioned (index m)        
         mu_star = self.get_mu_star(data_type)
         states = range(self.S[data_type])
-        # this also takes the argmax of mu_star
+        # this also takes the argmax of mu_star, we don't want that
         # return np.argmax(mu_star.reshape(self.K, self.M[data_type], len(states)), axis=2)    
         return mu_star.reshape(len(states), self.K, self.M[data_type])
     
@@ -157,21 +157,17 @@ class BasicGeMM(object):
             
             # this should be done differently in the regions class
             # NOTE: I am adding 1 to all the bulk reads to avoid 0 values. This is equivalent to adding a very small extra prior
-            self.beta_prior[data_type] = 1 + beta_prior[data_type].values.reshape(self.R[data_type], int(self.maxL[data_type]), self.S[data_type])         
+            self.beta_prior[data_type] = 1 + beta_prior[data_type].values.reshape(self.R[data_type], int(self.maxL[data_type]), self.S[data_type])
             
-#             i = 0
-#             for r in range(self.R[data_type]):
-#                 for l in range(self.maxL[data_type]):                
-#                     self.beta_prior[data_type][r][l] = beta_prior[data_type][i].copy()
-#                     i = i+1
-
+            # print self.beta_prior[data_type]
+            
 
     def _init_beta_star(self, data_type):
         if (self.include_bulk[data_type]):
             # MA: this has to be a matrix of size KxS, with bulk it is KxRxmaxLxS            
             self.beta_star[data_type] = np.zeros((self.K, self.R[data_type], int(self.maxL[data_type]), self.S[data_type]))
             for k in range(self.K):
-                 self.beta_star[data_type][k] = self.beta_prior[data_type].copy()        
+                 self.beta_star[data_type][k] = self.beta_prior[data_type].copy()                       
         else:            
             # MA: this has to be a matrix of size KxS, without bulk it is KxRxS
             self.beta_star[data_type] = np.zeros((self.K, self.R[data_type], self.S[data_type]))
@@ -179,7 +175,6 @@ class BasicGeMM(object):
                 for r in range(self.R[data_type]):
                     self.beta_star[data_type][k][r] = self.beta_prior[data_type].copy()            
 
-            
             
     def _init_alpha_star(self):
         self.alpha_star = {}
@@ -381,7 +376,7 @@ class BasicGeMM(object):
     def _update_beta_star(self):
         # MA: added this
         for data_type in self.data_types:
-            prior = self.beta_prior[data_type]
+            prior = self.beta_prior[data_type]                                        
                     
             newterm = self._get_beta_star_data_term(data_type)
             
@@ -390,8 +385,10 @@ class BasicGeMM(object):
             # self.beta_star[data_type] = np.einsum('krls, krls', prior[np.newaxis,:,:,:] + newterm[:,:,:,:])
             
             if (self.include_bulk[data_type]):
-                for k in range(self.K):
-                    self.beta_star[data_type][k] = prior + newterm[k]
+                self.beta_star[data_type] = prior[np.newaxis, :, :, :] + newterm
+                # Above and below seem to be the same
+                #for k in range(self.K):
+                #    self.beta_star[data_type][k] = prior + newterm[k]
             else:
                 self.beta_star[data_type] = prior + newterm                    
 
@@ -405,14 +402,7 @@ class BasicGeMM(object):
             return np.einsum('skrl -> krls', mu_star[:, :, :, :]) 
         else:
             return np.einsum('skrl -> krs', mu_star[:, :, :, :]) 
-
-        # NOTE: If I use for loops instead of einsum it is very slow            
-#         term = np.zeros((self.K,self.S[data_type]))
-#         for s in range(self.S[data_type]):
-#             for k in range(self.K):
-#                 for m in range(self.M[data_type]):
-#                     term[k,s] += mu_star[s,k,m]
-#         return term                    
+                  
                     
     ####################    
     
@@ -496,6 +486,7 @@ class BasicGeMM(object):
 
     def _compute_e_log_p_term1(self):
         # This computes term 1 
+        # ElogP_T1 = \sum_s \sum_t [(\sum_n \sum_m \sum_k pi*_nk mu*_kms IX_nmt) * ElogEps_st]
         
         e_log_p = 0
         for data_type in self.data_types:        
@@ -520,15 +511,24 @@ class BasicGeMM(object):
         
     def _compute_e_log_p_term3(self):
         # term 3 in the joint
+        # \sum_k \sum_m \sum_s mu*_kms E_log_mu_kms
         e_log_p = 0
         
         for data_type in self.data_types:                    
             mu_star = self._get_beta_star_data_term(data_type)  # size KxS, \sum_m E(I(Gkm=s)), now size KxRxS, with bulk size KxRxmaxLxS
-            e_log_mu = self.get_e_log_mu(data_type)  # size KxS, now KxRxS
+            e_log_mu = self.get_e_log_mu(data_type)  # size KxS, now KxRxmaxLxS
 
             # This below is \sum_m E(I(Gkm=s))Elog mu_ks     (term 3 in the joint)
             if (self.include_bulk[data_type]):
+                # the einsum below does sum_k sum_r sum_l sum_s mu_star[[k,r,l,s] * e_log_mu[k,r,l,s]
+                # I checked this with nested for loops
                 e_log_p += np.einsum('krls,krls', mu_star, e_log_mu)
+                # for k in range(self.K):
+                #     for r in range(self.R[data_type]):
+                #         for l in range(self.maxL[data_type]):     
+                #             for s in range(self.S[data_type]):             
+                #                 e_log_p += mu_star[k,r,l,s] * e_log_mu[k,r,l,s]
+                
             else:
                 e_log_p += np.einsum('krs,krs', mu_star, e_log_mu)    
 
@@ -547,6 +547,7 @@ class BasicGeMM(object):
 
     ################# 
     def _compute_e_log_p_term5(self):
+        # E log P(pi) = E log Dirichlet(alpha_star, alpha_zero)
     
         return  compute_e_log_p_dirichlet(self.alpha_star, self.alpha_prior)
         # This above computes E log Dirichlet(alpha_star, alpha_zero)
@@ -554,7 +555,7 @@ class BasicGeMM(object):
     #################                   
                     
     def _compute_e_log_p_term6(self):
-        
+        # sum_k sum_m E log P(mu_km) = sum_k sum_m E log Dirichlet(beta_star, beta_zero)
         e_log_p = 0        
         
         for data_type in self.data_types:
@@ -585,6 +586,7 @@ class BasicGeMM(object):
         
         e_log_q_epsilon = self._compute_e_log_q_epsilon()
         
+        # NOTE: in Genotyper with samples it goes over the unique samples only!!!
         e_log_q_pi = compute_e_log_q_dirichlet(self.alpha_star)
         
         e_log_q_mu = self._compute_e_log_q_mu()
@@ -616,12 +618,19 @@ class BasicGeMM(object):
         e_log_q = 0
         
         for data_type in self.data_types:
-            e_log_q += sum([compute_e_log_q_dirichlet(x) for x in self.gamma_star[data_type]])
+            for x in self.gamma_star[data_type]:
+            # this gives the first row in gamma_star (having 2 elements)
+                dir = compute_e_log_q_dirichlet(x)   
+                # dir is 1 value
+                # We need the brackets below for sum to work, although in my case dir is always 1 value
+                e_log_q += sum([dir])
+            # A shorter way of writing the for loop above              
+            # e_log_q += sum([compute_e_log_q_dirichlet(x) for x in self.gamma_star[data_type]])
         
         return e_log_q
 
     def _compute_e_log_q_mu(self):
-        e_log_q = 0
+        sum = 0
         
         for data_type in self.data_types:
         # ADDED r regions
@@ -636,7 +645,7 @@ class BasicGeMM(object):
                 for k in range(self.K):
                     for r in range(self.R[data_type]):
                         x = self.beta_star[data_type][k][r]
-                        sum += compute_e_log_q_dirichlet(x)                                                            
+                        sum += compute_e_log_q_dirichlet(x)                                           
         
         return sum
 

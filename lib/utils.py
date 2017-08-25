@@ -40,6 +40,7 @@ def compute_e_log_p_dirichlet(posterior, prior):
     return log_p
 
 def compute_e_log_q_dirichlet(x):
+    # x is the prior
     a_0 = x.sum()
        
     K = len(x)

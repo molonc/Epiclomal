@@ -37,6 +37,9 @@ analysis_parser.add_argument('--regions_file', default=None,
 analysis_parser.add_argument('--initial_clusters_file', default=None,
                             help='''Start from these clusters instead of random clusters.''')  
                             
+analysis_parser.add_argument('--true_clusters_file', default=None,
+                            help='''Path to the true_clusters_file, if known. If given, params.yaml will contain the V-measure for this prediction.''')                            
+                            
 analysis_parser.add_argument('--repeat_id', default=1, type=int,
                             help='''A number >= 0. If there is a column with this number (excluding the first column and starting from 0) in the initial_clusters_file, use that column as initial clusters, else use random initialization.''')
                             

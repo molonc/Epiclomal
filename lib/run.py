@@ -14,6 +14,9 @@ import time
 import operator
 import csv
 import os.path
+from sklearn.metrics.cluster import v_measure_score, homogeneity_score, completeness_score
+
+from memory_profiler import memory_usage
 
 from lib.basic_gemm import BasicGeMM
 from lib.basic_miss_gemm import BasicMissGeMM
@@ -81,24 +84,41 @@ def run_model(mtype, args):
                       regions,
                       initial_clusters)                                                                                                       
         
-    model.fit(convergence_tolerance=args.convergence_tolerance, num_iters=args.max_num_iters, debug=False)    
-    
+    # mem_usage = memory_usage((model.fit(convergence_tolerance=args.convergence_tolerance, num_iters=args.max_num_iters, debug=False)))
+    # maxmem = max(mem_usage)
+    maxmem = None
+    model.fit(convergence_tolerance=args.convergence_tolerance, num_iters=args.max_num_iters, debug=False)
+
+    # Measuring the memory
+    maxmem = max(memory_usage(-1))
+    # print(maxmem)
+
+
     if args.out_dir is not None:
         if not os.path.exists(args.out_dir):
             os.makedirs(args.out_dir)
+            
         write_cluster_posteriors(cell_ids, model.pi_star, args.out_dir)        
-        write_cluster_MAP(cell_ids, model.pi_star, args.out_dir)
-        # TO DO: I have to write the unregion function for this to work
-        #if (impute):
-        #    write_imputed_data_MAP(cell_ids, model, args.out_dir)
+        labels_pred = write_cluster_MAP(cell_ids, model.pi_star, args.out_dir)
                       
         write_genotype_posteriors(model, args.out_dir) 
         write_genotype_MAP(model, args.out_dir)         
         
         # function inherited from SCG which doesn't work right now
         # write_genotype_posteriors(event_ids, model.get_mu_star(), args.out_dir)         
+         
+        vmeasure = None    
+        if args.true_clusters_file is not None:    	
+            true_clusters = pd.read_csv(args.true_clusters_file, compression='gzip', index_col='cell_id', sep='\t')
+            labels_true = np.array(true_clusters['epigenotype_id'])
+            print labels_true
+            print labels_pred            
+            vmeasure = v_measure_score(labels_true, labels_pred)
+            print 'Vmeasure: {0:.5g}'.format(vmeasure)            
+
+        print('Maxmem: %s MB' % maxmem)
             
-        write_params(model, args.out_dir, event_ids, time.clock() - t0)          
+        write_params(model, args.out_dir, event_ids, time.clock() - t0, vmeasure, maxmem)
         
 ##############################        
     
@@ -199,7 +219,7 @@ def _load_data_frame(file_name):
 def _load_initial_clusters_frame(file_name, repeat_id):
     # IF the file doesn't exist, return None
     if (os.path.isfile(file_name) == False):
-        print "Initial clusters file was given, but it doesn't exist, ignore."
+        print "Initial clusters file was given (", file_name, "), but it doesn't exist, ignore."
         return None
     # First check if the number of columns in the file is > repeat_id
     with gzip.open(file_name, 'r') as file:
@@ -260,18 +280,22 @@ def write_cluster_posteriors(cell_ids, pi_star, out_dir):
        
 def write_cluster_MAP(cell_ids, pi_star, out_dir):        
     file_name = os.path.join(out_dir, 'cluster_MAP.tsv.gz') 
-        
-    labels_pred = []
+     
+    just_labels = []    # has only the cluster labels, we need this to compute vmeasure   
+    labels_pred = []    # has cluster labels and probabilities
     # traverse every row, and find out which cluster has the maximum value
     df = pd.DataFrame(pi_star)
     for index, row in df.iterrows():
         max_index, max_value = max(enumerate(row), key=operator.itemgetter(1))
         labels_pred.append([max_index, max_value])
+        just_labels.append(max_index)
         
-    print labels_pred
+    # print labels_pred
     df = pd.DataFrame(labels_pred, index=cell_ids)
     with gzip.GzipFile(file_name, 'w') as fh:
         df.to_csv(fh, index_label='cell_id', sep='\t')          
+    return just_labels
+       
         
 ##########################        
         
@@ -356,7 +380,7 @@ def write_genotype_MAP(model, out_dir):
 
 ##########################
 
-def write_params(model, out_dir, event_ids, cpu_time):
+def write_params(model, out_dir, event_ids, cpu_time, vmeasure, maxmem):
     file_name = os.path.join(out_dir, 'params.yaml')
     
     params = {
@@ -372,7 +396,13 @@ def write_params(model, out_dir, event_ids, cpu_time):
     params['gamma_star'] = {}
     params['beta_star'] = {}    
     
-    params['CPU_time'] = int(cpu_time)
+    params['CPU_time_seconds'] = int(cpu_time)
+
+    if vmeasure is not None:
+        params['Vmeasure'] = float(vmeasure)
+    
+    if maxmem is not None:
+        params['Max_memory_MB'] = int(maxmem)
     
     for data_type in model.gamma_star:
         # params['gamma_star'][data_type] = [[float(x) for x in row] for row in model.gamma_star[data_type]]

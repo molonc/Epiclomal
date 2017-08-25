@@ -71,5 +71,24 @@ class RegionGeMM(BasicGeMM):
     # TO DO
     # this is necessary when we want to compare the imputed values
         return
+
+
+    ######################         
         
+    def unregion_mu_star(self, data_type):
+    # transform data back from regioned (index rl) to unregioned (index m)        
+        mu_star = self.get_mu_star(data_type)
+        states = range(self.S[data_type])
+        unregioned_mu_star = np.zeros((len(states), self.K, self.M[data_type]))
         
+        # this is probably very slow, there may be a more efficient solution
+        for s in range(len(states)):
+            for k in range (self.K):
+                location = 0
+                for r in range(self.R[data_type]):
+                    length = int(self.L[data_type][r])                    
+                    unregioned_mu_star[s,k,location:location+length] = mu_star[s,k,r,range(length)]
+                    location = location + length
+                    
+        return unregioned_mu_star                            
+         
