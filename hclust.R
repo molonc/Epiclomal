@@ -129,7 +129,7 @@ if (R == 1){
     } else{
       possible_clusters <- cbind(rownames(input_CpG_data),mycl)
       possible_clusters <- as.data.frame(possible_clusters)
-      colnames(possible_clusters) <- c("cell_id",paste0("num_clusters_",1:Max_K))
+      colnames(possible_clusters) <- c("cell_id",paste0("hclust_cpg_num_clusters_",1:Max_K))
     }
     
     #print(possible_clusters)
@@ -255,7 +255,7 @@ if (R > 1){
   #   } else{
   #     possible_clusters <- cbind(rownames(input_CpG_data),mycl)
   #     possible_clusters <- as.data.frame(possible_clusters)
-  #     colnames(possible_clusters) <- c("cell_id",paste0("num_clusters_",1:Max_K))
+  #     colnames(possible_clusters) <- c("cell_id",paste0("hclust_cpg_num_clusters_",1:Max_K))
   #   }
   #   
   #   
@@ -359,7 +359,7 @@ if (R > 1){
     } else{
       possible_clusters <- cbind(rownames(input_CpG_data),mycl)
       possible_clusters <- as.data.frame(possible_clusters)
-      colnames(possible_clusters) <- c("cell_id",paste0("num_clusters_",1:Max_K))
+      colnames(possible_clusters) <- c("cell_id",paste0("hclust_region_num_clusters_",1:Max_K))
     }
     
     ### finding the best number of clusters
@@ -485,7 +485,7 @@ if(sum(is.na(diss_matrix_T)) == 0){
   } else{
     possible_clusters_T <- cbind(rownames(input_CpG_data),mycl_T)
     possible_clusters_T <- as.data.frame(possible_clusters_T)
-    colnames(possible_clusters_T) <- c("cell_id",paste0("num_clusters_",1:Max_K))
+    colnames(possible_clusters_T) <- c("cell_id",paste0("pbal_num_clusters_",1:Max_K))
   }
   
   ## t <- try(NbClust(mean_meth_matrix, diss = diss_matrix,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "cindex"))
@@ -547,16 +547,39 @@ outfile <- paste0(outdir, "/hclust_region_PBAL_CpG_clusters_maxk_",Max_K,".tsv")
 print (paste0("Hfile ", hfile))
 print (paste0("Pfile ", pfile))
 print (paste0("Outfile ", outfile))
-system (paste0 ("gunzip ", hfile,".gz"))
-system (paste0 ("gunzip ", pfile,".gz"))
-htempfile <- paste0(outdir,"/hclust_temp_maxk_",Max_K,".tsv")
-ptempfile <- paste0(outdir,"/PBALclust_temp_maxk_",Max_K,".tsv")
-system (paste0 ("cut -f1-11 ", hfile, " > ", htempfile))
-system (paste0 ("cut -f2-11 ", pfile, " > ", ptempfile))
-command <- paste0 ("paste ", htempfile, " ", ptempfile, " > ", outfile)
+
+htempfile <- ""
+ptempfile <- ""
+idtempfile <- paste0(outdir,"/cellid_temp_maxk_",Max_K,".tsv")
+
+if(file.exists(paste0(hfile,".gz"))) {
+    print("hclust result exists")
+    system(paste0 ("gunzip ", hfile,".gz"))
+    htempfile <- paste0(outdir,"/hclust_temp_maxk_",Max_K,".tsv")
+    system (paste0 ("cut -f1 ", hfile, " > ", idtempfile))
+    system (paste0 ("cut -f2-11 ", hfile, " > ", htempfile))
+    system (paste0("gzip --force ", hfile))
+}
+
+if(file.exists(paste0(pfile,".gz"))) {
+    print("PBALclust result exists")
+    system (paste0 ("gunzip ", pfile,".gz"))
+    ptempfile <- paste0(outdir,"/PBALclust_temp_maxk_",Max_K,".tsv")
+    system (paste0 ("cut -f1 ", pfile, " > ", idtempfile))    
+    system (paste0 ("cut -f2-11 ", pfile, " > ", ptempfile))
+    system (paste0("gzip --force ", pfile))    
+}
+ 
+ 
+ # TODO: I should add the name of PBAL or HCLUST
+    
+command <- paste0 ("paste ", idtempfile, " ", htempfile, " ", ptempfile, " > ", outfile)
 system(command)
+
 system (paste0("rm ", ptempfile))
 system (paste0("rm ", htempfile))
-system (paste0("gzip --force ", hfile))
-system (paste0("gzip --force ", pfile))
+system (paste0("rm ", idtempfile))
+
 system (paste0("gzip --force ", outfile))
+
+
