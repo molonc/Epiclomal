@@ -50,11 +50,11 @@ if ( args$true_clusters == 1){
 if ( args$copy_number == 1){
   input_CN_data_file <- args$copy_number_file }
 
-#  input_CN_data_file <- "/Users/cdesouza/Documents/EPI-91/CN_data_most_variable_CGIs_xeno7_Epiclomal.tsv"
-#  input_CpG_data_file <- "/Users/cdesouza/Documents/EPI-91/most_var_CGIs_all_cells_input_Epiclomal_hg19_xeno7.tsv"
-#  input_regions_file <- "/Users/cdesouza/Documents/EPI-91/most_var_CGIs_regionIDs_input_Epiclomal_hg19_xeno7.tsv"
-#  inferred_clusters_file <- "/Users/cdesouza/Documents/EPI-91/result_Basic_CN_Epiclomal_100repeats_MAXK7_64.tsv"
-#  cell_posterior_probabilities_file <- "/Users/cdesouza/Documents/EPI-91/result_Basic_CN_Epiclomal_100repeats_MAXK7_64_posterior_fake.tsv"
+# input_CN_data_file <- "/Users/cdesouza/Documents/EPI-91/CN_data_most_variable_CGIs_xeno7_Epiclomal.tsv"
+# input_CpG_data_file <- "/Users/cdesouza/Documents/EPI-91/most_var_CGIs_all_cells_input_Epiclomal_hg19_xeno7.tsv"
+# input_regions_file <- "/Users/cdesouza/Documents/EPI-91/most_var_CGIs_regionIDs_input_Epiclomal_hg19_xeno7.tsv"
+# inferred_clusters_file <- "/Users/cdesouza/Documents/EPI-91/result_Basic_CN_Epiclomal_100repeats_MAXK7_64.tsv"
+# cell_posterior_probabilities_file <- "/Users/cdesouza/Documents/EPI-91/result_Basic_CN_Epiclomal_100repeats_MAXK7_64_posterior_fake.tsv"
 
 # input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv"
 # input_regions_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
@@ -66,23 +66,15 @@ if ( args$copy_number == 1){
 # inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs1_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
 # true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs1_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
 # 
-# input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci500_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs1_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv"
-# input_regions_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci500_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs1_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
-# inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci500_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs1_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
-# true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci500_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs1_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
-# 
-# input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci5000_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs100_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv"
-# input_regions_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci5000_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs100_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
-# inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci5000_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs100_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
-# true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data/output_loci5000_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs100_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
-
- #input_CpG_data_file <- /Users/cdesouza/Documents/synthetic_data/output_loci800_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0.9_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv
- #input_regions_file <- /Users/cdesouza/Documents/synthetic_data/output_loci800_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0.9_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data/regions_file.tsv
- #inferred_clusters_file <- /Users/cdesouza/Documents/synthetic_data/output_loci800_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0.9_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv
- #true_clusters_file <- /Users/cdesouza/Documents/synthetic_data/output_loci800_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0.9_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv
-
-
-
+#input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci500_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs1_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv"
+#input_regions_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci500_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs1_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
+#inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci500_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs1_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
+#true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci500_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs1_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
+ 
+#input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci5000_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs100_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv"
+#input_regions_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci5000_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs100_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
+#inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci5000_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs100_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
+#true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci5000_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs100_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
 
 #======================
 # auxiliar functions
@@ -135,7 +127,6 @@ if ( !is.null(args$inferred_clusters_file)) {
     rm(tmp)
 }    
 
-
 # # cell posterior probabilities
 # tmp <- read.csv(cell_posterior_probabilities_file,sep="\t",header=TRUE,check.names=FALSE)
 # cell_posterior_probabilities <- as.matrix(apply(tmp[,-1],1,max)) ### check the format of this file
@@ -147,7 +138,6 @@ if ( !is.null(args$inferred_clusters_file)) {
 #   stop("order of cell IDs doesn't match")
 # }
 # rm(tmp)
-
 
 if ( args$true_clusters == 1){
   tmp <- read.csv(true_clusters_file,sep="\t",header=TRUE,check.names=FALSE)
@@ -307,7 +297,7 @@ if (M > 250) {
     #colnames(annotation_row) <- "inferred_clusters"
     #annotation_row$posterior <- paste0("post_", annotation_row$posterior) ### still need to make this more general
     #ann_colors = list(posterior = c(post_100="#111111", post_95="#333333",post_70="#666666", post_50="#777777", post_33="#888888", post_25="#999999" ))
-             
+    
     pheatmap(tmp,cluster_cols=FALSE, annotation_row = annotation_row,
              cluster_rows = FALSE,
              #cellwidth = 5, cellheight = 5,
@@ -331,7 +321,7 @@ if (M > 250) {
     } else if (!is.null(args$inferred_clusters_file)) {
       tmp <- mean_meth_matrix[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
     }
-             
+    
     pheatmap(tmp,cluster_cols=FALSE,
            cluster_rows=FALSE,
            annotation_row = annotation_row,
@@ -365,7 +355,6 @@ if (M > 250) {
       colnames(annotation_col) <- "regions"
       annotation_col$regions <- as.factor(annotation_col$regions)
       
-      
       if(args$true_clusters == 1 && args$order_by_true == 1){
         tmp <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
       } else if (!is.null(args$inferred_clusters_file)) {
@@ -386,8 +375,6 @@ if (M > 250) {
       rm(tmp)
       
     }
-    
-    
     
   }
   
