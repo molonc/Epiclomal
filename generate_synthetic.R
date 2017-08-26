@@ -40,7 +40,9 @@ parser$add_argument("--region_size_type", type="character", default="multinomial
 parser$add_argument("--output_dir", type="character", default="output", help="Entire or just the beginning of the output directory file ")
 parser$add_argument("--given_dir_complete", type="integer", default=0, help="If this is 0, it creates a long output dir name with the input parameters, if it's 1, the output dir is output_dir ")
 
-parser$add_argument("--visualization_software", type="character", default=NULL, help="If this is given, use this visualization software to plot the data")
+
+parser$add_argument("--plot_data", type="character", default=0, help="If this is 1, use the visualization software to plot the data")
+parser$add_argument("--visualization_software", type="character", default=NULL, help="Use this visualization software to plot the data if requested")
 
 parser$add_argument("--bulk_depth", type="integer", default=60, help="Number of cells that will be used to generate bulk methylation levels. If zero no bulk data will be saved.")
 
@@ -510,7 +512,7 @@ if( args$bulk_depth != 0 ){
 #Rprof ( NULL ) ; print ( summaryRprof ( tf )  )
 
 
-if (!is.null(args$visualization_software)) {
+if (args$plot_data) {
     print("PLOTTING GENERATED DATA")
     visline <- paste0("--copy_number=0 --out_directory=", output_dir, 
                     " --methylation_file=", paste0(meth_file,".gz"), 

@@ -22,7 +22,7 @@ parser$add_argument("--methylation_file", type="character", help="Path to methyl
 parser$add_argument("--regions_file", type="character",help="Path to region coordinates")
 parser$add_argument("--max_k", type="integer",default=5, help="maximum number of clusters to be considered when cutting the tree") 
 parser$add_argument("--true_clone_membership_file", type="character",help="Path to true clone membership file")
-
+# TO Remove the true_clone_membership because I don't use that anymore, I give it in a different file
 args <- parser$parse_args() 
 
 print(args)
@@ -548,9 +548,10 @@ print (paste0("Hfile ", hfile))
 print (paste0("Pfile ", pfile))
 print (paste0("Outfile ", outfile))
 
+# take the cell_ids from the input methylation file
+idtempfile <- paste0(outdir,"/cellid_temp_maxk_",Max_K,".tsv")
 htempfile <- ""
 ptempfile <- ""
-idtempfile <- paste0(outdir,"/cellid_temp_maxk_",Max_K,".tsv")
 
 if(file.exists(paste0(hfile,".gz"))) {
     print("hclust result exists")
@@ -571,15 +572,18 @@ if(file.exists(paste0(pfile,".gz"))) {
 }
  
  
- # TODO: I should add the name of PBAL or HCLUST
-    
-command <- paste0 ("paste ", idtempfile, " ", htempfile, " ", ptempfile, " > ", outfile)
-system(command)
+ # I should add the name of PBAL or HCLUST - added
+# Write the file only when at least one of the files exists
+if(file.exists(paste0(hfile,".gz")) || file.exists(paste0(pfile,".gz")))  {
+    command <- paste0 ("paste ", idtempfile, " ", htempfile, " ", ptempfile, " > ", outfile)
+    system(command)
+    system (paste0("gzip --force ", outfile))    
+}    
 
 system (paste0("rm ", ptempfile))
 system (paste0("rm ", htempfile))
 system (paste0("rm ", idtempfile))
 
-system (paste0("gzip --force ", outfile))
+
 
 
