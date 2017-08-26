@@ -512,7 +512,7 @@ if( args$bulk_depth != 0 ){
 #Rprof ( NULL ) ; print ( summaryRprof ( tf )  )
 
 
-if (args$plot_data) {
+if (args$plot_data == 1) {
     print("PLOTTING GENERATED DATA")
     visline <- paste0("--copy_number=0 --out_directory=", output_dir, 
                     " --methylation_file=", paste0(meth_file,".gz"), 
