@@ -19,14 +19,19 @@ parser <- ArgumentParser()
 
 parser$add_argument("--read_size", type="character",default="1_0", help="mean and std dev for the number of CpGs per read when generating data considering a read-based approach, default is no read based approach, that is 1_0") 
 
+parser$add_argument("--num_samples", type="integer", default=2, help="Number different samples") 
+
 parser$add_argument("--num_loci", type="integer", default=100, help="Number of loci") 
 parser$add_argument("--num_clones", type="integer", default=3, help="Number of clones")
-parser$add_argument("--num_cells", type="integer", default=10, help="Number of cells")
-parser$add_argument("--clone_prevalence", type="character", default="0.2_0.5_0.3", help="Probability of clone prevalences")
+
+parser$add_argument("--num_cells", type="character", default="10_10", help="Number of cells per sample, starting with sample 1, then sample 2, etc")
+
+parser$add_argument("--clone_prevalence", type="character", default="0.2_0.5_0.3_0.3_0.34_0.36", help="Probability of clone prevalences for all samples")
 parser$add_argument("--error_probability", type="character", default="0.01_0.01", help="Error probability for each methylation state")
 # error_probability="0.01_0.01" corresponds to P(Y=1|G=0)=0.01 and P(Y=0|G=1)=0.01, respectively
 # If we assume more than 2 states it would be better if error_probability is written as matrix
 
+### the missing probability could be in principle different among samples, keeping the same for now
 parser$add_argument("--missing_probability", type="double", default=0.1, help="Missing data probability")
 
 ### Genotype probabilities: p(G_krl = s) = mu_krs
@@ -62,9 +67,7 @@ parser$add_argument("--saveall", type="integer", default=1, help="Set to 1 if yo
 
 args <- parser$parse_args() 
 
-if(args$verbose){
 print(args)
-}
 
 #####################
 # other parameters ##
@@ -284,8 +287,6 @@ print ("GENERATING EPIGENOTYPES")
 # It includes regions
 # Remember note above: R=1 and region_size = num_loci corresponds to the basic-GeMM
 
-
-#ptm = proc.time()
 R <- args$num_regions
 K <- args$num_clones
 genotype_matrix <- NULL
@@ -315,7 +316,8 @@ for(k in 1:K){
  if (args$verbose) {
      print ("Final epigenotype matrix: ")
      print (genotype_matrix)
- }   
+ }  
+
 
 # NOW write the matrix with each clone genotype into a file
 # ========================================
@@ -341,29 +343,36 @@ print ("GENERATING CELLS")
 ### We assume that P(Z_i=k) = pi_k where pi_k is the clonal prevalence of clone k
 
 clone_prev <- as.double(unlist(strsplit(args$clone_prevalence, split="_"))) ### this is the vector with the pi_k's
-Z <- sample(1:K,size=args$num_cells,prob=clone_prev,replace = TRUE) 
 
-if (args$verbose) {
-  print ("Vector with clone memberships:")
-  print (Z)
-}  
+num_cells <- as.double(unlist(strsplit(args$num_cells, split="_")))
 
-#if (args$saveall){
-#  tmp <- cbind(1:length(Z),Z)
-#  colnames(tmp) <- c("cell_id","Z")
-#  write.table(tmp,file=paste0(output_dir, "/true_clone_membership", ".tsv"),row.names=FALSE,sep="\t")
-#  rm(tmp) 
-#  }
+print(clone_prev)
 
-# MA: I'm adding the epigenotype_id in the header of the file
-tmp <- cbind(1:length(Z),Z)  
+### this alows the number of cells to be different between samples
+Z <- matrix(NA,nrow=max(num_cells),ncol=args$num_samples)
+
+for(s in 1:args$num_samples){
+
+print(s)
+
+Z[(1:num_cells[s]),s] <- sample(1:K,size=num_cells[s],prob=clone_prev[((s*(K-1)+1) - (K-s)):(s*K)],replace = TRUE) 
+
+# if (args$verbose) {
+#   print ("Vector with clone memberships:")
+#   print (Z)
+# }  
+
+print(Z)
+
+tmp <- cbind(1:num_cells[s],Z[1:num_cells[s],s])  
 colnames(tmp) <- c("cell_id","epigenotype_id")
-clone_file <- paste0(output_dir, "/true_clone_membership.tsv")
+clone_file <- paste0(output_dir, "/true_clone_membership","_sample_",s,".tsv")
 write.table (tmp, clone_file, sep="\t", row.names=FALSE, quote=FALSE)
 system(paste0("gzip --force ", clone_file))
 rm(tmp)
 
-# ================================
+}
+
 ##################
 ### Steps 2 and 3: generating the observed data for each cell (X_nm or X_nrl)
 ##################
@@ -392,57 +401,40 @@ error_prob <- as.double(unlist(strsplit(args$error_probability, split="_")))
 
 Rprof(tmp_prof <- tempfile(),memory.profiling=TRUE,line.profiling=TRUE)
 
-x_data_matrix <- t(sapply(Z,xobs.function,epsilon=error_prob,genotype_matrix=genotype_matrix))
+for (s in 1:args$num_samples){
 
-if (args$verbose) {
-    print ("The complete data matrix with errors and all observations: ")
-    print(x_data_matrix)
-}    
-if (args$saveall)
-    write_data_file (x_data_matrix, paste0(output_dir, "/data_complete", ".tsv"))
+cat(sapply(c("cell_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_complete","_sample_",s,".tsv"), sep="\t")
+cat("\n", file=paste0(output_dir, "/data_complete","_sample_",s,".tsv"), append=TRUE)
 
-# ================================
-###########
-### Step 4: Now adding missingness
-###########
+cat(sapply(c("cell_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_incomplete","_sample_",s,".tsv"), sep="\t")
+cat("\n", file=paste0(output_dir, "/data_incomplete","_sample_",s,".tsv"), append=TRUE)
 
-# if (is.null(args$read_size)){
-# 
-# print ("ADDING MISSINGNESS")
-# 
-# miss_indices <- sample(1:(args$num_cells*args$num_loci),size=rbinom(1,size=(args$num_cells*args$num_loci),prob=args$missing_probability), replace=F)
-# x_data_matrix[miss_indices] <- ""
-# #x_data_matrix[miss_indices] <- NA
-# #apply(x_data_matrix,1,function(x){sum(is.na(x))/args$num_loci})
-# 
-# if (args$verbose) {
-#   print ("Data with missing observations: ")
-#   print(x_data_matrix)
-# }    
-# 
-# write_data_file (x_data_matrix, paste0(output_dir, "/data_incomplete", ".tsv"))
-# 
-# if (args$verbose) {
-#   print ("The end")
-# } 
-# }
+mean_read_size = as.double(unlist(strsplit(args$read_size, split="_")))[1]
+sd_read_size = as.double(unlist(strsplit(args$read_size, split="_")))[2]
 
-#if (!is.null(args$read_size)){
- 
-  print("adding missingness on a per read basis") 
-  ## if args$read_size = 1_0 we are doing no read-based sampling, just as commented above
+for(n in 1:num_cells[s]){
   
-  mean_read_size = as.double(unlist(strsplit(args$read_size, split="_")))[1]
-  sd_read_size = as.double(unlist(strsplit(args$read_size, split="_")))[2]
+  if(args$verbose){
+  print(n)}
   
-  print(mean_read_size)
-  print(sd_read_size)
-
-  ideal_obs <- rbinom(1,size=(dim(x_data_matrix)[1]*dim(x_data_matrix)[2]),prob=(1-args$missing_probability))
+  cell_n <- xobs.function(z=Z[n,s],epsilon=error_prob,genotype_matrix=genotype_matrix)
   
-  obs_indices <- sample(1:(dim(x_data_matrix)[1]*dim(x_data_matrix)[2]),size=ideal_obs,replace=F)
+  ## saving complete data
+  write.table(t(as.matrix(c(n,cell_n))), paste0(output_dir, "/data_complete","_sample_",s,".tsv") , sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE) 
   
-  vect_data_new <- rep(NA,(dim(x_data_matrix)[1]*dim(x_data_matrix)[2]))
+  ## including missingness 
+  
+  #print(length(cell_n))
+  
+  ideal_obs <- rbinom(1,size=length(cell_n),prob=(1-args$missing_probability))
+  #print(ideal_obs)
+  
+  obs_indices <- sample(1:length(cell_n),size=ideal_obs,replace=F)
+  #print(obs_indices)
+  
+  vect_data_new <- rep(NA,length(cell_n))
+  
+  #print(vect_data_new)
   
   total_obs <- 0
   i <- 0
@@ -454,96 +446,104 @@ if (args$saveall)
   while ( total_obs < ideal_obs) {
     
     read_length <- round(rnorm(1,mean=mean_read_size,sd=sd_read_size))
-   
+    
     i <- i+1
     
+    #print(i)
+    
     if( (ideal_obs - total_obs) > read_length  ){
-    vect_data_new[(obs_indices[i]:(obs_indices[i]+(read_length-1)))] <- t(x_data_matrix)[(obs_indices[i]:(obs_indices[i]+ (read_length-1)))]
-    }else{
-      vect_data_new[(obs_indices[i]:(obs_indices[i]+ ((ideal_obs - total_obs)-1) ))] <- t(x_data_matrix)[(obs_indices[i]:(obs_indices[i]+  ((ideal_obs - total_obs)-1) ))]
-      
+      vect_data_new[(obs_indices[i]:(obs_indices[i]+(read_length-1)))] <- cell_n[(obs_indices[i]:(obs_indices[i]+ (read_length-1)))]
+      vect_data_new <- vect_data_new[1:length(cell_n)]
+      }else{
+      vect_data_new[(obs_indices[i]:(obs_indices[i]+ ((ideal_obs - total_obs)-1) ))] <- cell_n[(obs_indices[i]:(obs_indices[i]+  ((ideal_obs - total_obs)-1) ))]
+      vect_data_new <- vect_data_new[1:length(cell_n)]
     }
     
     total_obs <- sum(!is.na(vect_data_new))
-     
+    #print(vect_data_new)
   }
   
-  x_data_new <- matrix(vect_data_new[1:(dim(x_data_matrix)[1]*dim(x_data_matrix)[2])],nrow=dim(x_data_matrix)[1],ncol=dim(x_data_matrix)[2],byrow=TRUE)
-  
   if (args$verbose) {
-    print(sum(!is.na(x_data_new)))
-    print(ideal_obs)
-    print(sum(!is.na(x_data_new)) == ideal_obs )     
-  }  
+  print(sum(!is.na(vect_data_new)))
+  print(sum(!is.na(vect_data_new)) == ideal_obs )  
+  }
   
-  x_data_new[is.na(x_data_new)] <- ""
+  vect_data_new[is.na(vect_data_new)] <- ""
   
+  write.table(t(as.matrix(c(n,vect_data_new))), paste0(output_dir, "/data_incomplete","_sample_",s,".tsv") , sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE) 
   
-  if (args$verbose) {
-    print ("Data with missing observations: ")
-    print(x_data_new)
-  }    
-  
-  meth_file <- paste0(output_dir, "/data_incomplete", ".tsv")
-  write_data_file (x_data_new, meth_file)
-  
-  if (args$verbose) {
-    print ("The end")
-  } 
-   
-#}
+    
+}
+
+
+
+system(paste0("gzip --force ", paste0(output_dir, "/data_complete","_sample_",s,".tsv") ))
+system(paste0("gzip --force ", paste0(output_dir, "/data_incomplete","_sample_",s,".tsv") ))
+
+}
 
 print("SUMMARY Rprof for generating cells")
 
 Rprof()
 summaryRprof(tmp_prof,memory="both",lines="both")
 
-
 if( args$bulk_depth != 0 ){
   
+  print("GENERATING BULK DATA") 
+  
   Rprof(tmp_prof_bulk <- tempfile(),memory.profiling=TRUE,line.profiling=TRUE)
-  
-  print("Generating bulk methylation levels to be used as priors for Epiclomal") 
-  
-  Z <- sample(1:K,size=args$bulk_depth,prob=clone_prev,replace = TRUE) 
-  
-  x_data_bulk <- t(sapply(Z,xobs.function,epsilon=error_prob,genotype_matrix=genotype_matrix))
-  
-  meth_reads <- apply(x_data_bulk,2,function(x){sum(x==1)})
-  unmeth_reads <- args$bulk_depth - meth_reads
-  position <- 1:M
-  
-  bulk_data <- cbind(position,meth_reads,unmeth_reads)
-  if (args$verbose) {
-    print(bulk_data)
-  }
-  write.table(bulk_data, paste0(output_dir, "/bulk_data", ".tsv") , sep="\t", col.names=TRUE,row.names=FALSE, quote=FALSE, append=TRUE)    
-  system(paste0("gzip --force ",paste0(output_dir, "/bulk_data", ".tsv")))   
 
-  print("SUMMARY Rprof for bulk")
+  for(s in 1:args$num_samples){
+    
+    Z <- sample(1:K,size=args$bulk_depth,prob=clone_prev[((s*(K-1)+1) - (K-s)):(s*K)],replace = TRUE) 
+ 
+      for(n in 1:length(Z)){
+   
+      if(args$verbose){
+      print(n)}
+   
+      cell_n <- xobs.function(z=Z[n],epsilon=error_prob,genotype_matrix=genotype_matrix)
+   
+      ## saving complete data
+      write.table(t(as.matrix(cell_n)), paste0(output_dir, "/bulk_cell_data_complete","_sample_",s,".tsv"),sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE) 
+   
+      rm(cell_n)
+   
+     }
   
-  Rprof()
-  summaryRprof(tmp_prof_bulk,memory="both",lines="both")
+  rm(Z)
+  
+  system(paste0("gzip --force ", paste0(output_dir, "/bulk_cell_data_complete","_sample_",s,".tsv")))
+
+  }
+
+print("SUMMARY Rprof for bulk")
+
+Rprof()
+summaryRprof(tmp_prof_bulk,memory="both",lines="both")
 }
 
+#### Camila: need to modify visualization code so that it saves the plots according to file names
 
-
-
-#Rprof ( NULL ) ; print ( summaryRprof ( tf )  )
-
-
-if (args$plot_data == 1) {
-    print("PLOTTING GENERATED DATA")
-    visline <- paste0("--copy_number=0 --out_directory=", output_dir, 
-                    " --methylation_file=", paste0(meth_file,".gz"), 
-                    " --regions_file=", paste0(reg_file,".gz"), 
-                    " --true_clusters=1 --order_by_true=1 --name=data",
-                    " --true_clusters_file=", paste0(clone_file,".gz"),
-                    " --inferred_clusters_file=", paste0(clone_file,".gz"))
-    # TO DO: allow inferred_clusters_file to be NULL. For now just using true.       
-        
-    command <- paste0 ("Rscript ", args$visualization_software, " ", visline)
-    print(command)
-    system(command)
-}        
+# if (args$plot_data == 1) {
+# 
+#   print("PLOTTING GENERATED DATA")
+# 
+#     for(s in 1:args$num_samples){
+# 
+#     meth_file =  paste0(output_dir, "/data_incomplete","_sample_",s,".tsv")
+#     visline <- paste0("--copy_number=0 --out_directory=", output_dir, 
+#                     " --methylation_file=", paste0(meth_file,".gz"), 
+#                     " --regions_file=", paste0(reg_file,".gz"), 
+#                     " --true_clusters=1 --order_by_true=1 --name=data",
+#                     " --true_clusters_file=", paste0(clone_file,".gz"),
+#                     " --inferred_clusters_file=", paste0(clone_file,".gz"))
+#     # TO DO: allow inferred_clusters_file to be NULL. For now just using true.       
+#         
+#     command <- paste0 ("Rscript ", args$visualization_software, " ", visline)
+#     print(command)
+#     system(command)
+#     }
+# 
+#   }
         
