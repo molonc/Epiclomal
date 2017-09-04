@@ -447,16 +447,25 @@ cat("\n", file=paste0(output_dir, "/data_incomplete",".tsv"), append=TRUE)
     
     i <- i+1
     
-    if( (ideal_obs - total_obs) > read_length  ){
-      vect_data_new[(obs_indices[i]:(obs_indices[i]+(read_length-1)))] <- cell_n[(obs_indices[i]:(obs_indices[i]+ (read_length-1)))]
-      vect_data_new <- vect_data_new[1:length(cell_n)]
+    if( (ideal_obs - total_obs) > read_length){
+      
+      mid <- round(read_length/2)
+      
+      if((obs_indices[i] - mid) >= 1){
+        vect_data_new[(obs_indices[i] - mid):(obs_indices[i]+((read_length-mid)-1))] <- cell_n[(obs_indices[i] - mid):(obs_indices[i]+((read_length-mid)-1))]
       }else{
+        vect_data_new[((obs_indices[i] - mid)-(obs_indices[i] - mid)+1):((obs_indices[i])+((read_length-mid)-1))] <- cell_n[((obs_indices[i] - mid)-(obs_indices[i] - mid)+1):((obs_indices[i])+((read_length-mid)-1))]
+      } 
+      
+      vect_data_new <- vect_data_new[1:length(cell_n)]
+      
+    }else{
       vect_data_new[(obs_indices[i]:(obs_indices[i]+ ((ideal_obs - total_obs)-1) ))] <- cell_n[(obs_indices[i]:(obs_indices[i]+  ((ideal_obs - total_obs)-1) ))]
       vect_data_new <- vect_data_new[1:length(cell_n)]
     }
     
     total_obs <- sum(!is.na(vect_data_new))
-  
+    
   }
   
   # if (args$verbose) {
