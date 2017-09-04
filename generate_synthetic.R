@@ -387,6 +387,8 @@ rm(tmp)
 ### so far we can only accommodate S=2 states 
 
 error_prob <- as.double(unlist(strsplit(args$error_probability, split="_")))
+
+Rprof(tmp_prof <- tempfile())
 x_data_matrix <- t(sapply(Z,xobs.function,epsilon=error_prob,genotype_matrix=genotype_matrix))
 
 if (args$verbose) {
@@ -395,26 +397,6 @@ if (args$verbose) {
 }    
 if (args$saveall)
     write_data_file (x_data_matrix, paste0(output_dir, "/data_complete", ".tsv"))
-
-if( args$bulk_depth != 0 ){
- print("Generating bulk methylation levels to be used as priors for Epiclomal") 
-  
-  Z <- sample(1:K,size=args$bulk_depth,prob=clone_prev,replace = TRUE) 
-  
-  x_data_bulk <- t(sapply(Z,xobs.function,epsilon=error_prob,genotype_matrix=genotype_matrix))
-  
-  meth_reads <- apply(x_data_bulk,2,function(x){sum(x==1)})
-  unmeth_reads <- args$bulk_depth - meth_reads
-  position <- 1:M
-  
-  bulk_data <- cbind(position,meth_reads,unmeth_reads)
-  if (args$verbose) {
-    print(bulk_data)
-  }
-  write.table(bulk_data, paste0(output_dir, "/bulk_data", ".tsv") , sep="\t", col.names=TRUE,row.names=FALSE, quote=FALSE, append=TRUE)    
-  system(paste0("gzip --force ",paste0(output_dir, "/bulk_data", ".tsv")))   
-  }
-
 
 # ================================
 ###########
@@ -507,6 +489,40 @@ if( args$bulk_depth != 0 ){
   } 
    
 #}
+
+Rprof()
+summaryRprof(tmp_prof)
+
+
+
+
+if( args$bulk_depth != 0 ){
+  
+  Rprof(tmp_prof_bulk <- tempfile(),memory.profiling=TRUE,line.profiling=TRUE)
+  
+  print("Generating bulk methylation levels to be used as priors for Epiclomal") 
+  
+  Z <- sample(1:K,size=args$bulk_depth,prob=clone_prev,replace = TRUE) 
+  
+  x_data_bulk <- t(sapply(Z,xobs.function,epsilon=error_prob,genotype_matrix=genotype_matrix))
+  
+  meth_reads <- apply(x_data_bulk,2,function(x){sum(x==1)})
+  unmeth_reads <- args$bulk_depth - meth_reads
+  position <- 1:M
+  
+  bulk_data <- cbind(position,meth_reads,unmeth_reads)
+  if (args$verbose) {
+    print(bulk_data)
+  }
+  write.table(bulk_data, paste0(output_dir, "/bulk_data", ".tsv") , sep="\t", col.names=TRUE,row.names=FALSE, quote=FALSE, append=TRUE)    
+  system(paste0("gzip --force ",paste0(output_dir, "/bulk_data", ".tsv")))   
+
+  Rprof()
+  summaryRprof(tmp_prof_bulk,memory="both",lines="show")
+
+}
+
+
 
 
 #Rprof ( NULL ) ; print ( summaryRprof ( tf )  )
