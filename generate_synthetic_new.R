@@ -387,7 +387,7 @@ cat("\n", file=paste0(output_dir, "/data_incomplete", ".tsv"), append=TRUE)
 mean_read_size = as.double(unlist(strsplit(args$read_size, split="_")))[1]
 sd_read_size = as.double(unlist(strsplit(args$read_size, split="_")))[2]
 
-Rprof(tmp_prof <- tempfile(),memory.profiling=TRUE,line.profiling=TRUE)
+#Rprof(tmp_prof <- tempfile(),memory.profiling=TRUE,line.profiling=TRUE)
 
 for(n in 1:length(Z)){
   
@@ -455,14 +455,14 @@ for(n in 1:length(Z)){
 system(paste0("gzip --force ", paste0(output_dir, "/data_complete", ".tsv")))
 system(paste0("gzip --force ", paste0(output_dir, "/data_incomplete", ".tsv")))
 
-print("SUMMARY Rprof for generating cells")
+#print("SUMMARY Rprof for generating cells")
 
-Rprof()
-summaryRprof(tmp_prof,memory="both",lines="both")
+#Rprof()
+#summaryRprof(tmp_prof,memory="both",lines="both")
 
 if( args$bulk_depth != 0 ){
   
-Rprof(tmp_prof_bulk <- tempfile(),memory.profiling=TRUE,line.profiling=TRUE)
+#Rprof(tmp_prof_bulk <- tempfile(),memory.profiling=TRUE,line.profiling=TRUE)
   
 print("GENERATING BULK DATA") 
   
@@ -484,9 +484,9 @@ print("GENERATING BULK DATA")
   
 system(paste0("gzip --force ", paste0(output_dir, "/bulk_cell_data_complete", ".tsv")))
 
-print("SUMMARY Rprof for bulk")
+#print("SUMMARY Rprof for bulk")
 
-Rprof()
+#Rprof()
 summaryRprof(tmp_prof_bulk,memory="both",lines="both")
 
 } 
