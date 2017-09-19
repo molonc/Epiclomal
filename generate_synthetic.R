@@ -373,7 +373,8 @@ cell_id_sample_id <- paste0(cell_id,"_",sample_id)
 #print(cell_id_sample_id)
 
 tmp <- cbind(cell_id_sample_id,Z)  
-colnames(tmp) <- c("cell_id_sample_id","epigenotype_id")
+colnames(tmp) <- c("cell_id","epigenotype_id")
+#colnames(tmp) <- c("cell_id_sample_id","epigenotype_id")
 clone_file <- paste0(output_dir, "/true_clone_membership",".tsv")
 write.table (tmp, clone_file, sep="\t", row.names=FALSE, quote=FALSE)
 system(paste0("gzip --force ", clone_file))
@@ -408,10 +409,12 @@ sd_read_size = as.double(unlist(strsplit(args$read_size, split="_")))[2]
 
 #Rprof(tmp_prof <- tempfile(),line.profiling=TRUE)
 
-cat(sapply(c("cell_id_sample_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_complete",".tsv"), sep="\t")
+cat(sapply(c("cell_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_complete",".tsv"), sep="\t")
+# cat(sapply(c("cell_id_sample_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_complete",".tsv"), sep="\t")
 cat("\n", file=paste0(output_dir, "/data_complete",".tsv"), append=TRUE)
 
-cat(sapply(c("cell_id_sample_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_incomplete",".tsv"), sep="\t")
+cat(sapply(c("cell_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_incomplete",".tsv"), sep="\t")
+#cat(sapply(c("cell_id_sample_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_incomplete",".tsv"), sep="\t")
 cat("\n", file=paste0(output_dir, "/data_incomplete",".tsv"), append=TRUE)
 
   for (n in 1:length(cell_id_sample_id)){
