@@ -280,39 +280,41 @@ if (M > 250) {
   
   if (R > 1){
     
-    print("plotting CpG based methylation data")
-    if(args$true_clusters == 1 && args$order_by_true == 1){
-      tmp <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
-    } else if (!is.null(args$inferred_clusters_file)) {
-      tmp <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
-    }
+    if (M < 10000) {
+        print("plotting CpG based methylation data")
+        if(args$true_clusters == 1 && args$order_by_true == 1){
+          tmp <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
+        } else if (!is.null(args$inferred_clusters_file)) {
+          tmp <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
+        }
+        
+        ## in case we want to force some colors to be the same
+        #colnames(annotation_row) <- "inferred_clusters"
+        #annotation_row$inferred_clusters <- paste0("cl", annotation_row$inferred_clusters)
+        #ann_colors = list(
+        #inferred_clusters = c(cl0="blue", cl3="green",cl4="pink"))
+        
+        ## including the cell posterior probabilities in shades of grey
+        #colnames(annotation_row) <- "inferred_clusters"
+        #annotation_row$posterior <- paste0("post_", annotation_row$posterior) ### still need to make this more general
+        #ann_colors = list(posterior = c(post_100="#111111", post_95="#333333",post_70="#666666", post_50="#777777", post_33="#888888", post_25="#999999" ))       
     
-    ## in case we want to force some colors to be the same
-    #colnames(annotation_row) <- "inferred_clusters"
-    #annotation_row$inferred_clusters <- paste0("cl", annotation_row$inferred_clusters)
-    #ann_colors = list(
-    #inferred_clusters = c(cl0="blue", cl3="green",cl4="pink"))
-    
-    ## including the cell posterior probabilities in shades of grey
-    #colnames(annotation_row) <- "inferred_clusters"
-    #annotation_row$posterior <- paste0("post_", annotation_row$posterior) ### still need to make this more general
-    #ann_colors = list(posterior = c(post_100="#111111", post_95="#333333",post_70="#666666", post_50="#777777", post_33="#888888", post_25="#999999" ))
-    
-    pheatmap(tmp,cluster_cols=FALSE, annotation_row = annotation_row,
-             cluster_rows = FALSE,
-             #cellwidth = 5, cellheight = 5,
-             fontsize = 8, main = paste0("CpG based methylation data for ", args$name),
-             gaps_row = index_gaps,fontsize_row=8,fontsize_col=4,
-             annotation_names_row = FALSE,
-             #annotation_colors = ann_colors,
-             #annotation_names_col= TRUE,
-             show_colnames=FALSE,
-             #annotation_col=annotation_col,
-             annotation_legend = TRUE,
-             #legend_breaks = c(0,1),legend_labels = c("unmeth","meth"),
-             filename = paste0(out_dir,"/",args$name,"_CpG_based_PLOT.pdf"))          
-             
-    rm(tmp)
+        pheatmap(tmp,cluster_cols=FALSE, annotation_row = annotation_row,
+                 cluster_rows = FALSE,
+                 #cellwidth = 5, cellheight = 5,
+                 fontsize = 8, main = paste0("CpG based methylation data for ", args$name),
+                 gaps_row = index_gaps,fontsize_row=8,fontsize_col=4,
+                 annotation_names_row = FALSE,
+                 #annotation_colors = ann_colors,
+                 #annotation_names_col= TRUE,
+                 show_colnames=FALSE,
+                 #annotation_col=annotation_col,
+                 annotation_legend = TRUE,
+                 #legend_breaks = c(0,1),legend_labels = c("unmeth","meth"),
+                 filename = paste0(out_dir,"/",args$name,"_CpG_based_PLOT.pdf"))          
+                 
+        rm(tmp)
+    }         
     
     print("plotting region based mean methylation data")
     
