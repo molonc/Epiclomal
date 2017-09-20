@@ -435,7 +435,7 @@ cat("\n", file=paste0(output_dir, "/data_incomplete",".tsv"), append=TRUE)
       unif_range <- as.double(unlist(strsplit(args$missing_probability, split="_")))
       miss_prob <- round(runif(1,min=unif_range[1],max=unif_range[2]),2)
       }else{
-      miss_prob <- args$missing_probability
+      miss_prob <- as.numeric(args$missing_probability)
       }
     
     ideal_obs <- rbinom(1,size=length(cell_n),prob=(1-miss_prob))
