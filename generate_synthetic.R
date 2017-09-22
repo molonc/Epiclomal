@@ -52,6 +52,10 @@ parser$add_argument("--visualization_software", type="character", default=NULL, 
 parser$add_argument("--bulk_depth", type="integer", default=60, help="Number of cells that will be used to generate bulk methylation levels. If zero no bulk data will be saved.")
 
 
+### arguments to generate following a phylogenetic tree
+
+parser$add_argument("--prop_cpg_flip", type="double", default=1, help="proportion of CpGs to be flipped inside a region")  
+
 # writes: 6 files 
 # 1: all input parameters 
 # 2. region coordinates 
@@ -204,6 +208,23 @@ flip <- function (vector, positions_to_flip) {
     return (c(vector))        
 }
 
+parent_child_flip <- function(parent,region_coord,region_flip,prop_flip){
+  ### flipping only a region at a time
+  ##for(i in 1:length(region_flip)){
+    if(prop_flip == 1){
+      pos_flip <- region_coord[region_flip,1]:region_coord[region_flip,2]
+      child <- flip(vector = parent, positions_to_flip = pos_flip)
+    }
+  
+    if(prop_flip != 1){
+      pos_flip <- sort(sample(region_coord[region_flip,1]:region_coord[region_flip,2],size=rbinom(1,size=(region_coord[region_flip,2]-region_coord[region_flip,1]),prob=prop_flip)))
+      child <- flip(vector = parent, positions_to_flip = pos_flip)  
+    }
+    
+  ##}
+  return(child)
+}
+
 #function that generates the observed data for each cell
 xobs.function <- function(z,epsilon,genotype_matrix){
     g <- genotype_matrix[z,] ### that's Step 2 - assigning the cell a true genotype 
@@ -289,8 +310,15 @@ print ("GENERATING EPIGENOTYPES")
 
 R <- args$num_regions
 K <- args$num_clones
+
+#print(region_sizes)
+#print(reg_coord + 1)
+
 genotype_matrix <- NULL
+
 for(k in 1:K){
+  
+  print(k)
   
   if(k==1){
     g_k <- as.vector(unlist(sapply(1:R,genotype_reg,region_sizes=region_sizes,mu_k=mu_array[,,k]))) ### the S element of mu_array[,r,k] is the probability of sucess
@@ -299,31 +327,80 @@ for(k in 1:K){
      #     print ("First clone of epigenotype matrix")
      #    print (genotype_matrix) }
     
-    }else{
-    g_k <- as.vector(unlist(sapply(1:R,genotype_reg,region_sizes=region_sizes,mu_k=mu_array[,,k])))
-      while (sum(duplicated(rbind(genotype_matrix,g_k))==TRUE) != 0) { ### making sure there all genotype vectors are different from each other
-          #if (args$verbose) {
-          #  print ("Clone is already there, regenerate")
-          #}
-          #c <- c+1
-          g_k <- as.vector(unlist(sapply(1:R,genotype_reg,region_sizes=region_sizes,mu_k=mu_array[,,k])))
-         }
+  }
+  
+  if(k==2){
+    
+    region_flip <- sort(sample(1:R,1)) ### selection one region to flip per lineage
+    if (args$verbose)   {          
+    print("region to flip")
+    print(region_flip)
+    }
+    
+    g_k <- parent_child_flip(parent=genotype_matrix[k-1,],region_coord=(reg_coord+1),region_flip = region_flip,prop_flip=args$prop_cpg_flip)
     genotype_matrix <- rbind(genotype_matrix,g_k)
-        }
+    
+  }
+  
+  if(k > 2){
+   
+    ## picking a parent epigenotype
+    
+    parent_k <- sample(1:(k-1),size=1)
+             if (args$verbose)   {          
+             print("parent epigenotype")
+             print(parent_k)
+             }
+    
+    region_flip <- sort(sample(1:R,1))
+    
+      if (args$verbose){          
+      print("region to flip")
+      print(region_flip)
+      }
+    
+    g_k <- parent_child_flip(parent=genotype_matrix[parent_k,],region_coord=(reg_coord+1),region_flip = region_flip,prop_flip=args$prop_cpg_flip)
+    
+    while (sum(duplicated(rbind(genotype_matrix,g_k))==TRUE) != 0) { ### making sure there all genotype vectors are different from each other
+    
+      if (args$verbose) {
+      print ("Clone is already there, regenerate")
+      }
+    
+      parent_k <- sample(1:(k-1),size=1)
+      if (args$verbose)   {          
+        print("parent epigenotype")
+        print(parent_k)
+      }
+      
+      region_flip <- sort(sample(1:R,1))
+      
+      if (args$verbose){          
+        print("region to flip")
+        print(region_flip)
+      }
+    
+    g_k <- parent_child_flip(parent=genotype_matrix[parent_k,],region_coord=(reg_coord+1),region_flip = region_flip,prop_flip=args$prop_cpg_flip)
+    
+    }
+  
+    genotype_matrix <- rbind(genotype_matrix,g_k)
+  
+  }
+  
 }
 
-#final <- proc.time() - ptm
- if (args$verbose) {
-     print ("Final epigenotype matrix: ")
-     print (genotype_matrix)
- }  
+if (args$verbose) {
+  print ("Final epigenotype matrix: ")
+  print (genotype_matrix)
+}
 
+print(genotype_matrix)
 
 # NOW write the matrix with each clone genotype into a file
 # ========================================
 geno_file <- paste0(output_dir, "/true_clone_epigenotypes.tsv")
 write_data_file(genotype_matrix, geno_file)
-
 
 # Now generate the cells
 # =============================
@@ -334,7 +411,6 @@ print ("GENERATING CELLS")
 ### Step 2: assign to each cell to its true genotype from the genotype_matrix according to the value of Z
 ### Step 3: add error to the true genotype generating the observed data for each cell
 ### Step 4: remove some observations from each cell to allow for missing data
-
 
 ###########
 ### Step 1: generating the clone membership of each cell, that is, the Z_i's 
@@ -373,8 +449,7 @@ cell_id_sample_id <- paste0(cell_id,"_",sample_id)
 #print(cell_id_sample_id)
 
 tmp <- cbind(cell_id_sample_id,Z)  
-colnames(tmp) <- c("cell_id","epigenotype_id")
-#colnames(tmp) <- c("cell_id_sample_id","epigenotype_id")
+colnames(tmp) <- c("cell_id_sample_id","epigenotype_id")
 clone_file <- paste0(output_dir, "/true_clone_membership",".tsv")
 write.table (tmp, clone_file, sep="\t", row.names=FALSE, quote=FALSE)
 system(paste0("gzip --force ", clone_file))
@@ -409,12 +484,10 @@ sd_read_size = as.double(unlist(strsplit(args$read_size, split="_")))[2]
 
 #Rprof(tmp_prof <- tempfile(),line.profiling=TRUE)
 
-cat(sapply(c("cell_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_complete",".tsv"), sep="\t")
-# cat(sapply(c("cell_id_sample_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_complete",".tsv"), sep="\t")
+cat(sapply(c("cell_id_sample_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_complete",".tsv"), sep="\t")
 cat("\n", file=paste0(output_dir, "/data_complete",".tsv"), append=TRUE)
 
-cat(sapply(c("cell_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_incomplete",".tsv"), sep="\t")
-#cat(sapply(c("cell_id_sample_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_incomplete",".tsv"), sep="\t")
+cat(sapply(c("cell_id_sample_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_incomplete",".tsv"), sep="\t")
 cat("\n", file=paste0(output_dir, "/data_incomplete",".tsv"), append=TRUE)
 
   for (n in 1:length(cell_id_sample_id)){
@@ -525,11 +598,12 @@ if( args$bulk_depth != 0 ){
 
   }
 
- ## print("SUMMARY Rprof for bulk")
- ## Rprof()
- ## print(summaryRprof(tmp_prof_bulk,lines="both"))
-
-  }
+  
+  
+  ## print("SUMMARY Rprof for bulk")
+  ## Rprof()
+  ## print(summaryRprof(tmp_prof_bulk,lines="both"))
+}
 
 
 if (args$plot_data == 1) {
