@@ -500,7 +500,7 @@ if( args$bulk_depth != 0 ){
   
   print("GENERATING BULK DATA") 
   
-  Rprof(tmp_prof_bulk <- tempfile(),line.profiling=TRUE)
+  ## Rprof(tmp_prof_bulk <- tempfile(),line.profiling=TRUE)
 
   for(s in 1:args$num_samples){
     
@@ -525,10 +525,11 @@ if( args$bulk_depth != 0 ){
 
   }
 
-  print("SUMMARY Rprof for bulk")
-  Rprof()
-  print(summaryRprof(tmp_prof_bulk,lines="both"))
-}
+ ## print("SUMMARY Rprof for bulk")
+ ## Rprof()
+ ## print(summaryRprof(tmp_prof_bulk,lines="both"))
+
+  }
 
 
 if (args$plot_data == 1) {
