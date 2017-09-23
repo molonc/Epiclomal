@@ -331,11 +331,9 @@ for(k in 1:K){
   
   if(k==2){
     
-    region_flip <- sort(sample(1:R,1)) ### selection one region to flip per lineage
-    if (args$verbose)   {          
+    region_flip <- sort(sample(1:R,1)) ### selection one region to flip per lineage      
     print("region to flip")
     print(region_flip)
-    }
     
     g_k <- parent_child_flip(parent=genotype_matrix[k-1,],region_coord=(reg_coord+1),region_flip = region_flip,prop_flip=args$prop_cpg_flip)
     genotype_matrix <- rbind(genotype_matrix,g_k)
@@ -346,18 +344,13 @@ for(k in 1:K){
    
     ## picking a parent epigenotype
     
-    parent_k <- sample(1:(k-1),size=1)
-             if (args$verbose)   {          
-             print("parent epigenotype")
-             print(parent_k)
-             }
+    parent_k <- sample(1:(k-1),size=1)       
+    print("parent epigenotype")
+    print(parent_k)
     
-    region_flip <- sort(sample(1:R,1))
-    
-      if (args$verbose){          
-      print("region to flip")
-      print(region_flip)
-      }
+    region_flip <- sort(sample(1:R,1))       
+    print("region to flip")
+    print(region_flip)
     
     g_k <- parent_child_flip(parent=genotype_matrix[parent_k,],region_coord=(reg_coord+1),region_flip = region_flip,prop_flip=args$prop_cpg_flip)
     
@@ -395,7 +388,7 @@ if (args$verbose) {
   print (genotype_matrix)
 }
 
-print(genotype_matrix)
+# print(genotype_matrix)
 
 # NOW write the matrix with each clone genotype into a file
 # ========================================
@@ -449,7 +442,7 @@ cell_id_sample_id <- paste0(cell_id,"_",sample_id)
 #print(cell_id_sample_id)
 
 tmp <- cbind(cell_id_sample_id,Z)  
-colnames(tmp) <- c("cell_id_sample_id","epigenotype_id")
+colnames(tmp) <- c("cell_id","epigenotype_id")
 clone_file <- paste0(output_dir, "/true_clone_membership",".tsv")
 write.table (tmp, clone_file, sep="\t", row.names=FALSE, quote=FALSE)
 system(paste0("gzip --force ", clone_file))
@@ -484,10 +477,12 @@ sd_read_size = as.double(unlist(strsplit(args$read_size, split="_")))[2]
 
 #Rprof(tmp_prof <- tempfile(),line.profiling=TRUE)
 
-cat(sapply(c("cell_id_sample_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_complete",".tsv"), sep="\t")
-cat("\n", file=paste0(output_dir, "/data_complete",".tsv"), append=TRUE)
+if (args$saveall) {
+    cat(sapply(c("cell_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_complete",".tsv"), sep="\t")
+    cat("\n", file=paste0(output_dir, "/data_complete",".tsv"), append=TRUE)
+}
 
-cat(sapply(c("cell_id_sample_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_incomplete",".tsv"), sep="\t")
+cat(sapply(c("cell_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_incomplete",".tsv"), sep="\t")
 cat("\n", file=paste0(output_dir, "/data_incomplete",".tsv"), append=TRUE)
 
   for (n in 1:length(cell_id_sample_id)){
@@ -498,7 +493,9 @@ cat("\n", file=paste0(output_dir, "/data_incomplete",".tsv"), append=TRUE)
     ## saving complete data ##
     ##########################
     
-    write.table(t(as.matrix(c(cell_id_sample_id[n],cell_n))), paste0(output_dir, "/data_complete",".tsv") , sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE) 
+    if (args$saveall) {
+        write.table(t(as.matrix(c(cell_id_sample_id[n],cell_n))), paste0(output_dir, "/data_complete",".tsv") , sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE) 
+    }
     
     ###########################
     ## including missingness ##
@@ -562,7 +559,10 @@ cat("\n", file=paste0(output_dir, "/data_incomplete",".tsv"), append=TRUE)
     
   }
 
-system(paste0("gzip --force ", paste0(output_dir, "/data_complete",".tsv")))
+if (args$saveall) {
+    system(paste0("gzip --force ", paste0(output_dir, "/data_complete",".tsv")))
+}    
+    
 system(paste0("gzip --force ", paste0(output_dir, "/data_incomplete",".tsv") ))
 
 #print("SUMMARY Rprof for generating cells")
