@@ -31,6 +31,8 @@ parser$add_argument("--true_clusters_file", type="character", help="Path to true
 parser$add_argument("--order_by_true", type="integer", default=1, help="If 1, rows are ordered by the true clustering if given, else by the predicted")
 parser$add_argument("--name", type="character", help="A name for the final plot")
 
+parser$add_argument("--regions_to_plot", type="character", help="A file with which regions to plot, for example the flipped_regions.tsv file from the generator.")
+
 args <- parser$parse_args() 
 
 print(args)
@@ -341,26 +343,39 @@ if (M > 250) {
     #=============================
     ### plotting CpG data from a subset of regions
     #=============================
-    plot_subset <- 0
-    if(plot_subset == 1){
-      set.seed(14)
-      input_regions <- input_regions[sort(sample(R,size=3)),] 
-      input_CpG_data <- input_CpG_data[,c(input_regions[1,1]:input_regions[1,2],input_regions[2,1]:input_regions[2,2],input_regions[3,1]:input_regions[3,2])]
+    
+    # MA: transforming the plotting below into plotting the different regions
+    # plot_subset <- 0
+    # if(plot_subset == 1){    
+    #   set.seed(14)
+    #   input_regions <- input_regions[sort(sample(R,size=3)),] 
+    
+    if(file.exists(args$regions_to_plot))  {
       
-      R <- dim(input_regions)[1] ## number of regions
-      M <- dim(input_CpG_data)[2] ## number of loci
+      regions_for_plot <- scan (file=args$regions_to_plot,what=integer())
+      print ("Plotting CpGs for regions")
+      print (regions_for_plot)
+      input_regions <- input_regions[sort(regions_for_plot),] 
+      print (input_regions)
+      R <- length(regions_for_plot) ## number of regions
+      diff_CpG_data <- NULL
+      for (r in 1:R)  {
+          diff_CpG_data <- cbind(diff_CpG_data, input_CpG_data[,c(input_regions[r,1]:input_regions[r,2])])
+      }
+
+      M <- dim(diff_CpG_data)[2] ## number of loci
       
       reg_id <- unlist(sapply(1:R,function(x){rep(x,(input_regions[x,2]-input_regions[x,1])+1)}))
-      annotation_col <- as.matrix(reg_id,nrow=length(colnames(input_CpG_data)))
-      rownames(annotation_col) <- colnames(input_CpG_data)
+      annotation_col <- as.matrix(reg_id,nrow=length(colnames(diff_CpG_data)))
+      rownames(annotation_col) <- colnames(diff_CpG_data)
       annotation_col <- as.data.frame(annotation_col)
       colnames(annotation_col) <- "regions"
       annotation_col$regions <- as.factor(annotation_col$regions)
       
       if(args$true_clusters == 1 && args$order_by_true == 1){
-        tmp <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
+        tmp <- diff_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
       } else if (!is.null(args$inferred_clusters_file)) {
-        tmp <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
+        tmp <- diff_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
       }
                
       pheatmap(tmp,cluster_rows = FALSE,cluster_cols=FALSE, 
@@ -372,7 +387,7 @@ if (M > 250) {
                show_colnames=FALSE,
                annotation_col=annotation_col,
                gaps_col =  (which(!duplicated(reg_id) == TRUE)[-1]-1),
-               filename = paste0(out_dir,"/",args$name,"_subset_of_regions_CpG_based_PLOT.png"))
+               filename = paste0(out_dir,"/",args$name,"_flipped_regions_CpG_based_PLOT.pdf"))
                #filename = paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_subset_of_regions_CpG_based_PLOT.png"))               
       rm(tmp)
       

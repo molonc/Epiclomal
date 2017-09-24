@@ -315,6 +315,7 @@ K <- args$num_clones
 #print(reg_coord + 1)
 
 genotype_matrix <- NULL
+flipped_regions <- NULL
 
 for(k in 1:K){
   
@@ -334,6 +335,7 @@ for(k in 1:K){
     region_flip <- sort(sample(1:R,1)) ### selection one region to flip per lineage      
     print("region to flip")
     print(region_flip)
+    flipped_regions <- region_flip
     
     g_k <- parent_child_flip(parent=genotype_matrix[k-1,],region_coord=(reg_coord+1),region_flip = region_flip,prop_flip=args$prop_cpg_flip)
     genotype_matrix <- rbind(genotype_matrix,g_k)
@@ -356,26 +358,22 @@ for(k in 1:K){
     
     while (sum(duplicated(rbind(genotype_matrix,g_k))==TRUE) != 0) { ### making sure there all genotype vectors are different from each other
     
-      if (args$verbose) {
       print ("Clone is already there, regenerate")
-      }
     
-      parent_k <- sample(1:(k-1),size=1)
-      if (args$verbose)   {          
-        print("parent epigenotype")
-        print(parent_k)
-      }
+      parent_k <- sample(1:(k-1),size=1)       
+      print("parent epigenotype")
+      print(parent_k)
       
       region_flip <- sort(sample(1:R,1))
-      
-      if (args$verbose){          
-        print("region to flip")
-        print(region_flip)
-      }
+         
+      print("region to flip")
+      print(region_flip)
     
-    g_k <- parent_child_flip(parent=genotype_matrix[parent_k,],region_coord=(reg_coord+1),region_flip = region_flip,prop_flip=args$prop_cpg_flip)
+      g_k <- parent_child_flip(parent=genotype_matrix[parent_k,],region_coord=(reg_coord+1),region_flip = region_flip,prop_flip=args$prop_cpg_flip)
     
     }
+    # here region_flip is surely accepted as unique
+    flipped_regions <- c(flipped_regions, region_flip)    
   
     genotype_matrix <- rbind(genotype_matrix,g_k)
   
@@ -383,7 +381,13 @@ for(k in 1:K){
   
 }
 
-if (args$verbose) {
+print ("All the flipped regions are")
+print (flipped_regions)
+# Write the flipped regions to a file
+write (flipped_regions, file=paste0(output_dir, "/flipped_regions.tsv"))
+
+
+if (args$verbose) {  
   print ("Final epigenotype matrix: ")
   print (genotype_matrix)
 }
@@ -437,7 +441,9 @@ for (s in 1:args$num_samples){
   cell_id <- c(cell_id, seq(from=1,to=num_cells[s],by=1))  
 }
 
-cell_id_sample_id <- paste0(cell_id,"_",sample_id)
+# MA 23 Sep 2017: for now I am removing _sample_id from the final cell ID because epiclomal doesn't know how to deal with that yet. I will add it later when I add samples in epiclomal.
+#cell_id_sample_id <- paste0(cell_id,"_",sample_id)
+cell_id_sample_id <- cell_id
 
 #print(cell_id_sample_id)
 
@@ -616,7 +622,8 @@ if (args$plot_data == 1) {
                     " --regions_file=", paste0(reg_file,".gz"), 
                     " --true_clusters=1 --order_by_true=1 --name=data",
                     " --true_clusters_file=", paste0(clone_file,".gz"),
-                    " --inferred_clusters_file=", paste0(clone_file,".gz"))
+                    " --inferred_clusters_file=", paste0(clone_file,".gz"),
+                    " --regions_to_plot=", paste0(output_dir, "/flipped_regions.tsv"))
     # TO DO: allow inferred_clusters_file to be NULL. For now just using true.       
         
     command <- paste0 ("Rscript ", args$visualization_software, " ", visline)
