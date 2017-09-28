@@ -35,16 +35,15 @@ parser$add_argument("--error_probability", type="character", default="0.01_0.01"
 parser$add_argument("--missing_probability", type="character", default=0.1, help="Missing data probability, it could be one probability for all cells or different ones")
 
 ### Genotype probabilities: p(G_krl = s) = mu_krs
-parser$add_argument("--genotype_prob", type="character", default="random", help="Random or nonrandom indicating if the genotype probabilities are generated randomly from a Dirichlet distribution") 
+parser$add_argument("--genotype_prob", type="character", default="dirichlet_fixed", help="dirichlet_fixed (genotype probabilities are fixed by a seed to draws from a dirichlet distribution) or 0.5_fixed (all genotype probabilities fixed to 0.5)") 
 ### Generate them using a Dirichlet distribution
-parser$add_argument("--dirichlet_param_genotype_prob", type="character", default="1_1" , help="Dirichlet parameters to generate the genotype probabilities for each region r and clone k") 
+parser$add_argument("--dirichlet_param_genotype_prob", type="character", default="1_1" , help="Dirichlet parameters to draw fixed genotype probabilities for each region r and clone k") 
 
 parser$add_argument("--num_regions", type="double", default=5, help="Number of regions")  
-parser$add_argument("--region_size_type", type="character", default="multinomial_equal", help="uniform, multinomial_equal or multinomial_nonequal (currently this has hard-coded probabilities)")
+parser$add_argument("--region_size_type", type="character", default="multinomial_equal", help="uniform, multinomial_equal or multinomial_nonequal. Fixed generated from uniform (from 1 to nloci), multinomial_equal (with prob 1/nregions) or multinomial_nonequal (currently this has hard-coded probabilities)")
 
 parser$add_argument("--output_dir", type="character", default="output", help="Entire or just the beginning of the output directory file ")
 parser$add_argument("--given_dir_complete", type="integer", default=0, help="If this is 0, it creates a long output dir name with the input parameters, if it's 1, the output dir is output_dir ")
-
 
 parser$add_argument("--plot_data", type="character", default=0, help="If this is 1, use the visualization software to plot the data")
 parser$add_argument("--visualization_software", type="character", default=NULL, help="Use this visualization software to plot the data if requested")
@@ -53,8 +52,14 @@ parser$add_argument("--bulk_depth", type="integer", default=60, help="Number of 
 
 
 ### arguments to generate following a phylogenetic tree
+# TODO's for Camila
+# TO PUT BACK the non-phylo
+# To ADD fixing of the tree
+parser$add_argument("--phylogenetic_generation", type="integer", default=0, help="1 or 0. If this is 1, use phylogenetic tree to generate the clones, if this is 0, the clones are independent.")
 
 parser$add_argument("--prop_cpg_flip", type="double", default=1, help="proportion of CpGs to be flipped inside a region")  
+
+parser$add_argument("--fixing_seed", default=2, help="The seed to be used for fixing region sizes, genotype probabilities and phylogenetic tree.")  
 
 # writes: 6 files 
 # 1: all input parameters 
@@ -64,7 +69,7 @@ parser$add_argument("--prop_cpg_flip", type="double", default=1, help="proportio
 # 5: complete data ( all X's already with error)
 # 6: incomplete data (data with some X's missing)
 
-parser$add_argument("--seed", help="You can set the seed for reproducibility")  
+parser$add_argument("--seed", help="The variability seed. You can set the seed for reproducibility")  
 parser$add_argument("--verbose", type="integer", default=1, help="Set to 1 if you want details of the data generation")  
 parser$add_argument("--saveall", type="integer", default=1, help="Set to 1 if you want the save all the data (with errors but without missing observations)")  
 
@@ -79,7 +84,9 @@ print(args)
 # these parameters should be the same for all simulated data sets
 # therefore, we need to set another seed here for them and keep that the same across all simulated data sets from a particular scenario
 
-set.seed(2) 
+
+# Setting a seed to get fixed genotype probabilities and fixed region sizes
+set.seed(args$fixing_seed) 
 
 S = 2 # number of states, we will consider only two for now in all simulations
 
@@ -136,7 +143,7 @@ if (args$num_regions > 1) {
             for(r in 1:args$num_regions){
                 reg_coord <- rbind(reg_coord,c(breaks_unif[r]+1,breaks_unif[r+1])) 
             }
-    } else if(args$region_size_type=="multinomial_nonequal") {
+    } else if(args$region_size_type=="multinomial_nonequal") {  # NOT USED
             #print("nonuniform")
             p_reg <- rep(c(0.1,0.2,0.5,0.1,0.1),args$num_regions/5)
             region_sizes <- rmultinom(1,size=M,p=p_reg) ### unbalanced sizes  
@@ -158,38 +165,6 @@ if (args$num_regions > 1) {
         stop("region_size_type has to be multinomial_equal, uniform or multinomial_nonequal")
     }
 }
-
-
-# disable the scientific notation so that the output dir has the name 100000, and not 1e+05
-options(scipen=999)
-
-# Make the output directory have all the input parameters, only if given_dir_complete is 0, see below
-# adding the regions arguments in the output directory
-output_dir <- paste0(args$output_dir ,"_readsize",args$read_size,"_loci", args$num_loci, "_clones", args$num_clones,
-    "_cells", args$num_cells, "_prev", args$clone_prevalence, "_errpb", args$error_probability,
-    "_mispb", args$missing_probability, "_gpb", args$genotype_prob, "_dirpar", args$dirichlet_param_genotype_prob,
-    "_nregs", args$num_regions, "_regionsize-", args$region_size_type, "_rnonequal-", args$region_nonequal)
-
-# if seed is not provided, then length(args$seed) is 0
-if (length(args$seed) > 0) {
-    print ("Setting seed")
-    set.seed(args$seed)
-    output_dir <- paste0(output_dir, "_seed", args$seed)    
-} else {
-    print ("Setting seed to random")
-    set.seed(Sys.time())
-}
-
-# if argument given_dir_complete is 1, then just use the given output_dir
-if (args$given_dir_complete)
-    output_dir<-args$output_dir
-
-print(paste0("Output dir is: ", output_dir))
-
-dir.create(output_dir, showWarnings = TRUE)
-# add a data subdirectory
-output_dir <- paste0(output_dir, "/data")
-dir.create(output_dir, showWarnings = TRUE)
 
 
 # BEGIN FUNCTIONS
@@ -273,6 +248,37 @@ write_data_file <- function (data_matrix, output_file, index="cell_id") {
 
 # END FUNCTIONS
 # =============================
+
+# disable the scientific notation so that the output dir has the name 100000, and not 1e+05
+options(scipen=999)
+
+# Make the output directory have all the input parameters, only if given_dir_complete is 0, see below
+# adding the regions arguments in the output directory
+output_dir <- paste0(args$output_dir ,"_readsize",args$read_size,"_loci", args$num_loci, "_clones", args$num_clones,
+    "_cells", args$num_cells, "_prev", args$clone_prevalence, "_errpb", args$error_probability,
+    "_mispb", args$missing_probability, "_gpb", args$genotype_prob, "_dirpar", args$dirichlet_param_genotype_prob,
+    "_nregs", args$num_regions, "_regionsize-", args$region_size_type, "_rnonequal-", args$region_nonequal)
+
+# if seed is not provided, then length(args$seed) is 0
+if (length(args$seed) > 0) {
+    print ("Setting seed")
+    set.seed(args$seed)
+    output_dir <- paste0(output_dir, "_seed", args$seed)    
+} else {
+    print ("Setting seed to random")
+    set.seed(Sys.time())
+}
+
+# if argument given_dir_complete is 1, then just use the given output_dir
+if (args$given_dir_complete)
+    output_dir<-args$output_dir
+
+print(paste0("Output dir is: ", output_dir))
+
+dir.create(output_dir, showWarnings = TRUE)
+# add a data subdirectory
+output_dir <- paste0(output_dir, "/data")
+dir.create(output_dir, showWarnings = TRUE)
 
 
 ### WE NEED TO SAVE mu_array or at least the seed that generates it
