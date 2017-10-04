@@ -55,7 +55,7 @@ parser$add_argument("--bulk_depth", type="integer", default=60, help="Number of 
 # TODO's for Camila
 # TO PUT BACK the non-phylo
 # To ADD fixing of the tree
-parser$add_argument("--phylogenetic_generation", type="integer", default=0, help="1 or 0. If this is 1, use phylogenetic tree to generate the clones, if this is 0, the clones are independent.")
+parser$add_argument("--phylogenetic_generation", type="integer", default=1, help="1 or 0. If this is 1, use phylogenetic tree to generate the clones, if this is 0, the clones are independent.")
 
 parser$add_argument("--prop_cpg_flip", type="double", default=1, help="proportion of CpGs to be flipped inside a region")  
 
@@ -84,7 +84,6 @@ print(args)
 # these parameters should be the same for all simulated data sets
 # therefore, we need to set another seed here for them and keep that the same across all simulated data sets from a particular scenario
 
-
 # Setting a seed to get fixed genotype probabilities and fixed region sizes
 set.seed(args$fixing_seed) 
 
@@ -94,10 +93,10 @@ S = 2 # number of states, we will consider only two for now in all simulations
 ### Generating the genotype probabilites
 ### when genotype_prob="random" we generate different mu_krs's for each k and r
 ### Important note: when R=1 and region_sizes[1] = num_loci we have the basic-GeMM as in that case we assumed P(G_km = s) = mu_k (probability does not depend on the locus)
-  if (args$genotype_prob=="nonrandom"){
+  if (args$genotype_prob=="0.5_fixed"){
     mu_array <- array(0.5,c(S,args$num_regions,args$num_clones))
   }
-  if (args$genotype_prob=="random"){
+  if (args$genotype_prob=="dirichlet_fixed"){
     dirichlet_param <- as.double(unlist(strsplit(args$dirichlet_param_genotype_prob, split="_")))
     mu_array <- array(NA,c(S,args$num_regions,args$num_clones))
     for (k in 1:args$num_clones) {
@@ -317,8 +316,46 @@ print ("GENERATING EPIGENOTYPES")
 R <- args$num_regions
 K <- args$num_clones
 
-#print(region_sizes)
-#print(reg_coord + 1)
+
+if (args$phylogenetic_generation == 0){
+  genotype_matrix <- NULL
+  for(k in 1:K){
+    
+    if(k==1){
+      g_k <- as.vector(unlist(sapply(1:R,genotype_reg,region_sizes=region_sizes,mu_k=mu_array[,,k]))) ### the S element of mu_array[,r,k] is the probability of sucess
+      genotype_matrix <- rbind(genotype_matrix,g_k)
+      #if (args$verbose)   {
+      #     print ("First clone of epigenotype matrix")
+      #    print (genotype_matrix) }
+      
+    }else{
+      g_k <- as.vector(unlist(sapply(1:R,genotype_reg,region_sizes=region_sizes,mu_k=mu_array[,,k])))
+      while (sum(duplicated(rbind(genotype_matrix,g_k))==TRUE) != 0) { ### making sure there all genotype vectors are different from each other
+        #if (args$verbose) {
+        #  print ("Clone is already there, regenerate")
+        #}
+        #c <- c+1
+        g_k <- as.vector(unlist(sapply(1:R,genotype_reg,region_sizes=region_sizes,mu_k=mu_array[,,k])))
+      }
+      genotype_matrix <- rbind(genotype_matrix,g_k)
+    }
+  }
+  
+  #final <- proc.time() - ptm
+  if (args$verbose) {
+    print ("Final epigenotype matrix: ")
+    print (genotype_matrix)
+  }  
+  
+  
+  # NOW write the matrix with each clone genotype into a file
+  # ========================================
+  geno_file <- paste0(output_dir, "/true_clone_epigenotypes.tsv")
+  write_data_file(genotype_matrix, geno_file)
+  
+}
+
+if (args$phylogenetic_generation == 1){
 
 genotype_matrix <- NULL
 flipped_regions <- NULL
@@ -404,6 +441,8 @@ if (args$verbose) {
 # ========================================
 geno_file <- paste0(output_dir, "/true_clone_epigenotypes.tsv")
 write_data_file(genotype_matrix, geno_file)
+
+}
 
 # Now generate the cells
 # =============================
