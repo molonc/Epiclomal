@@ -59,7 +59,7 @@ parser$add_argument("--phylogenetic_generation", type="integer", default=1, help
 
 parser$add_argument("--prop_cpg_flip", type="double", default=1, help="proportion of CpGs to be flipped inside a region")  
 
-parser$add_argument("--fixing_seed", default=2, help="The seed to be used for fixing region sizes, genotype probabilities and phylogenetic tree.")  
+#parser$add_argument("--fixing_seed", default=2, help="The seed to be used for fixing region sizes, genotype probabilities and phylogenetic tree.")  
 
 # writes: 6 files 
 # 1: all input parameters 
@@ -85,9 +85,32 @@ print(args)
 # therefore, we need to set another seed here for them and keep that the same across all simulated data sets from a particular scenario
 
 # Setting a seed to get fixed genotype probabilities and fixed region sizes
-set.seed(args$fixing_seed) 
+#set.seed(args$fixing_seed) 
 
 S = 2 # number of states, we will consider only two for now in all simulations
+
+# disable the scientific notation so that the output dir has the name 100000, and not 1e+05
+options(scipen=999)
+
+# Make the output directory have all the input parameters, only if given_dir_complete is 0, see below
+# adding the regions arguments in the output directory
+output_dir <- paste0(args$output_dir ,"_readsize",args$read_size,"_loci", args$num_loci, "_clones", args$num_clones,
+                     "_cells", args$num_cells, "_prev", args$clone_prevalence, "_errpb", args$error_probability,
+                     "_mispb", args$missing_probability, "_gpb", args$genotype_prob, "_dirpar", args$dirichlet_param_genotype_prob,
+                     "_nregs", args$num_regions, "_regionsize-", args$region_size_type, "_rnonequal-", args$region_nonequal)
+
+# if seed is not provided, then length(args$seed) is 0
+if (length(args$seed) > 0) {
+  print ("Setting seed")
+  set.seed(args$seed)
+  output_dir <- paste0(output_dir, "_seed", args$seed)    
+} else {
+  print ("Setting seed to random")
+  set.seed(Sys.time())
+}
+
+
+
 
 #==============================================
 ### Generating the genotype probabilites
@@ -248,25 +271,7 @@ write_data_file <- function (data_matrix, output_file, index="cell_id") {
 # END FUNCTIONS
 # =============================
 
-# disable the scientific notation so that the output dir has the name 100000, and not 1e+05
-options(scipen=999)
 
-# Make the output directory have all the input parameters, only if given_dir_complete is 0, see below
-# adding the regions arguments in the output directory
-output_dir <- paste0(args$output_dir ,"_readsize",args$read_size,"_loci", args$num_loci, "_clones", args$num_clones,
-    "_cells", args$num_cells, "_prev", args$clone_prevalence, "_errpb", args$error_probability,
-    "_mispb", args$missing_probability, "_gpb", args$genotype_prob, "_dirpar", args$dirichlet_param_genotype_prob,
-    "_nregs", args$num_regions, "_regionsize-", args$region_size_type, "_rnonequal-", args$region_nonequal)
-
-# if seed is not provided, then length(args$seed) is 0
-if (length(args$seed) > 0) {
-    print ("Setting seed")
-    set.seed(args$seed)
-    output_dir <- paste0(output_dir, "_seed", args$seed)    
-} else {
-    print ("Setting seed to random")
-    set.seed(Sys.time())
-}
 
 # if argument given_dir_complete is 1, then just use the given output_dir
 if (args$given_dir_complete)
@@ -357,6 +362,21 @@ if (args$phylogenetic_generation == 0){
 
 if (args$phylogenetic_generation == 1){
 
+  if (args$verbose) {
+    print ("Generating epigenotypes using phylogeny")
+  }  
+  
+  
+  if (args$num_regions == 1){
+    
+    if (args$verbose) {
+    print ("Number of regions > 1, it does not work for phylogenies")
+    }
+    
+    stop()
+  }
+
+  
 genotype_matrix <- NULL
 flipped_regions <- NULL
 
@@ -620,12 +640,18 @@ system(paste0("gzip --force ", paste0(output_dir, "/data_incomplete",".tsv") ))
 #Rprof()
 #print(summaryRprof(tmp_prof,lines="both"))
 
+
 if( args$bulk_depth != 0 ){
   
   print("GENERATING BULK DATA") 
   
   ## Rprof(tmp_prof_bulk <- tempfile(),line.profiling=TRUE)
-
+  
+  bulk_data <- matrix(0,nrow=dim(genotype_matrix)[2],ncol=3)
+  colnames(bulk_data) <- c("position","meth_reads","unmeth_reads")
+  
+  bulk_data[,1] <- 1:dim(genotype_matrix)[2]
+  
   for(s in 1:args$num_samples){
     
     Z <- sample(1:K,size=args$bulk_depth,prob=clone_prev[((s*(K-1)+1) - (K-s)):(s*K)],replace = TRUE) 
@@ -634,18 +660,34 @@ if( args$bulk_depth != 0 ){
    
       cell_n <- xobs.function(z=Z[n],epsilon=error_prob,genotype_matrix=genotype_matrix)
       
+      bulk_data[,2] <- bulk_data[,2] + cell_n
+      
       ######################################
       ## saving complete data per sample ###
       ######################################
-      write.table(t(as.matrix(cell_n)), paste0(output_dir, "/bulk_cell_data_complete","_sample_",s,".tsv"),sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE) 
+      #write.table(t(as.matrix(cell_n)), paste0(output_dir, "/bulk_cell_data_complete","_sample_",s,".tsv"),sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE) 
    
       rm(cell_n)
    
-     }
+      }
+    
+    bulk_data[,3] <- args$bulk_depth - bulk_data[,2]
+    
+    #print(reg_coord)
+    
+    #print(mu_array)
+    
+    if (args$verbose){ 
+    print(head(bulk_data))
+    }
+    
+    write.table(bulk_data, paste0(output_dir, "/bulk_data","_sample_",s,".tsv"),sep="\t",row.names=FALSE, col.names=TRUE, quote=FALSE, append=FALSE)
   
   rm(Z)
   
-  system(paste0("gzip --force ", paste0(output_dir, "/bulk_cell_data_complete","_sample_",s,".tsv")))
+  #system(paste0("gzip --force ", paste0(output_dir, "/bulk_cell_data_complete","_sample_",s,".tsv")))
+  
+  system(paste0("gzip --force ", paste0(output_dir, "/bulk_data","_sample_",s,".tsv")))
 
   }
 
