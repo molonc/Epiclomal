@@ -52,20 +52,29 @@ def compute_e_log_q_discrete(log_x):
 
 def safe_multiply(x, y):
     # MA: if x or y are 0, then log doesn't apply. So I add 1e-10.
-    return np.sign(x) * np.sign(y) * np.exp(np.log(np.abs(x+1e-10)) + np.log(np.abs(y+1e-10)))
+    return np.sign(x) * np.sign(y) * np.exp(np.log(np.abs(x+1e-20)) + np.log(np.abs(y+1e-20)))
+    # return np.sign(x) * np.sign(y) * np.exp(np.log(np.abs(x)) + np.log(np.abs(y)))
+    # without adding anything, I get [ 0.47323602  0.52676398]
+    # adding 1e-20, I get [ 0.47323602  0.52676398]
 
 def log_space_normalise(log_X, axis=0):
     return log_X - np.expand_dims(log_sum_exp(log_X, axis=axis), axis=axis) 
     
 def init_log_pi_star(K, N, initial_clusters_data):
+    # This function assigns random or given clusters to the Z variable, and then takes the log
     log_pi_star = np.zeros((N, K))
 
-    if (initial_clusters_data is not None):
+    if (initial_clusters_data is not None):        
+        # Epiclomal clusters start from 0, making the initial clusters to start from 0 too
+        # Checking to see what is the min    
+        mincl = initial_clusters_data.iloc[:,0].min()
+        # print 'mincl ', mincl
+        initial_clusters_data = initial_clusters_data - mincl
+            
         # initialize to this and exit
-        labels = np.reshape(initial_clusters_data.as_matrix(),N)
+        labels = np.reshape(initial_clusters_data.as_matrix(),N)            
         
     else:    
-        # This function assign random clusters to the Z variable, and then takes the log
         labels = np.random.random(size=(N, K)).argmax(axis=1)
         # np.random.random returns random float in the interval [0,1)
         # np.random.random(size=(N, K)) is a matrix of size NxK
@@ -81,7 +90,7 @@ def init_log_pi_star(K, N, initial_clusters_data):
         # for i, s in enumerate(range(len(set(labels)))):
         #     log_pi_star[:, i] = (labels == s).astype(int)
         # Replacing len(set(labels)) with K    
-    
+    print 'Initial labels:'
     print labels
     
     for i, s in enumerate(range(K)):
@@ -93,6 +102,10 @@ def init_log_pi_star(K, N, initial_clusters_data):
     # print 'pi_star before log'
     # print(log_pi_star)
     log_pi_star = np.log(log_pi_star + 1e-10)       # adding 1e-10 to avoid undetermined log(0)
+    # I tried adding 1e-20 instead of 1e-10 and it seems to make no difference
+    # with 1e-20 0.526767468326 
+    # with 1e-10 0.526767468326 
+    # It makes a very slight difference (of 0.000005) if we have K=10 or K=2
     
     # Now make sure they sum up to 1 over columns
     return log_space_normalise(log_pi_star, axis=1)

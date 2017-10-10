@@ -111,7 +111,9 @@ def run_model(mtype, args):
         if args.true_clusters_file is not None:    	
             true_clusters = pd.read_csv(args.true_clusters_file, compression='gzip', index_col='cell_id', sep='\t')
             labels_true = np.array(true_clusters['epigenotype_id'])
+            print "True labels:"
             print labels_true
+            print "Predicted labels:"
             print labels_pred            
             vmeasure = v_measure_score(labels_true, labels_pred)
             print 'Vmeasure: {0:.5g}'.format(vmeasure)            

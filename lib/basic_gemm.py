@@ -26,7 +26,7 @@ class BasicGeMM(object):
         
         self.K = len(alpha_prior)               # max number of clusters
         
-        print self.K, ' max number of clusters'        
+        print 'Max number of clusters: ', self.K
         
         self.N = X[X.keys()[0]].shape[0]        # number of cells
                 
@@ -95,7 +95,7 @@ class BasicGeMM(object):
             # This just initializes beta_star for each cluster k with beta_prior, matrix KxS, now KxRxS     
         
         self.log_pi_star = init_log_pi_star(self.K, self.N, initial_clusters_data)
-        # This function assigns random clusters to the Z variable. 
+        # This function assigns random or given clusters to the Z variable. 
         # For each cell (row), one of the k values will be 1 and the others 0.
         # Then, return the log of this matrix (log_pi_star) of size N rows x K columns                                                              
         
@@ -213,8 +213,16 @@ class BasicGeMM(object):
     
     def fit(self, convergence_tolerance=1e-4, debug=False, num_iters=100):
         print "Iter  ELBO difference"
+
+        # print 'pi_star for cell 14 initially: ', self.pi_star[13,]  
       
         for i in range(num_iters):
+
+            # update alpha_star
+            self._update_alpha_star()
+            
+            if debug:
+                print 'ELBO, diff after update_alpha_star', self._diff_lower_bound()
 
             # update E(I(Gmk=s))
             self._update_mu_star()            
@@ -222,29 +230,26 @@ class BasicGeMM(object):
             if debug:
                 print 'ELBO, diff after update_mu_star', self._diff_lower_bound()
             
+            # update beta_star
+            self._update_beta_star()
+            
+            if debug:
+                print 'ELBO, diff after update_beta_star', self._diff_lower_bound()            
+            
             # update gamma_star
             self._update_gamma_star()
             
             if debug:
                 print 'ELBO, diff after update_gamma_star', self._diff_lower_bound()
-            
-            # update alpha_star
-            self._update_alpha_star()
-            
-            if debug:
-                print 'ELBO, diff after update_alpha_star', self._diff_lower_bound()
-
-            # update beta_star
-            self._update_beta_star()
-            
-            if debug:
-                print 'ELBO, diff after update_beta_star', self._diff_lower_bound()
-            
+                        
             # update pi_star
             self._update_pi_star()
             
             if debug:
                 print 'ELBO, diff after update_pi_star', self._diff_lower_bound()
+                     
+            # print 'pi_star for cell 14 after pi_star update: ', self.pi_star[13,]                
+                
             
             # update rho_star, but here in the basic model nothing happens
             self._update_rho_star()
