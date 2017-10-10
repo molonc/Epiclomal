@@ -35,9 +35,13 @@ parser$add_argument("--error_probability", type="character", default="0.01_0.01"
 parser$add_argument("--missing_probability", type="character", default=0.1, help="Missing data probability, it could be one probability for all cells or different ones")
 
 ### Genotype probabilities: p(G_krl = s) = mu_krs
-parser$add_argument("--genotype_prob", type="character", default="dirichlet_fixed", help="dirichlet_fixed (genotype probabilities are fixed by a seed to draws from a dirichlet distribution) or 0.5_fixed (all genotype probabilities fixed to 0.5)") 
+parser$add_argument("--genotype_prob", type="character", default="dirichlet", help="dirichlet (genotype probabilities are draws from a dirichlet distribution) or 0.5_fixed (all genotype probabilities fixed to 0.5)") 
+
 ### Generate them using a Dirichlet distribution
-parser$add_argument("--dirichlet_param_genotype_prob", type="character", default="1_1" , help="Dirichlet parameters to draw fixed genotype probabilities for each region r and clone k") 
+parser$add_argument("--dirichlet_param_genotype_prob", type="character", default="1_1", help="Dirichlet parameters to draw genotype probabilities for each region r and clone k") 
+parser$add_argument("--percent_regions_dirichlet_param", type="character", default="0.9", 
+	help="The percentage of the regions that have methylation drawn from the above distribution. For example if I want 90% of the regions to be hypermethylated and 10% to be hypomethylated, I will set dirichlet_param_genotype_prob=99_1 and percent_regions_dirichlet_param=0.9") 
+
 
 parser$add_argument("--num_regions", type="double", default=5, help="Number of regions")  
 parser$add_argument("--region_size_type", type="character", default="multinomial_equal", help="uniform, multinomial_equal or multinomial_nonequal. Fixed generated from uniform (from 1 to nloci), multinomial_equal (with prob 1/nregions) or multinomial_nonequal (currently this has hard-coded probabilities)")
@@ -114,20 +118,33 @@ if (length(args$seed) > 0) {
 
 #==============================================
 ### Generating the genotype probabilites
-### when genotype_prob="random" we generate different mu_krs's for each k and r
+### when genotype_prob="dirichlet" we generate different mu_krs's for each k and r
 ### Important note: when R=1 and region_sizes[1] = num_loci we have the basic-GeMM as in that case we assumed P(G_km = s) = mu_k (probability does not depend on the locus)
-  if (args$genotype_prob=="0.5_fixed"){
+if (args$genotype_prob=="0.5_fixed") {
     mu_array <- array(0.5,c(S,args$num_regions,args$num_clones))
-  }
-  if (args$genotype_prob=="dirichlet_fixed"){
+}
+if (args$genotype_prob=="dirichlet") {
     dirichlet_param <- as.double(unlist(strsplit(args$dirichlet_param_genotype_prob, split="_")))
     mu_array <- array(NA,c(S,args$num_regions,args$num_clones))
+    # Note: if phylogeny is used, only the first row from mu_array is used. For no phylogeny, the entire mu_array is used.
     for (k in 1:args$num_clones) {
-      mu_array[,,k] <- t(round(rdirichlet(args$num_regions, alpha=c(dirichlet_param[1],dirichlet_param[2])),2))
+        # MA: The following command was executed before we introduced the argument  percent_regions_dirichlet_param
+        # mu_array[,,k] <- t(round(rdirichlet(args$num_regions, alpha=c(dirichlet_param[1],dirichlet_param[2])),2))
+        # MA: adding the percent_regions_dirichlet_param argument here
+        # first generating num_regions random numbers
+        random_methylation <- runif (args$num_regions, 0, 1)
+        for (r in 1:args$num_regions) {            
+            if (random_methylation[r] <= as.double(args$percent_regions_dirichlet_param))  {
+                mu_array[,r,k] <- t(round(rdirichlet(1, alpha=c(dirichlet_param[1],dirichlet_param[2])),2))
+            } else {
+                mu_array[,r,k] <- t(round(rdirichlet(1, alpha=c(dirichlet_param[2],dirichlet_param[1])),2))
+            }
+        } 
     }
-  }
+}
 
 if(args$verbose) {
+    print("mu_array")
     print(mu_array)
 }    
 
@@ -362,86 +379,84 @@ if (args$phylogenetic_generation == 0){
 
 if (args$phylogenetic_generation == 1){
 
-  if (args$verbose) {
-    print ("Generating epigenotypes using phylogeny")
-  }  
-  
-  
-  if (args$num_regions == 1){
-    
     if (args$verbose) {
-    print ("Number of regions > 1, it does not work for phylogenies")
+        print ("Generating epigenotypes using phylogeny")
+    }  
+  
+  
+    if (args$num_regions == 1){
+    
+        if (args$verbose) {
+            print ("Number of regions > 1, it does not work for phylogenies")
+        }
+    
+        stop()
     }
-    
-    stop()
-  }
 
   
-genotype_matrix <- NULL
-flipped_regions <- NULL
+    genotype_matrix <- NULL
+    flipped_regions <- NULL
 
-for(k in 1:K){
+    for(k in 1:K){
   
-  print(k)
+        print(k)
   
-  if(k==1){
-    g_k <- as.vector(unlist(sapply(1:R,genotype_reg,region_sizes=region_sizes,mu_k=mu_array[,,k]))) ### the S element of mu_array[,r,k] is the probability of sucess
-    genotype_matrix <- rbind(genotype_matrix,g_k)
-     #if (args$verbose)   {
-     #     print ("First clone of epigenotype matrix")
-     #    print (genotype_matrix) }
+        if(k==1){
+            g_k <- as.vector(unlist(sapply(1:R,genotype_reg,region_sizes=region_sizes,mu_k=mu_array[,,k]))) ### the S element of mu_array[,r,k] is the probability of sucess
+            genotype_matrix <- rbind(genotype_matrix,g_k)
+             #if (args$verbose)   {
+             #     print ("First clone of epigenotype matrix")
+             #    print (genotype_matrix) }
     
-  }
+        }
   
-  if(k==2){
-    
-    region_flip <- sort(sample(1:R,1)) ### selection one region to flip per lineage      
-    print("region to flip")
-    print(region_flip)
-    flipped_regions <- region_flip
-    
-    g_k <- parent_child_flip(parent=genotype_matrix[k-1,],region_coord=(reg_coord+1),region_flip = region_flip,prop_flip=args$prop_cpg_flip)
-    genotype_matrix <- rbind(genotype_matrix,g_k)
-    
-  }
+        if(k==2){
+
+            region_flip <- sort(sample(1:R,1)) ### selection one region to flip per lineage      
+            print("region to flip")
+            print(region_flip)
+            flipped_regions <- region_flip
+
+            g_k <- parent_child_flip(parent=genotype_matrix[k-1,],region_coord=(reg_coord+1),region_flip = region_flip,prop_flip=args$prop_cpg_flip)
+            genotype_matrix <- rbind(genotype_matrix,g_k)
+
+        }
   
-  if(k > 2){
+        if(k > 2){
    
-    ## picking a parent epigenotype
+            ## picking a parent epigenotype
     
-    parent_k <- sample(1:(k-1),size=1)       
-    print("parent epigenotype")
-    print(parent_k)
+            parent_k <- sample(1:(k-1),size=1)       
+            print("parent epigenotype")
+            print(parent_k)
     
-    region_flip <- sort(sample(1:R,1))       
-    print("region to flip")
-    print(region_flip)
+            region_flip <- sort(sample(1:R,1))       
+            print("region to flip")
+            print(region_flip)
     
-    g_k <- parent_child_flip(parent=genotype_matrix[parent_k,],region_coord=(reg_coord+1),region_flip = region_flip,prop_flip=args$prop_cpg_flip)
+            g_k <- parent_child_flip(parent=genotype_matrix[parent_k,],region_coord=(reg_coord+1),region_flip = region_flip,prop_flip=args$prop_cpg_flip)
     
-    while (sum(duplicated(rbind(genotype_matrix,g_k))==TRUE) != 0) { ### making sure there all genotype vectors are different from each other
+            while (sum(duplicated(rbind(genotype_matrix,g_k))==TRUE) != 0) { 
+            ### making sure there all genotype vectors are different from each other
     
-      print ("Clone is already there, regenerate")
-    
-      parent_k <- sample(1:(k-1),size=1)       
-      print("parent epigenotype")
-      print(parent_k)
-      
-      region_flip <- sort(sample(1:R,1))
-         
-      print("region to flip")
-      print(region_flip)
-    
-      g_k <- parent_child_flip(parent=genotype_matrix[parent_k,],region_coord=(reg_coord+1),region_flip = region_flip,prop_flip=args$prop_cpg_flip)
-    
-    }
-    # here region_flip is surely accepted as unique
-    flipped_regions <- c(flipped_regions, region_flip)    
+                print ("Clone is already there, regenerate")
+
+                parent_k <- sample(1:(k-1),size=1)       
+                print("parent epigenotype")
+                print(parent_k)
   
-    genotype_matrix <- rbind(genotype_matrix,g_k)
+                region_flip <- sort(sample(1:R,1))
+     
+                print("region to flip")
+                print(region_flip)
+
+                g_k <- parent_child_flip(parent=genotype_matrix[parent_k,],region_coord=(reg_coord+1),region_flip = region_flip,prop_flip=args$prop_cpg_flip)    
+            }
+            # here region_flip is surely accepted as unique
+            flipped_regions <- c(flipped_regions, region_flip)    
   
-  }
-  
+            genotype_matrix <- rbind(genotype_matrix,g_k)  
+      }  
 }
 
 print ("All the flipped regions are")
@@ -704,12 +719,11 @@ if (args$plot_data == 1) {
   print("PLOTTING GENERATED DATA")
 
     meth_file =  paste0(output_dir, "/data_incomplete",".tsv")
-    visline <- paste0("--copy_number=0 --out_directory=", output_dir, 
+    visline <- paste0("--out_directory=", output_dir, 
                     " --methylation_file=", paste0(meth_file,".gz"), 
                     " --regions_file=", paste0(reg_file,".gz"), 
-                    " --true_clusters=1 --order_by_true=1 --name=data",
+                    " --name=data",
                     " --true_clusters_file=", paste0(clone_file,".gz"),
-                    " --inferred_clusters_file=", paste0(clone_file,".gz"),
                     " --regions_to_plot=", paste0(output_dir, "/flipped_regions.tsv"))
     # TO DO: allow inferred_clusters_file to be NULL. For now just using true.       
         

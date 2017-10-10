@@ -35,6 +35,7 @@ outdir <- args$output_dir
 ### line plots ###
 ##################
 
+# adding basic_true and region_true to the plot
 info_file <- paste0(outdir, "/info_", args$var, ".txt")
 print(info_file)
 title <- system(paste0("cat ", info_file, " | grep -v DPARPROB | grep -v GPROB | grep -v EPROB | grep -v CPREV | grep -v ", args$var, " | perl -p -e 's/\n/ /g;'"), intern=TRUE)
@@ -42,18 +43,18 @@ title <- sub("multinomial_equal","mnon_eq",title)
 print (paste0("Title is ", title))
 
 pdf(paste0(outdir,"/plot_aveVmeasure_basic_VS_region.pdf"),height=7,width=9)
-tmp <- cbind(summary_table$Avg_Vmeasure_basic,summary_table$Avg_Vmeasure_region, summary_table$Avg_Vmeasure_PBAL_Bestcut)
+tmp <- cbind(summary_table$Avg_Vmeasure_basic_true, summary_table$Avg_Vmeasure_region_true, summary_table$Avg_Vmeasure_basic, summary_table$Avg_Vmeasure_region, summary_table$Avg_Vmeasure_PBAL_Bestcut)
 print(tmp)
-matplot(summary_table[,1],tmp,lty=1,type='l',lwd=c(6,4,2),col=c(2,4,3),
+matplot(summary_table[,1],tmp,lty=1,type='l', 
     ylab="Average V-measure",
     xlab=colnames(summary_table)[1],
     main=title,
-    cex.axis=1.2,cex.lab=1.2,xaxt="n",ylim=c(0,1))
+    cex.axis=1.2,cex.lab=1.2,xaxt="n",ylim=c(0,1), lwd=c(10,8,6,4,2),col=c(1,6,2,4,3))
 # col is color: 1=black, 2=blue, 3=green, 4=red, 6=magenta
 # trying without y limit to see if it shows better
 #,ylim=c(0,1))
 axis(1, summary_table[,1])
-legend("bottomright",c("Basic Epiclomal","Region Epiclomal","PBALclust"),bty="n",col=c(2,4,3),lty=c(1,1,1),lwd=c(6,4,2),cex=.8)
+legend("bottomright",c("Basic Epiclomal True", "Region Epiclomal True", "Basic Epiclomal","Region Epiclomal","PBALclust"),bty="n",cex=.8,col=c(1,6,2,4,3),lty=c(1,1,1,1,1),lwd=c(10,8,6,4,2))
 grid()
 # not sure how to add text
 #text(pos=2,"NCELLS=100\nNLOCI=10000")
