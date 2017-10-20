@@ -251,12 +251,11 @@ annotation_col$regions <- as.factor(annotation_col$regions)
 #}
 
 if (M <= 250) {
-    print("plotting CpG based data")
+    print("plotting CpG based data")    
   
-    if (!is.null(true_clusters_file) || args$order_by_true == 1) {
+    if (args$order_by_true == 1) {
         data <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
-    }
-    if (!is.null(args$inferred_clusters_file) || args$order_by_true == 0) {
+    } else {
         data <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
     }
            
@@ -287,10 +286,9 @@ if (M > 250) {
     
     print("plotting CpG based methylation data for R=1")
     
-    if (!is.null(true_clusters_file) || args$order_by_true == 1) {
+    if (args$order_by_true == 1) {
         data <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
-    }
-    if (!is.null(args$inferred_clusters_file) || args$order_by_true == 0) {
+    } else {
         data <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
     }
              
@@ -314,17 +312,11 @@ if (M > 250) {
     if (M < 10000) {
         print("plotting CpG based methylation data for R > 1")
         
-        if (!is.null(true_clusters_file) || args$order_by_true == 1) {
+        if (args$order_by_true == 1) {
             data <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
-        }
-        if (!is.null(args$inferred_clusters_file) || args$order_by_true == 0) {
+        } else {
             data <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
         }        
-#        if(args$true_clusters == 1 && args$order_by_true == 1){
-#            tmp <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
-#        } else if (!is.null(args$inferred_clusters_file)) {
-#            tmp <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
-#        }
         
         ## in case we want to force some colors to be the same
         #colnames(annotation_row) <- "inferred_clusters"
@@ -356,18 +348,12 @@ if (M > 250) {
     
     print("plotting region based mean methylation data")
     
-    if (!is.null(true_clusters_file) || args$order_by_true == 1) {
+    if (args$order_by_true == 1) {
         data <- mean_meth_matrix[order(as.integer(true_cell_clusters$true_clusters)),]
-    }
-    if (!is.null(args$inferred_clusters_file) || args$order_by_true == 0) {
+    } else {
         data <- mean_meth_matrix[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
     }    
     
-    #if(args$true_clusters == 1 && args$order_by_true == 1){
-    #  tmp <- mean_meth_matrix[order(as.integer(true_cell_clusters$true_clusters)),]
-    #} else if (!is.null(args$inferred_clusters_file)) {
-    #  tmp <- mean_meth_matrix[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
-    #}
     
     pheatmap(data,cluster_cols=FALSE,
            cluster_rows=FALSE,
@@ -415,18 +401,11 @@ if (M > 250) {
         colnames(annotation_col) <- "regions"
         annotation_col$regions <- as.factor(annotation_col$regions)
       
-        if (!is.null(true_clusters_file) || args$order_by_true == 1) {
+        if (args$order_by_true == 1) {
             data <- diff_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
-        }
-        if (!is.null(args$inferred_clusters_file) || args$order_by_true == 0) {
+        } else {
             data <- diff_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
-        }        
-      
-      #if(args$true_clusters == 1 && args$order_by_true == 1){
-      #  tmp <- diff_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
-      #} else if (!is.null(args$inferred_clusters_file)) {
-      #  tmp <- diff_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
-      #}
+        }              
                
         pheatmap(data,cluster_rows = FALSE,cluster_cols=FALSE, 
                #annotation_row =annotation_row, 

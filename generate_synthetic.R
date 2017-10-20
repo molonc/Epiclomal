@@ -663,7 +663,8 @@ if( args$bulk_depth != 0 ){
   ## Rprof(tmp_prof_bulk <- tempfile(),line.profiling=TRUE)
   
   bulk_data <- matrix(0,nrow=dim(genotype_matrix)[2],ncol=3)
-  colnames(bulk_data) <- c("position","meth_reads","unmeth_reads")
+  # MA 19 Oct 2017: reversing meth_reads and unmetth_read, putting unmeth first because that is how we do in epiclomal
+  colnames(bulk_data) <- c("position","unmeth_reads","meth_reads")
   
   bulk_data[,1] <- 1:dim(genotype_matrix)[2]
   
@@ -675,7 +676,7 @@ if( args$bulk_depth != 0 ){
    
       cell_n <- xobs.function(z=Z[n],epsilon=error_prob,genotype_matrix=genotype_matrix)
       
-      bulk_data[,2] <- bulk_data[,2] + cell_n
+      bulk_data[,3] <- bulk_data[,3] + cell_n
       
       ######################################
       ## saving complete data per sample ###
@@ -686,7 +687,7 @@ if( args$bulk_depth != 0 ){
    
       }
     
-    bulk_data[,3] <- args$bulk_depth - bulk_data[,2]
+    bulk_data[,2] <- args$bulk_depth - bulk_data[,3]
     
     #print(reg_coord)
     
