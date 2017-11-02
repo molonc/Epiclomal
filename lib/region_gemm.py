@@ -46,11 +46,11 @@ class RegionGeMM(BasicGeMM):
             self.Rend[data_type][index] = row["end"]
             self.L[data_type][index] = row["end"] - row["start"] + 1
         self.maxL[data_type] = np.max(self.L[data_type])
-        print 'R, ', self.R[data_type]
+        print ('R, ', self.R[data_type])
         # print 'L, ', self.L[data_type] 
         # print 'Rstart ,', self.Rstart[data_type]        
         # print 'Rend ,', self.Rend[data_type]        
-        print 'maxL, ', self.maxL[data_type]
+        print ('maxL, ', self.maxL[data_type])
        
     ######################       
           

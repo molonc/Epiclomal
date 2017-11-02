@@ -28,8 +28,13 @@ from lib.utils import load_labels
 ##############################
 
 def run_basic_gemm_model(args):
-    run_model('BasicGeMM', args)
+    run_model('BasicGeMM', args)    
     
+##############################
+
+def run_basic_bayespy_model(args):
+    run_model('BasicBayesPy', args)
+        
 ##############################
     
 def run_basic_miss_gemm_model(args):
@@ -61,6 +66,9 @@ def run_model(mtype, args):
        
     if (mtype == 'BasicGeMM'):
         className = BasicGeMM
+        
+    elif (mtype == 'BasicBayesPy'):
+        className = BasicBayesPy    
         
     elif (mtype == 'BasicMissGeMM'):
         className = BasicMissGeMM
@@ -111,12 +119,12 @@ def run_model(mtype, args):
         if args.true_clusters_file is not None:    	
             true_clusters = pd.read_csv(args.true_clusters_file, compression='gzip', index_col='cell_id', sep='\t')
             labels_true = np.array(true_clusters['epigenotype_id'])
-            print "True labels:"
-            print labels_true
-            print "Predicted labels:"
-            print labels_pred            
+            print ("True labels:")
+            print (*labels_true)
+            print ("Predicted labels:")
+            print (*labels_pred)  
             vmeasure = v_measure_score(labels_true, labels_pred)
-            print 'Vmeasure: {0:.5g}'.format(vmeasure)            
+            print ('Vmeasure: {0:.5g}'.format(vmeasure))
 
         print('Maxmem: %s MB' % maxmem)
             
@@ -138,7 +146,7 @@ def load_data(args, include_regions=False):
     else:
         num_clusters = config['num_clusters']        
     
-    print 'Num clusters: ', num_clusters
+    print ('Num clusters: ', num_clusters)
     
     cell_ids = []
     
@@ -146,7 +154,7 @@ def load_data(args, include_regions=False):
     
     event_ids = {}
     
-    priors = {'gamma' : {}, 'beta' : {}, 'alpha' : {} }
+    priors = {'gamma' : {}, 'beta' : {}, 'alpha' : [] }
     
     # Used only by the region models
     regions = {}
@@ -166,10 +174,10 @@ def load_data(args, include_regions=False):
         if (include_regions):
             regions[data_type] = _load_regions_frame(regions_filename)
         else:
-            regions = None            
+            regions = None             
         
         priors['gamma'][data_type] = np.array(config['data'][data_type]['gamma_prior'])
-        
+                
         if (args.bulk_file != None):
             # If the bulk reads file is given, there will be a different parameter for each locus
             priors['beta'][data_type] = _load_bulk_frame(args.bulk_file)
@@ -185,25 +193,33 @@ def load_data(args, include_regions=False):
 
     cell_ids = sorted(set.intersection(*[set(x) for x in cell_ids]))
     
-    for data_type in data:
+    # not sure what this below does
+    for data_type in data.keys():
         data[data_type] = data[data_type].loc[cell_ids]
     
-    priors['alpha'] = np.ones(num_clusters) * config['alpha_prior']
+    priors['alpha'] = np.ones(num_clusters) * config['alpha_prior']    
     
     # I'm giving just one number in the yaml file
     #if 'alpha_prior' in config:
     #    priors['alpha'] = np.array(config['alpha_prior'])
     
-    print 'Number of cells: {0}'.format(len(cell_ids))
+    print ('Number of cells: {}'.format(len(cell_ids)))
     
-    print 'Number of data types: {0}'.format(len(event_ids))
+    print ('Number of data types: {}'.format(len(event_ids)))
     
-    print 'Alpha priors: {0}'.format(priors['alpha'])            
+    print ('Alpha priors: ', *priors['alpha'])
     
-    for data_type in event_ids:
-        print 'Number of {0} events: {1}'.format(data_type, len(event_ids[data_type]))
+    # print(priors['beta'])
+    
+    for data_type in data.keys():
+        print ('Number of {0} events: {1}'.format(data_type, len(event_ids[data_type])))
         # print 'Beta prior of {0} events: {1}'.format(data_type, priors['beta'][data_type])
-        print 'Gamma prior of {0} events: {1}'.format(data_type, priors['gamma'][data_type])
+        # TODO In python3 I am not able to print the gamma and beta priors            
+        # TODO
+        #print ('Gamma prior of main events:')
+        #print(priors['gamma'][data_type])
+        # TODO
+        #print ('Beta prior of main events: {0}'.format(priors['beta'][data_type]))
         #print 'Data: \n', data[data_type]
         #print 'Regions: \n', regions[data_type] 
         
@@ -214,39 +230,41 @@ def load_data(args, include_regions=False):
     return  cell_ids, data, event_ids, priors, regions, initial_clusters_data
 
 def _load_data_frame(file_name):
-    print 'Loading data file {0}.'.format(file_name)
+    print ('Loading data file {0}.'.format(file_name))
     df = pd.read_csv(file_name, compression='gzip', index_col='cell_id', sep='\t')    
     return df
     
 def _load_initial_clusters_frame(file_name, repeat_id):
     # IF the file doesn't exist, return None
     if (os.path.isfile(file_name) == False):
-        print "Initial clusters file was given (", file_name, "), but it doesn't exist, ignore."
+        print ("Initial clusters file was given (", file_name, "), but it doesn't exist, ignore.")
         return None
     # First check if the number of columns in the file is > repeat_id
-    with gzip.open(file_name, 'r') as file:
-        reader = list(csv.reader(file, delimiter='\t'))
-        numcols = len(reader[0])
-    print 'Num columns in initial_clusters_file is ', numcols, ', repeat_id is ', repeat_id
+    # with gzip.open(file_name, 'r') as file:
+    #     reader = list(csv.reader(file, delimiter='\t'))
+    #     numcols = len(reader[0])
+    df = pd.read_csv(file_name, compression='gzip', sep='\t') 
+    numcols = df.shape[1]        
+    print ('Num columns in initial_clusters_file is ', numcols, ', repeat_id is ', repeat_id)
     # Make repeat_id bigger by 1, because in kronos repeat_id starts from 0
     repeat_id = repeat_id+1
     if (repeat_id >= numcols):
-        print 'Using random initialization'
+        print ('Using random initialization')
         return None
-    print 'Loading initial clusters file {0}.'.format(file_name)
-    df = pd.read_csv(file_name, compression='gzip', index_col=0, sep='\t', usecols=[0,int(repeat_id)])
+    print ('Loading initial clusters file {0}.'.format(file_name))
+    df = pd.read_csv(file_name, compression='gzip', index_col=0, sep='\t', usecols=[0,int(repeat_id)])        
     return df    
 
 def _load_regions_frame(file_name):
     # Assume the data file contains only regions, and the regions start and end are the column index from the data
-    print 'Loading regions file {0}.'.format(file_name)
+    print ('Loading regions file {0}.'.format(file_name))
     df = pd.read_csv(file_name, compression='gzip', index_col='region_id', sep='\t')
     return df
 
 def _load_bulk_frame(file_name):
     # Assume the header of the bulk file is:
     # position        meth_reads      unmeth_reads
-    print 'Loading bulk file {0}.'.format(file_name)
+    print ('Loading bulk file {0}.'.format(file_name))
     df = pd.read_csv(file_name, compression='gzip', index_col='position', sep='\t')
     return df
 
@@ -259,12 +277,12 @@ def load_samples(cell_ids, file_name):
         
         samples = samples.loc[cell_ids, 'sample']
         
-        print 'Number of samples: {0}'.format(samples.nunique())
+        print ('Number of samples: {0}'.format(samples.nunique()))
     
     else:
         samples = None
         
-        print 'No samples file supplied. All cells assumed to come from same sample.'
+        print ('No samples file supplied. All cells assumed to come from same sample.')
     
     return samples
 
@@ -275,9 +293,11 @@ def write_cluster_posteriors(cell_ids, pi_star, out_dir):
 
     df = pd.DataFrame(pi_star, index=cell_ids)
     
-    with gzip.GzipFile(file_name, 'w') as fh:
-        df.to_csv(fh, index_label='cell_id', sep='\t')
-    
+#    with gzip.GzipFile(file_name, 'w') as fh:
+#        df.to_csv(fh, index_label='cell_id', sep='\t')
+    df.to_csv(file_name, index_label='cell_id', sep='\t', mode='w', compression='gzip')
+    # For some reason the with gzip.GzipFile doesn't work in python3    
+
 ##########################    
        
 def write_cluster_MAP(cell_ids, pi_star, out_dir):        
@@ -294,8 +314,9 @@ def write_cluster_MAP(cell_ids, pi_star, out_dir):
         
     # print labels_pred
     df = pd.DataFrame(labels_pred, index=cell_ids)
-    with gzip.GzipFile(file_name, 'w') as fh:
-        df.to_csv(fh, index_label='cell_id', sep='\t')          
+    #with gzip.GzipFile(file_name, 'w') as fh:
+    #    df.to_csv(fh, index_label='cell_id', sep='\t')          
+    df.to_csv(file_name, index_label='cell_id', sep='\t', mode='w', compression='gzip')
     return just_labels
        
         
@@ -322,8 +343,9 @@ def write_double_cluster_posteriors(cell_ids, model, out_dir):
     
     df = pd.DataFrame(model.Z_1.reshape(model.N, model.K * model.K), index=cell_ids)
     
-    with gzip.GzipFile(file_name, 'w') as fh:
-        df.to_csv(fh, index_label='cell_id', sep='\t')    
+    # with gzip.GzipFile(file_name, 'w') as fh:
+    #     df.to_csv(fh, index_label='cell_id', sep='\t')    
+    df.to_csv(file_name, index_label='cell_id', sep='\t', mode='w', compression='gzip')
 
 ##########################
 
@@ -335,8 +357,9 @@ def write_genotype_posteriors(model, out_dir):
         u_mu_star = model.unregion_mu_star(data_type)             
         df = pd.DataFrame(u_mu_star[0], index=range(u_mu_star.shape[1]))
   
-        with gzip.GzipFile(file_name, 'w') as fh:
-            df.to_csv(fh, index_label='cluster_id', sep='\t')
+        # with gzip.GzipFile(file_name, 'w') as fh:
+        #     df.to_csv(fh, index_label='cluster_id', sep='\t')
+        df.to_csv(file_name, index_label='cluster_id', sep='\t', mode='w', compression='gzip')    
 
 ##########################
 
@@ -349,8 +372,9 @@ def write_genotype_MAP(model, out_dir):
         map_mu_star = np.argmax(u_mu_star, axis=0)
         df = pd.DataFrame(map_mu_star, index=range(u_mu_star.shape[1]))
   
-        with gzip.GzipFile(file_name, 'w') as fh:
-            df.to_csv(fh, index_label='cluster_id', sep='\t')
+        # with gzip.GzipFile(file_name, 'w') as fh:
+        #     df.to_csv(fh, index_label='cluster_id', sep='\t')
+        df.to_csv(file_name, index_label='cluster_id', sep='\t', mode='w', compression='gzip')    
 
 ##########################
 

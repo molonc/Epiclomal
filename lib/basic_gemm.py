@@ -26,9 +26,10 @@ class BasicGeMM(object):
         
         self.K = len(alpha_prior)               # max number of clusters
         
-        print 'Max number of clusters: ', self.K
+        print ('Max number of clusters: ', self.K)
         
-        self.N = X[X.keys()[0]].shape[0]        # number of cells
+        # In python3 I am replacing X.keys() to list(X.keys()) (list(X) would work too)
+        self.N = X[list(X.keys())[0]].shape[0]        # number of cells
                 
         self.gamma_prior = gamma_prior
         
@@ -37,7 +38,7 @@ class BasicGeMM(object):
         self._init_alpha_star()  
         # MA: this just initializes with 1 for every clone. if 4 clones, it'll be [1 1 1 1]  
                 
-        self.data_types = X.keys()
+        self.data_types = list(X.keys())
     
         # I am actually implementing it as a one region, that way we can extend to regions more easily
         self.M = {}           
@@ -49,6 +50,8 @@ class BasicGeMM(object):
         self.T = {}
         
         self.IX = {}
+        
+        self.X = {}
         
         self.gamma_star = {}
         
@@ -75,6 +78,7 @@ class BasicGeMM(object):
             # T is 2 when gamma_prior is [99, 1; 1, 99]        
         
             matrix = self._region_data_matrix(data_type, X[data_type])        
+            self.X[data_type] = matrix
         
             self.IX[data_type] = self._get_indicator_X(data_type, matrix)
             # size TxNxM, now TxNxRxmaxL
@@ -159,7 +163,7 @@ class BasicGeMM(object):
             # NOTE: I am adding 1 to all the bulk reads to avoid 0 values. This is equivalent to adding a very small extra prior
             self.beta_prior[data_type] = 1 + beta_prior[data_type].values.reshape(self.R[data_type], int(self.maxL[data_type]), self.S[data_type])
             
-            # print self.beta_prior[data_type]
+            #print self.beta_prior[data_type]
             
 
     def _init_beta_star(self, data_type):
@@ -212,7 +216,7 @@ class BasicGeMM(object):
         return np.exp(self.log_pi_star)
     
     def fit(self, convergence_tolerance=1e-4, debug=False, num_iters=100):
-        print "Iter  ELBO difference"
+        print ("Iter  ELBO difference")
 
         # print 'pi_star for cell 14 initially: ', self.pi_star[13,]  
       
@@ -222,31 +226,31 @@ class BasicGeMM(object):
             self._update_alpha_star()
             
             if debug:
-                print 'ELBO, diff after update_alpha_star', self._diff_lower_bound()
+                print ('ELBO, diff after update_alpha_star', self._diff_lower_bound())
 
             # update E(I(Gmk=s))
             self._update_mu_star()            
             
             if debug:
-                print 'ELBO, diff after update_mu_star', self._diff_lower_bound()
+                print ('ELBO, diff after update_mu_star', self._diff_lower_bound())
             
             # update beta_star
             self._update_beta_star()
             
             if debug:
-                print 'ELBO, diff after update_beta_star', self._diff_lower_bound()            
+                print ('ELBO, diff after update_beta_star', self._diff_lower_bound())
             
             # update gamma_star
             self._update_gamma_star()
             
             if debug:
-                print 'ELBO, diff after update_gamma_star', self._diff_lower_bound()
+                print ('ELBO, diff after update_gamma_star', self._diff_lower_bound())
                         
             # update pi_star
             self._update_pi_star()
             
             if debug:
-                print 'ELBO, diff after update_pi_star', self._diff_lower_bound()
+                print ('ELBO, diff after update_pi_star', self._diff_lower_bound())
                      
             # print 'pi_star for cell 14 after pi_star update: ', self.pi_star[13,]                
                 
@@ -254,7 +258,7 @@ class BasicGeMM(object):
             # update rho_star, but here in the basic model nothing happens
             self._update_rho_star()
             if debug:
-                print 'ELBO, diff after update_rho_star', self._diff_lower_bound()            
+                print ('ELBO, diff after update_rho_star', self._diff_lower_bound())
             
             
             # From Blei 2016: computing the ELBO for the full data set may be too expensive, we can compute on a held-out set
@@ -262,19 +266,26 @@ class BasicGeMM(object):
              
             diff = (self.lower_bound[-1] - self.lower_bound[-2]) / np.abs(self.lower_bound[-1])
              
-            print i, self.lower_bound[-1], diff
+            print (i, self.lower_bound[-1], diff)
              
             if abs(diff) < convergence_tolerance:
-                print 'Converged'
+                print ('Converged')
                 
                 self.converged = True
                 
                 self._unregion_rho_star()
                 
+                loglik = self._compute_log_likelihood()
+                print ('Log likelihood is ', loglik)
+                
+                elbo_without_eps = self._compute_lower_bound(skip="pi_and_prior")
+                print ('ELBO with pi_and_prior is ', elbo_without_eps)
+                
+                
                 break
             
             elif diff < 0:
-                print 'Lower bound decreased'
+                print ('Lower bound decreased')
                 
                 if not debug:
                     self.converged = False
@@ -427,9 +438,14 @@ class BasicGeMM(object):
             
         e_log_pi = self.get_e_log_pi()
                         
+        #cellnum = 12 - 1
+        #print 'e_log_pi', e_log_pi[0:4]             
+        #print 'log_pi_star sum term', log_pi_star[cellnum,0:4] 
         log_pi_star = e_log_pi[np.newaxis, :] + log_pi_star
     
+        #print 'log_pi_star before normalize', log_pi_star[cellnum,0:4]
         self.log_pi_star = log_space_normalise(log_pi_star, axis=1)
+        #print 'pi_star after normalize', np.exp(self.log_pi_star[cellnum,0:4])
     
     def _get_log_pi_star_d(self, data_type):
         mu_star = self.get_mu_star(data_type)
@@ -452,16 +468,17 @@ class BasicGeMM(object):
         
         return log_pi_star    
     
+    
     ##########################################################    
     
-    def _compute_lower_bound(self):
-        Elogp = self._compute_e_log_p()
-        Elogq = self._compute_e_log_q()
+    def _compute_lower_bound(self, skip=0):
+        Elogp = self._compute_e_log_p(skip)
+        Elogq = self._compute_e_log_q(skip)
         return Elogp - Elogq
-    
+            
     #################### 
     
-    def _compute_e_log_p(self):
+    def _compute_e_log_p(self, skip=0):
     # This is the expectation of log of joint for p
     # For Basic-Gemm, this is:
     # = ElogP(X|Z,G,epsilon,pi,mu) + ElogP(Z|pi) + ElogP(G|mu) + ElogP(epsilon) + ElogP(pi) + ElogP(mu)
@@ -471,9 +488,18 @@ class BasicGeMM(object):
         e_log_p_term1 = self._compute_e_log_p_term1()   # term 1
         e_log_p_term2 = self._compute_e_log_p_term2()   # term 2        
         e_log_p_term3 = self._compute_e_log_p_term3()   # term 3
-        e_log_p_term4 = self._compute_e_log_p_term4()   # term 4
-        e_log_p_term5 = self._compute_e_log_p_term5()   # term 5
-        e_log_p_term6 = self._compute_e_log_p_term6()   # term 6
+        if (skip=="eps"):
+            e_log_p_term4 = 0
+        else:    
+            e_log_p_term4 = self._compute_e_log_p_term4()   # term 4
+        if (skip=="pi" or skip=="pi_and_prior"):
+            e_log_p_term5 = 0
+        else:        
+            e_log_p_term5 = self._compute_e_log_p_term5()   # term 5
+        if (skip=="mu"):
+            e_log_p_term6 = 0
+        else:    
+            e_log_p_term6 = self._compute_e_log_p_term6()   # term 6
         e_log_p_term7 = self._compute_e_log_p_term7()   # term 7
                     
         e_log_p = sum([e_log_p_term1,
@@ -583,18 +609,29 @@ class BasicGeMM(object):
         return 0 
                                                     
     ####################
-    def _compute_e_log_q(self):
+    def _compute_e_log_q(self, skip=0):
         # For Basic-GeMM:
         # E(log q) = E(log(eps)) + E(log(pi)) + E(log(mu)) + E(log(G)) + E(log(Z))
         # For Basic-Miss-GeMM:
         # E(log q) = E(log(eps)) + E(log(pi)) + E(log(mu)) + E(log(G)) + E(log(Z)) + E(log(Xmiss))
         
-        e_log_q_epsilon = self._compute_e_log_q_epsilon()
+        if(skip=="eps"):
+            e_log_q_epsilon = 0
+        else:    
+            e_log_q_epsilon= self._compute_e_log_q_epsilon()
         
         # NOTE: in Genotyper with samples it goes over the unique samples only!!!
-        e_log_q_pi = compute_e_log_q_dirichlet(self.alpha_star)
+        if(skip=="pi"):
+            e_log_q_pi = 0
+        elif (skip=="pi_and_prior"):            
+            e_log_q_pi = compute_e_log_p_dirichlet(self.alpha_star, self.alpha_prior)
+        else:
+            e_log_q_pi = compute_e_log_q_dirichlet(self.alpha_star)
         
-        e_log_q_mu = self._compute_e_log_q_mu()
+        if (skip=="mu"):
+            e_log_q_mu = 0
+        else:    
+            e_log_q_mu = self._compute_e_log_q_mu()
         
         e_log_q_G = 0
         
@@ -664,9 +701,33 @@ class BasicGeMM(object):
         diff = (self._debug_lower_bound[-1] - self._debug_lower_bound[-2]) / np.abs(self._debug_lower_bound[-1])
         
         if diff < 0:
-            print 'Bound decreased',
+            print ('Bound decreased')
         
-        return (ELBO, diff)
-            
+        return (ELBO, diff)            
+
+    ###############    
+    
+    def _compute_log_likelihood(self):
+        logl = 0
+        # first add the likelihood of the methylation data
+        # check which is the mode of Z and G
+        # log P(X|Z,G,eps) = sum_n sum_r sum_l log  [gamma_star[g_krl,X_nrl]-1 /(gamma_star[g_krl,0]+gamma_star[g_krl,1]-2)]
+        for data_type in self.data_types:  
+            X = self.X[data_type]   
+            mu_star = self.mu_star[data_type]   
+            gamma_star = self.gamma_star[data_type]
+            for n in range(self.N):
+                cluster = np.argmax(self.pi_star[n,])
+                # print 'pi_star for n=', n, 'is ', self.pi_star[n,], ' cluster is ', cluster
+                for r in range(self.R[data_type]):     
+                    for l in range(int(self.maxL[data_type])):
+                        if not np.isnan(X[n,r,l]):
+                            epigeno = int(np.argmax(mu_star[:,cluster,r,l]))
+                            # if (epigeno is not int(X[n,r,l])):
+                            #     print 'IS NOT NA n=', n, ' r=', r, ' l=', l, 'X=', X[n,r,l], 'cluster=', cluster
+                            #     print 'Epigeno is ', epigeno
+                            #     print 'gamma_star is ', gamma_star[epigeno, int(X[n,r,l])]
+                            logl = logl + np.log(gamma_star[epigeno, int(X[n,r,l])] - 1 / (gamma_star[epigeno,0] + gamma_star[epigeno,1]-2))
+        return logl
 
 

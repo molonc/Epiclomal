@@ -4,7 +4,7 @@
 # Epiclomal, probabilistic model for clustering and imputing single-cell methylation data
 # Author : Mirela Andronescu
 #=======================================================================================================================
-from lib.run import run_basic_gemm_model, run_basic_miss_gemm_model, run_region_gemm_model, run_region_miss_gemm_model
+from lib.run import run_basic_gemm_model, run_basic_bayespy_model, run_basic_miss_gemm_model, run_region_gemm_model, run_region_miss_gemm_model
 
 import argparse
 
@@ -65,6 +65,12 @@ basic_parser = subparsers.add_parser('Basic-GeMM', parents=[analysis_parser],
                                        help='''Analyse single cell methylation data using the Basic-GeMM model.''')
 
 basic_parser.set_defaults(func=run_basic_gemm_model)
+
+#---------------------------------------------------------------------------------------------------------------------- 
+basic_parser = subparsers.add_parser('Basic-BayesPy', parents=[analysis_parser],
+                                       help='''Analyse single cell methylation data using the Basic model with BayesPy.''')
+
+basic_parser.set_defaults(func=run_basic_bayespy_model)
 
 #---------------------------------------------------------------------------------------------------------------------- 
 

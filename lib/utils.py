@@ -29,7 +29,8 @@ def get_indicator_matrix(states, X):
     return Y
 
 def compute_e_log_p_dirichlet(posterior, prior):
-# This computes the log of Dirichlet (x, alpha), where alpha=prior x=posterior
+# For p we use both the prior and the hidden variable, such as gamma_star and gamma_0
+# This computes the E log of Dirichlet (x, alpha), where alpha=prior x=posterior
 # Dirichlet(alpha) = gamma(sum(alpha))/prod(gamma(alpha)) prod x_i^{alpha_i-1}
 # log(Dirichlet(alpha)) = log_gamma(sum(alpha)) - sum(log_gamma(alpha)) + sum(alpha_i-1 * log(x_i))
 # Elog(Dirichlet(alpha)) = log_gamma(sum(alpha)) - sum(log_gamma(alpha)) + sum(alpha_i-1 * Elog(x_i))
@@ -40,6 +41,7 @@ def compute_e_log_p_dirichlet(posterior, prior):
     return log_p
 
 def compute_e_log_q_dirichlet(x):
+    # for q, we don't use the priors of the Dirichlets (alpha_0, beta_0, gamma_0), just the hidden variables
     # x is the prior
     a_0 = x.sum()
        
@@ -90,8 +92,8 @@ def init_log_pi_star(K, N, initial_clusters_data):
         # for i, s in enumerate(range(len(set(labels)))):
         #     log_pi_star[:, i] = (labels == s).astype(int)
         # Replacing len(set(labels)) with K    
-    print 'Initial labels:'
-    print labels
+    print ('Initial labels:')
+    print (*labels)
     
     for i, s in enumerate(range(K)):
         log_pi_star[:, i] = (labels == s).astype(int)
