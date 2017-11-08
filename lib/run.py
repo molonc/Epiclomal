@@ -410,7 +410,9 @@ def write_params(model, out_dir, event_ids, cpu_time, vmeasure, maxmem):
     file_name = os.path.join(out_dir, 'params.yaml')
     
     params = {
-              'lower_bound' : int(model.lower_bound[-1]),
+              'lower_bound' : float(model.lower_bound[-1]),
+              'log_likelihood' : float(model.log_likelihood),
+              'log_posterior' : float(model.log_posterior),
               'converged' : model.converged
               }
     

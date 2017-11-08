@@ -15,6 +15,8 @@ import pandas as pd
 from lib.utils import compute_e_log_dirichlet, compute_e_log_q_dirichlet, compute_e_log_p_dirichlet, \
                       compute_e_log_q_discrete, init_log_pi_star, log_space_normalise, safe_multiply
 
+from scipy.stats import dirichlet
+
 class BasicGeMM(object):
     def __init__(self,
                  gamma_prior,
@@ -104,6 +106,8 @@ class BasicGeMM(object):
         # Then, return the log of this matrix (log_pi_star) of size N rows x K columns                                                              
         
         self.lower_bound = [float('-inf')]
+        self.log_likelihood = [float('-inf')]
+        self.log_posterior = [float('-inf')]
 
         self._debug_lower_bound = [float('-inf')]
         
@@ -274,12 +278,17 @@ class BasicGeMM(object):
                 self.converged = True
                 
                 self._unregion_rho_star()
-                
+
                 loglik = self._compute_log_likelihood()
-                print ('Log likelihood is ', loglik)
+                print ('Log likelihood: ', loglik)
+                self.log_likelihood = loglik
                 
-                elbo_without_eps = self._compute_lower_bound(skip="pi_and_prior")
-                print ('ELBO with pi_and_prior is ', elbo_without_eps)
+                loglik = self._compute_log_likelihood_times_priors()
+                print ('Log posterior unnormalized: ', loglik)
+                self.log_posterior = loglik
+                
+                #elbo_without_eps = self._compute_lower_bound(skip="pi_and_prior")
+                #print ('ELBO with pi_and_prior is ', elbo_without_eps)
                 
                 
                 break
@@ -705,6 +714,25 @@ class BasicGeMM(object):
         
         return (ELBO, diff)            
 
+
+    ###############  
+    
+    def _compute_log_likelihood_times_priors(self):    
+        logl = self._compute_log_likelihood()
+        # print("logl ", logl)
+        logPZ = self._compute_log_P_Z()
+        # print("logPZ ", logPZ)
+        logPG = self._compute_log_P_G()
+        # print("logPG ", logPG)
+        logPpi = self._compute_log_P_pi()
+        # print("logPpi ", logPpi)
+        logPmu = self._compute_log_P_mu()
+        # print("logPmu ", logPmu)        
+        logPeps = self._compute_log_P_epsilon()
+        # print("logPeps ", logPeps)                
+        post = logl + logPZ + logPG + logPpi + logPmu + logPeps
+        return post
+    
     ###############    
     
     def _compute_log_likelihood(self):
@@ -730,4 +758,78 @@ class BasicGeMM(object):
                             logl = logl + np.log(gamma_star[epigeno, int(X[n,r,l])] - 1 / (gamma_star[epigeno,0] + gamma_star[epigeno,1]-2))
         return logl
 
+    ###############     
+    
+    def _compute_log_P_Z(self):
+        logp = 0
+        for data_type in self.data_types:          
+            for n in range(self.N):
+                cluster = np.argmax(self.pi_star[n,:])   
+                #print(*self.log_pi_star[n,])                
+                #print("cluster ", cluster, " logpi* ", self.log_pi_star[n,cluster])                
+                logp = logp + self.log_pi_star[n,cluster]
+        # this turns out to be 0 every time the probabilities of Z are 1            
+        return logp
+        
+    ###############     
+    
+    def _compute_log_P_G(self):
+        logp = 0
+        all_clusters = []
+        for data_type in self.data_types:  
+            log_mu_star = self.log_mu_star[data_type]
+            mu_star = self.get_mu_star(data_type)
+            # First get the final clusters for each cell
+            for n in range(self.N):            
+                cluster = np.argmax(self.pi_star[n,:])
+                if cluster not in all_clusters:
+                    all_clusters.append(cluster)
+            for k in all_clusters:    
+                for r in range(self.R[data_type]):     
+                    for l in range(int(self.maxL[data_type])):                        
+                        # print("k ", k, " mu star ", *mu_star[:,k,r,l], " max ", max(log_mu_star[:,k,r,l]))                        
+                        logp = logp + max(log_mu_star[:,k,r,l])           
+        return logp        
 
+    ###############     
+    
+    def _compute_log_P_pi(self):
+        # This is Dirichlet(alpha_star, alpha_zero)
+        # Should we include only the found clusters? Or all clusters?
+        # Including all the clusters for now. The unused ones will have value 1 for both alpha_star and alpha_prior
+        logp = dirichlet.logpdf (x=self.alpha_star/sum(self.alpha_star), alpha=self.alpha_prior)
+                        
+        return logp      
+        
+    ###############     
+    
+    def _compute_log_P_mu(self):     
+        # \sum_k \sum_r Dirichlet(beta_star, beta_zero)   
+        logp = 0        
+        
+        for data_type in self.data_types:
+            # TODO: check this
+            if (self.include_bulk[data_type]):        
+                for k in range(self.K):
+                    for r in range(self.R[data_type]):
+                        for l in range(self.maxL[data_type]):                
+                            logp += dirichlet.logpdf(x=self.beta_star[data_type][k][r][l]/sum(self.beta_star[data_type][k][r][l]), alpha=self.beta_prior[data_type][r][l])  
+                     # This above computes log Dirichlet(beta_star, beta_zero)
+            else:
+                for k in range(self.K):
+                    for r in range(self.R[data_type]):            
+                        # print(*self.beta_star[data_type][k][r])
+                        # print(*self.beta_prior[data_type])
+                        logp += dirichlet.logpdf(x=self.beta_star[data_type][k][r]/sum(self.beta_star[data_type][k][r]), alpha=self.beta_prior[data_type])
+        return logp       
+        
+    def _compute_log_P_epsilon(self):
+        logp = 0        
+        
+        for data_type in self.data_types:
+            # \sum \sum log Dirichlet(epsilon)
+            logp += sum([dirichlet.logpdf(x=x/sum(x), alpha=y) for x, y in zip(self.gamma_star[data_type], self.gamma_prior[data_type])])
+            
+        return logp
+        
+        
