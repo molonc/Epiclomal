@@ -16,6 +16,8 @@ parser$add_argument("--output_dir", type="character", default="output", help="En
 
 parser$add_argument("--var", type="character", help="The variable value")
 
+parser$add_argument("--criterion", type="character", help="The selection criterion for the best run: lower_bound or log_posterior")
+
 args <- parser$parse_args() 
 
 print(args)
@@ -31,6 +33,8 @@ summary_table <- read.table(summary_table_file,header=TRUE,na.strings="NA",sep="
 outdir <- args$output_dir
 #outdir <- "~/Documents/shahlab15/csouza/BS-seq/whole_genome_single_cell/EPI-73"
 
+criterion <- args$criterion
+
 ##################
 ### line plots ###
 ##################
@@ -42,30 +46,30 @@ title <- system(paste0("cat ", info_file, " | grep -v DPARPROB | grep -v GPROB |
 title <- sub("multinomial_equal","mnon_eq",title)
 print (paste0("Title is ", title))
 
-pdf(paste0(outdir,"/plot_aveVmeasure_basic_VS_region.pdf"),height=7,width=9)
-tmp <- cbind(summary_table$Avg_Vmeasure_basic_true, summary_table$Avg_Vmeasure_region_true, summary_table$Avg_Vmeasure_basic, summary_table$Avg_Vmeasure_region, summary_table$Avg_Vmeasure_PBAL_Bestcut)
+pdf(paste0(outdir,"/plot_aveVmeasure_basic_VS_region_",criterion,".pdf"),height=7,width=9)
+tmp <- cbind(summary_table$Avg_Vmeasure_basic_true, summary_table$Avg_Vmeasure_region_true, summary_table$Avg_Vmeasure_basic, summary_table$Avg_Vmeasure_region, summary_table$Avg_Vmeasure_PBAL_Bestcut, summary_table$Avg_Vmeasure_densitycut)
 print(tmp)
 matplot(summary_table[,1],tmp,lty=1,type='l', 
     ylab="Average V-measure",
-    xlab=colnames(summary_table)[1],
+    xlab=paste0(colnames(summary_table)[1]," ",criterion),
     main=title,
-    cex.axis=1.2,cex.lab=1.2,xaxt="n",ylim=c(0,1), lwd=c(10,8,6,4,2),col=c(1,6,2,4,3))
-# col is color: 1=black, 2=blue, 3=green, 4=red, 6=magenta
+    cex.axis=1.2,cex.lab=1.2,xaxt="n",ylim=c(0,1), lwd=c(10,8,6,4,2,4),col=c(1,6,2,4,3,5))
+# col is color: 1=black, 2=blue, 3=green, 4=red, 6=magenta, 5=??
 # trying without y limit to see if it shows better
 #,ylim=c(0,1))
 axis(1, summary_table[,1])
-legend("bottomright",c("Basic Epiclomal True", "Region Epiclomal True", "Basic Epiclomal","Region Epiclomal","PBALclust"),bty="n",cex=.8,col=c(1,6,2,4,3),lty=c(1,1,1,1,1),lwd=c(10,8,6,4,2))
+legend("bottomleft",c("Basic Epiclomal True", "Region Epiclomal True", "Basic Epiclomal","Region Epiclomal","PBALclust","densitycut"),bty="n",cex=.8,col=c(1,6,2,4,3,5),lty=c(1,1,1,1,1,1),lwd=c(10,8,6,4,2,4))
 grid()
 # not sure how to add text
 #text(pos=2,"NCELLS=100\nNLOCI=10000")
 
 dev.off()
 
-pdf(paste0(outdir,"/plot_aveHD_basic_VS_region.pdf"),height=7,width=9)
+pdf(paste0(outdir,"/plot_aveHD_basic_VS_region_",criterion,".pdf"),height=7,width=9)
 tmp <- cbind(summary_table$Avg_avgHD_basic,summary_table$Avg_avgHD_region)
 matplot(summary_table[,1],tmp,lty=1,type='l',lwd=c(6,4),col=c(2,4),
     ylab="Average cell-based mean hamming distance",
-    xlab=colnames(summary_table)[1],
+    xlab=paste0(colnames(summary_table)[1]," ",criterion),
     main=title,
     cex.axis=1.2,cex.lab=1.2,xaxt="n",ylim=c(0,1))
 # trying without y limit to see if it shows better
@@ -103,12 +107,12 @@ for(m in 1:length(model)){
     print(j)
     for(i in 1:number_data_sets){
       #print(i)
-      t <- try(read.table(file=paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_",model[m],"/all_hdist_bestrun_",model[m],".tsv"),sep="\t",header=TRUE))   
+      t <- try(read.table(file=paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_",model[m],"/",criterion,"/all_hdist_bestrun_",model[m],".tsv"),sep="\t",header=TRUE))   
       if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
         print("can't find file")
         counts[j] <- counts[j]+1 }
       else {
-        hD <- read.table(file=paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_",model[m],"/all_hdist_bestrun_",model[m],".tsv"),sep="\t",header=TRUE)
+        hD <- read.table(file=paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_",model[m],"/",criterion,"/all_hdist_bestrun_",model[m],".tsv"),sep="\t",header=TRUE)
         
         hamming_distance <- c(hamming_distance,hD$mean)
         
@@ -137,7 +141,7 @@ pHD <- ggplot(big_hD_df, aes(x=method, y=hD,fill=method)) +
         axis.title.y =element_text(size=15), axis.title.x=element_text(size=15),
         strip.text.x = element_text(size =12) )
 
-ggsave(pHD,file=paste0(outdir,"/boxplot_meanHD_basic_VS_region.pdf"),width=13.1,height=10.6)
+ggsave(pHD,file=paste0(outdir,"/boxplot_meanHD_basic_VS_region_",criterion,".pdf"),width=13.1,height=10.6)
 
 
 ### V-measure
@@ -153,12 +157,12 @@ for(m in 1:length(model)){
   for(j in 1:length(variable)){
     print(j)
     for(i in 1:number_data_sets){
-      t <- try(read.table(file=paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_",model[m],"/all_results_bestrun_",model[m],".tsv"),sep="\t",header=TRUE))   
+      t <- try(read.table(file=paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_",model[m],"/",criterion,"/all_results_bestrun_",model[m],".tsv"),sep="\t",header=TRUE))   
       if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
         print("can't find file")
         counts[j] <- counts[j]+1 }
       else {
-        v <- read.table(file=paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_",model[m],"/all_results_bestrun_",model[m],".tsv"),sep="\t",header=TRUE)
+        v <- read.table(file=paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_",model[m],"/",criterion,"/all_results_bestrun_",model[m],".tsv"),sep="\t",header=TRUE)
         
         Vmeasure <- c(Vmeasure,v$best_vmeasure)
         
@@ -187,7 +191,7 @@ pvmeasure <- ggplot(big_Vmeasure_df, aes(x=method, y=Vmeasure,fill=method)) +
         axis.title.y =element_text(size=15), axis.title.x=element_text(size=15),
         strip.text.x = element_text(size =12) )
 
-ggsave(pvmeasure,file=paste0(outdir,"/boxplot_Vmeasure_basic_VS_region.pdf"),width=13.1,height=10.6)
+ggsave(pvmeasure,file=paste0(outdir,"/boxplot_Vmeasure_basic_VS_region_",criterion,".pdf"),width=13.1,height=10.6)
 
 # ###############################
 # #### Code for plotting ELBo ###

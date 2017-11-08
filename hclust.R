@@ -10,6 +10,8 @@ suppressMessages(library(argparse))
 suppressMessages(library(NbClust))
 suppressMessages(library(pheatmap))
 
+RSCRIPT <- "/gsc/software/linux-x86_64-centos6/R-3.3.2/bin/Rscript"
+
 #======================
 # arguments
 #======================
@@ -536,6 +538,28 @@ if(sum(is.na(diss_matrix_T)) > 0){
   PBAL_crash <- 1
   write.table(PBAL_crash,file=paste0(outdir,"/PBAL_crash.tsv"),row.names=FALSE,col.names=FALSE)}
 
+####################
+# Now call densitycut
+print("Calling densitycut")
+
+# assume densitycut is in the same directory as this file
+# trying to figure out the path of this file so I can call densitycut.R
+initial.options <- commandArgs(trailingOnly = FALSE)
+file.arg.name <- "--file="
+script.name <- sub(file.arg.name, "", initial.options[grep(file.arg.name, initial.options)])
+script.basename <- dirname(script.name)
+densitycut.name <- paste(sep="/", script.basename, "densitycut.R")
+# print(paste("Sourcing",densitycut.name,"from",script.name))
+
+maxpc <- 20
+command <- paste0(RSCRIPT, " ", densitycut.name, 
+    " --output_directory ", outdir, 
+    " --max_PC ", maxpc, " --methylation_file ", input_CpG_data_file,
+    " --regions_file ", input_regions_file)
+
+print(command)
+system(command)
+
 
 # MA: added another file at the end with all the columns from hclust regions and pbal (except the first 2 columns of pbal cell_id and clusters_1
 # Note: I am unzipping so I zip again after, I should not zip earlier, TODO
@@ -543,9 +567,11 @@ if(sum(is.na(diss_matrix_T)) > 0){
 
 hfile <- paste0(outdir,"/hclust_clusters_region_based_maxk_",Max_K,".tsv")
 pfile <- paste0(outdir,"/PBALclust_clusters_CpG_based_maxk_",Max_K,".tsv")
-outfile <- paste0(outdir, "/hclust_region_PBAL_CpG_clusters_maxk_",Max_K,".tsv")
+dfile <- paste0(outdir,"/densityCut_clusters_Region_based_maxPC_",maxpc,".tsv")
+outfile <- paste0(outdir, "/hclust_region_PBAL_CpG_clusters_maxk_",Max_K,"_densitycut_PC", maxpc, ".tsv")
 print (paste0("Hfile ", hfile))
 print (paste0("Pfile ", pfile))
+print (paste0("Dfile ", dfile))
 print (paste0("Outfile ", outfile))
 
 # take the cell_ids from the input methylation file
@@ -553,6 +579,7 @@ idtempfile <- paste0(outdir,"/cellid_temp_maxk_",Max_K,".tsv")
 htempfile <- ""
 ptempfile <- ""
 
+#hclust
 if(file.exists(paste0(hfile,".gz"))) {
     print("hclust result exists")
     system(paste0 ("gunzip ", hfile,".gz"))
@@ -562,6 +589,7 @@ if(file.exists(paste0(hfile,".gz"))) {
     system (paste0("gzip --force ", hfile))
 }
 
+# pbal 
 if(file.exists(paste0(pfile,".gz"))) {
     print("PBALclust result exists")
     system (paste0 ("gunzip ", pfile,".gz"))
@@ -571,17 +599,27 @@ if(file.exists(paste0(pfile,".gz"))) {
     system (paste0("gzip --force ", pfile))    
 }
  
+# densitycut 
+if(file.exists(paste0(dfile,".gz"))) {
+    print("densitycut result exists")
+    system (paste0 ("gunzip ", dfile,".gz"))
+    dtempfile <- paste0(outdir,"/densitycut_temp_maxpc_",maxpc,".tsv")
+    system (paste0 ("cut -f1 ", dfile, " > ", idtempfile))    
+    system (paste0 ("cut -f2 ", dfile, " > ", dtempfile))
+    system (paste0("gzip --force ", dfile))    
+} 
  
  # I should add the name of PBAL or HCLUST - added
 # Write the file only when at least one of the files exists
-if(file.exists(paste0(hfile,".gz")) || file.exists(paste0(pfile,".gz")))  {
-    command <- paste0 ("paste ", idtempfile, " ", htempfile, " ", ptempfile, " > ", outfile)
+if(file.exists(paste0(hfile,".gz")) || file.exists(paste0(pfile,".gz")) || file.exists(paste0(dfile,".gz")))  {
+    command <- paste0 ("paste ", idtempfile, " ", htempfile, " ", ptempfile, " ", dtempfile, " > ", outfile)
     system(command)
     system (paste0("gzip --force ", outfile))    
 }    
 
 system (paste0("rm ", ptempfile))
 system (paste0("rm ", htempfile))
+system (paste0("rm ", dtempfile))
 system (paste0("rm ", idtempfile))
 
 

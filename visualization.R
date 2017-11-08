@@ -107,6 +107,7 @@ extract_mean_meth_per_cell <- function(cell_data,region_coord){
 #======================
 
 # Methylation data
+
 tmp <- read.csv(input_CpG_data_file,sep="\t",header=TRUE,check.names=FALSE)
 input_CpG_data <- as.matrix(tmp[,-1])
 rownames(input_CpG_data) <- tmp$cell_id
@@ -235,13 +236,17 @@ M <- dim(input_CpG_data)[2] ## number of loci
 #======================
 
 ## annotating the columns by region
+#print('Start annotating the columns by region')
 reg_id <- unlist(sapply(1:R,function(x){rep(x,(input_regions[x,2]-input_regions[x,1])+1)}))
+#print(reg_id)
 annotation_col <- as.matrix(reg_id,nrow=length(colnames(input_CpG_data)))
+#print('colnames')
+#print(colnames(input_CpG_data))
 rownames(annotation_col) <- colnames(input_CpG_data)
 annotation_col <- as.data.frame(annotation_col)
 colnames(annotation_col) <- "regions"
 annotation_col$regions <- as.factor(annotation_col$regions)
-
+#print ('DONE')
 
 
 #if(args$true_clusters == 1 && args$order_by_true == 1){
