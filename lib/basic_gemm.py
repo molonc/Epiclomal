@@ -721,15 +721,15 @@ class BasicGeMM(object):
         logl = self._compute_log_likelihood()
         # print("logl ", logl)
         logPZ = self._compute_log_P_Z()
-        # print("logPZ ", logPZ)
+        print("logPZ ", logPZ)
         logPG = self._compute_log_P_G()
-        # print("logPG ", logPG)
+        print("logPG ", logPG)
         logPpi = self._compute_log_P_pi()
-        # print("logPpi ", logPpi)
+        print("logPpi ", logPpi)
         logPmu = self._compute_log_P_mu()
-        # print("logPmu ", logPmu)        
+        print("logPmu ", logPmu)        
         logPeps = self._compute_log_P_epsilon()
-        # print("logPeps ", logPeps)                
+        print("logPeps ", logPeps)                
         post = logl + logPZ + logPG + logPpi + logPmu + logPeps
         return post
     
@@ -761,6 +761,7 @@ class BasicGeMM(object):
     ###############     
     
     def _compute_log_P_Z(self):
+    # For every cell, I look at this cluster assignment and add the log prob for that pi_star
         logp = 0
         for data_type in self.data_types:          
             for n in range(self.N):
@@ -780,11 +781,13 @@ class BasicGeMM(object):
             log_mu_star = self.log_mu_star[data_type]
             mu_star = self.get_mu_star(data_type)
             # First get the final clusters for each cell
-            for n in range(self.N):            
-                cluster = np.argmax(self.pi_star[n,:])
-                if cluster not in all_clusters:
-                    all_clusters.append(cluster)
-            for k in all_clusters:    
+            # Actually I think I should include all the k's
+            # for n in range(self.N):            
+            #     cluster = np.argmax(self.pi_star[n,:])
+            #     if cluster not in all_clusters:
+            #        all_clusters.append(cluster)
+            # for k in all_clusters:    
+            for k in range(self.K):
                 for r in range(self.R[data_type]):     
                     for l in range(int(self.maxL[data_type])):                        
                         # print("k ", k, " mu star ", *mu_star[:,k,r,l], " max ", max(log_mu_star[:,k,r,l]))                        
