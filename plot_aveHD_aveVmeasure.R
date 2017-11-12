@@ -58,15 +58,16 @@ matplot(summary_table[,1],tmp,lty=1,type='l',
     ylab="Average V-measure",
     xlab=paste0(colnames(summary_table)[1]," ",criterion),
     main=title,
-    cex.axis=1.2,cex.lab=1.2,xaxt="n",xlim=c(1,length(summary_table[,1])), ylim=c(0,1), lwd=c(10,8,6,4,2,4),col=c(1,6,2,4,3,5))
+    cex.axis=1.2,cex.lab=1.2,xaxt="n",ylim=c(0,1), lwd=c(10,8,6,4,2,4),col=c(1,6,2,4,3,5))
+# also tried to set a limit on x but didn't work xlim=c(1,length(summary_table[,1]))    
 # col is color: 1=black, 2=blue, 3=green, 4=red, 6=magenta, 5=??
 # trying without y limit to see if it shows better
 #,ylim=c(0,1))
 
+axis(1, summary_table[,1])
 # axis(1, 1:5)
 # axis(1, at=1:length(summary_table[,1]), labels=c("0.33_0.33_0.34","0.2_0.5_0.3","0.45_0.45_0.1","0.49_0.49_0.02","0.8_0.1_0.1"))   #summary_table[,1])
-#axis(1, summary_table[,1])
-axis(1, at=1:5)
+# axis(1, at=1:5)
 legend("bottomleft",c("Basic Epiclomal True", "Region Epiclomal True", "Basic Epiclomal","Region Epiclomal","PBALclust","densitycut"),bty="n",cex=.8,col=c(1,6,2,4,3,5),lty=c(1,1,1,1,1,1),lwd=c(10,8,6,4,2,4))
 grid()
 # not sure how to add text
