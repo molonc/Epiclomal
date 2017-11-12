@@ -578,6 +578,7 @@ print (paste0("Outfile ", outfile))
 idtempfile <- paste0(outdir,"/cellid_temp_maxk_",Max_K,".tsv")
 htempfile <- ""
 ptempfile <- ""
+dtempfile <- ""
 
 #hclust
 if(file.exists(paste0(hfile,".gz"))) {
@@ -617,10 +618,10 @@ if(file.exists(paste0(hfile,".gz")) || file.exists(paste0(pfile,".gz")) || file.
     system (paste0("gzip --force ", outfile))    
 }    
 
-system (paste0("rm ", ptempfile))
-system (paste0("rm ", htempfile))
-system (paste0("rm ", dtempfile))
-system (paste0("rm ", idtempfile))
+if (ptempfile != "")  system (paste0("rm ", ptempfile))
+if (htempfile != "")  system (paste0("rm ", htempfile))
+if (dtempfile != "")  system (paste0("rm ", dtempfile))  
+if (idtempfile != "")  system (paste0("rm ", idtempfile))
 
 
 

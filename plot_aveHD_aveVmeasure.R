@@ -42,22 +42,31 @@ criterion <- args$criterion
 # adding basic_true and region_true to the plot
 info_file <- paste0(outdir, "/info_", args$var, ".txt")
 print(info_file)
-title <- system(paste0("cat ", info_file, " | grep -v DPARPROB | grep -v GPROB | grep -v EPROB | grep -v CPREV | grep -v ", args$var, " | perl -p -e 's/\n/ /g;'"), intern=TRUE)
+title <- system(paste0("cat ", info_file, " | grep -v DPARPROB | grep -v REGSIZE | grep -v CONFIG | grep -v GPROB | grep -v EPROB | grep -v CPREV | grep -v ", args$var, " | perl -p -e 's/\n/ /g;'"), intern=TRUE)
 title <- sub("multinomial_equal","mnon_eq",title)
 print (paste0("Title is ", title))
 
 pdf(paste0(outdir,"/plot_aveVmeasure_basic_VS_region_",criterion,".pdf"),height=7,width=9)
 tmp <- cbind(summary_table$Avg_Vmeasure_basic_true, summary_table$Avg_Vmeasure_region_true, summary_table$Avg_Vmeasure_basic, summary_table$Avg_Vmeasure_region, summary_table$Avg_Vmeasure_PBAL_Bestcut, summary_table$Avg_Vmeasure_densitycut)
 print(tmp)
+#print("SUmmaryTable is")
+#print(paste0("Length of SUmmaryTable is ", length(summary_table[,1])))
+#print(summary_table[,1])
+#summary_table[,1] <- factor(summary_table[,1])
+#print("end summary table")
 matplot(summary_table[,1],tmp,lty=1,type='l', 
     ylab="Average V-measure",
     xlab=paste0(colnames(summary_table)[1]," ",criterion),
     main=title,
-    cex.axis=1.2,cex.lab=1.2,xaxt="n",ylim=c(0,1), lwd=c(10,8,6,4,2,4),col=c(1,6,2,4,3,5))
+    cex.axis=1.2,cex.lab=1.2,xaxt="n",xlim=c(1,length(summary_table[,1])), ylim=c(0,1), lwd=c(10,8,6,4,2,4),col=c(1,6,2,4,3,5))
 # col is color: 1=black, 2=blue, 3=green, 4=red, 6=magenta, 5=??
 # trying without y limit to see if it shows better
 #,ylim=c(0,1))
-axis(1, summary_table[,1])
+
+# axis(1, 1:5)
+# axis(1, at=1:length(summary_table[,1]), labels=c("0.33_0.33_0.34","0.2_0.5_0.3","0.45_0.45_0.1","0.49_0.49_0.02","0.8_0.1_0.1"))   #summary_table[,1])
+#axis(1, summary_table[,1])
+axis(1, at=1:5)
 legend("bottomleft",c("Basic Epiclomal True", "Region Epiclomal True", "Basic Epiclomal","Region Epiclomal","PBALclust","densitycut"),bty="n",cex=.8,col=c(1,6,2,4,3,5),lty=c(1,1,1,1,1,1),lwd=c(10,8,6,4,2,4))
 grid()
 # not sure how to add text
