@@ -283,9 +283,11 @@ class BasicGeMM(object):
                 print ('Log likelihood: ', loglik)
                 self.log_likelihood = loglik
                 
-                loglik = self._compute_log_likelihood_times_priors()
-                print ('Log posterior unnormalized: ', loglik)
-                self.log_posterior = loglik
+                (loglik1, loglik2) = self._compute_log_likelihood_times_priors()
+                print ('Log posterior unnormalized cluster Ks: ', loglik1)
+                print ('Log posterior unnormalized all Ks: ', loglik2) 
+                self.log_posterior_clusterK = loglik1
+                self.log_posterior_allK = loglik2
                 
                 #elbo_without_eps = self._compute_lower_bound(skip="pi_and_prior")
                 #print ('ELBO with pi_and_prior is ', elbo_without_eps)
@@ -722,16 +724,19 @@ class BasicGeMM(object):
         # print("logl ", logl)
         logPZ = self._compute_log_P_Z()
         print("logPZ ", logPZ)
-        logPG = self._compute_log_P_G()
-        print("logPG ", logPG)
+        logPG_clusterK = self._compute_log_P_G_clusterK()
+        print("logPG_clusterK ", logPG_clusterK)
+        logPG_allK = self._compute_log_P_G_allK()
+        print("logPG_allK ", logPG_allK)
         logPpi = self._compute_log_P_pi()
         print("logPpi ", logPpi)
         logPmu = self._compute_log_P_mu()
         print("logPmu ", logPmu)        
         logPeps = self._compute_log_P_epsilon()
         print("logPeps ", logPeps)                
-        post = logl + logPZ + logPG + logPpi + logPmu + logPeps
-        return post
+        post1 = logl + logPZ + logPG_clusterK + logPpi + logPmu + logPeps
+        post2 = logl + logPZ + logPG_allK + logPpi + logPmu + logPeps
+        return (post1, post2)
     
     ###############    
     
@@ -773,8 +778,30 @@ class BasicGeMM(object):
         return logp
         
     ###############     
+
+    def _compute_log_P_G_clusterK(self):
+    # Here include only the k's that were found
+        logp = 0
+        all_clusters = []
+        for data_type in self.data_types:  
+            log_mu_star = self.log_mu_star[data_type]
+            mu_star = self.get_mu_star(data_type)
+            # First get the final clusters for each cell
+            for n in range(self.N):            
+                cluster = np.argmax(self.pi_star[n,:])
+                if cluster not in all_clusters:
+                   all_clusters.append(cluster)
+            for k in all_clusters:    
+                for r in range(self.R[data_type]):     
+                    for l in range(int(self.maxL[data_type])):                        
+                        # print("k ", k, " mu star ", *mu_star[:,k,r,l], " max ", max(log_mu_star[:,k,r,l]))                        
+                        logp = logp + max(log_mu_star[:,k,r,l])           
+        return logp 
+        
+    ###############        
     
-    def _compute_log_P_G(self):
+    def _compute_log_P_G_allK(self):
+    # Here include all the possible k's
         logp = 0
         all_clusters = []
         for data_type in self.data_types:  
@@ -792,7 +819,29 @@ class BasicGeMM(object):
                     for l in range(int(self.maxL[data_type])):                        
                         # print("k ", k, " mu star ", *mu_star[:,k,r,l], " max ", max(log_mu_star[:,k,r,l]))                        
                         logp = logp + max(log_mu_star[:,k,r,l])           
-        return logp        
+        return logp 
+        
+    # Note: If many of the G values are much less than 1 (e.g. 0.72), then logP(G) will be lower, and the log_posterior will be lower
+    # That means that the log_posterior score favours the more "certain" results
+    # For example, in the following 2 cases log_likelihood is higher for run 17, 
+    #   but log_posterior is higher for run 39 because logP(G) is much lower for run 17
+    # /shahlab/mandronescu/EPI-98_run_synthetic_pipeline/OUTPUT_NREGIONS/RUN/D_NREGIONS_500_9_epiclomal_synthetic/outputs
+    # [node0514 outputs]$ grep -i log ../logs/TASK_BASIC_EPICLOMAL__17.o2748085
+    # Log likelihood:  2320317.60907
+    # logPZ  -0.0424230776958
+    # logPG  -22808.0376075
+    # logPpi  12.8018274801
+    # logPmu  0.0
+    # logPeps  8.98091533122
+    # Log posterior unnormalized:  2297531.31178
+    # [node0514 outputs]$ grep -i log ../logs/TASK_BASIC_EPICLOMAL__39.o2747743
+    # Log likelihood:  2319274.73179
+    # logPZ  0.0
+    # logPG  -3749.627868
+    # logPpi  12.8018274801
+    # logPmu  0.0
+    # logPeps  8.72871796896
+    # Log posterior unnormalized:  2315546.63447
 
     ###############     
     

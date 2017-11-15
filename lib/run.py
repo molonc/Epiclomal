@@ -412,7 +412,8 @@ def write_params(model, out_dir, event_ids, cpu_time, vmeasure, maxmem):
     params = {
               'lower_bound' : float(model.lower_bound[-1]),
               'log_likelihood' : float(model.log_likelihood),
-              'log_posterior' : float(model.log_posterior),
+              'log_posterior_clusterK' : float(model.log_posterior_clusterK),
+              'log_posterior_allK' : float(model.log_posterior_allK),              
               'converged' : model.converged
               }
     
