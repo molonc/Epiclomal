@@ -3,10 +3,13 @@
 # libraries
 #======================
 
+### for testing I used this paths for the libraries and R in /gsc/software/linux-x86_64-centos6/R-3.3.2/bin/R
+# library(pcaMethods,lib.loc="/home/mandronescu/R/x86_64-pc-linux-gnu-library/3.2")
+# library(densitycut,lib.loc = "/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos6/3.3/" )
+
 suppressMessages(library(argparse))
 suppressMessages(library(pcaMethods))
 suppressMessages(library(densitycut))
-
 
 #======================
 # arguments
@@ -28,6 +31,9 @@ outdir <- args$output_directory
 dir.create(file.path(outdir), showWarnings = FALSE)
 input_CpG_data_file <- args$methylation_file
 input_regions_file <- args$regions_file
+
+# input_CpG_data_file <- "data_incomplete.tsv.gz"
+# input_regions_file <- "regions_file.tsv.gz"
 
 # input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv"
 # input_regions_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
@@ -192,13 +198,23 @@ if (R > 1){
   
   max_comp <- min(args$max_PC,R)
   
-  pc <- pca( mean_meth_matrix ,method="nipals",nPcs=max_comp)
+  t <- try(pca( mean_meth_matrix ,method="nipals",nPcs=max_comp))
+  if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
+    print("Stop! At least one cell has NO data across all regions, can't do PCA")
+    stop()
+    }else{
+    pc <- pca( mean_meth_matrix ,method="nipals",nPcs=max_comp) }
   
   pc_scores <- scores(pc)
   
   #print(head(pc_scores))
   
   #plot(pc_scores[,1],pc_scores[,2],col=true_membership)
+  
+  checking_warning <- capture.output(DensityCut(pc_scores))
+  
+  if(checking_warning[1] == "WARNING! not converged "){
+    print("densitycut didn't converge, not saving results")}else{
   
   cluster.out <-  DensityCut(pc_scores) # DensityCut clustering analysis
   
@@ -213,6 +229,8 @@ if (R > 1){
   ofile <- paste0(outdir,"/densityCut_clusters_Region_based_maxPC_",max_comp,".tsv") 
   write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
   system(paste0("gzip --force ", ofile))   
+  
+  }
   
 }
 
