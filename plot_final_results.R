@@ -1,4 +1,5 @@
 
+# plotting Vmeasure, Hamming Distance, number of clusters, cluster prevalence mean absolute error and mean squared error
 
 suppressMessages(library("argparse"))
 library(ggplot2)
@@ -55,101 +56,126 @@ print (paste0("Title is ", title))
 
 print(title)
 
+
+ 
+#################
+## V-measure line plot with a selection of the models considered
+#################
+
+tmp <- cbind(summary_table$Avg_Vmeasure_basic, summary_table$Avg_Vmeasure_region, summary_table$Avg_Vmeasure_PBAL_Bestcut, summary_table$Avg_Vmeasure_densitycut)
+print(str(tmp))
+print(tmp)
+
+pdf(paste0(outdir,"/lineplot_aveVmeasure_",criterion,".pdf"),height=7,width=9)
+
+if(is.numeric(summary_table[,1])){ 
+    x <- summary_table[,1]
+} else {
+    x <- (1:dim(tmp)[1])    
+}  
+
+
+cexaxis=1.2
+
+
+if(grepl("MISSPB", args$var, fixed=TRUE))   {
+    xlabel <- "Missing data proportion"
+} else if (grepl("NREGIONS", args$var, fixed=TRUE))   {
+    xlabel <- "Percentage of loci different between clusters"
+    x <- 100.0/x
+} else if (grepl("CLONE_PREV", args$var, fixed=TRUE))   {
+    xlabel <- "Clone prevalence"    
+} else if (grepl("ERROR", args$var, fixed=TRUE))   {
+    xlabel <- "Error"
+} else if (grepl("NCELLS", args$var, fixed=TRUE))   {
+    xlabel <- "Number of cells"    
+} else if (grepl("NCLONES", args$var, fixed=TRUE))   {
+    xlabel <- "Number of clones"    
+} else if (grepl("NLOCI", args$var, fixed=TRUE))   {
+    xlabel <- "Number of loci"   
+} else if (grepl("READSIZE", args$var, fixed=TRUE))   {
+    xlabel <- "Read size"     
+}
+
+
+matplot(x, tmp, lty=1,type='l', 
+    ylab="Average V-measure",
+    xlab=xlabel, 
+    cex.axis=1.2,
+    cex.lab=1.2,
+    # xaxt="n",
+    ylim=c(0,1), lwd=c(8,6,4,4),col=c(2,4,3,5))
+
+if(is.numeric(summary_table[,1])){ 
+    print ("IS NUMERIC")
+    axis(1, summary_table[,1])
+} else {
+    axis(1, at=1:length(summary_table[,1]), labels=as.character(summary_table[,1]))   
+    print ("Is NOT Numeric")
+}  
+
+legend("bottomright",c("Basic Epiclomal", "Region Epiclomal","Hclust","DensityCut"),bty="n",cex=.8,col=c(2,4,3,5),lty=c(1,1,1,1),lwd=c(8,6,4,4))
+grid()
+
+dev.off()
+
+#################
+## V-measure line plot with all the models considered 
+#################
+
 tmp <- cbind(summary_table$Avg_Vmeasure_basic_true, summary_table$Avg_Vmeasure_region_true, summary_table$Avg_Vmeasure_basic, summary_table$Avg_Vmeasure_basic_munok, summary_table$Avg_Vmeasure_region, summary_table$Avg_Vmeasure_region_munok, summary_table$Avg_Vmeasure_PBAL_Bestcut, summary_table$Avg_Vmeasure_densitycut)
 print(str(tmp))
 print(tmp)
 
-#if(!is.numeric(summary_table[,1])){
-#  print("ok")
-#}
+pdf(paste0(outdir,"/lineplot2_aveVmeasure_",criterion,".pdf"),height=7,width=9)
 
-#stop()
+if(!is.numeric(summary_table[,1])){ 
+    x <- (1:dim(tmp)[1])    
+}  
 
-pdf(paste0(outdir,"/plot_aveVmeasure_basic_VS_region_",criterion,".pdf"),height=7,width=9)
-
-#print("SUmmaryTable is")
-#print(paste0("Length of SUmmaryTable is ", length(summary_table[,1])))
-#print(summary_table[,1])
-#summary_table[,1] <- factor(summary_table[,1])
-#print("end summary table")
-
-if(is.numeric(summary_table[,1])){
-  
-matplot(summary_table[,1],tmp,lty=1,type='l', 
+matplot(x, tmp, lty=1,type='l', 
     ylab="Average V-measure",
-    xlab=paste0(colnames(summary_table)[1]," ",criterion),
+    xlab=xlabel,
     main=title,
-    cex.axis=1.2,cex.lab=1.2,xaxt="n",ylim=c(0,1), lwd=c(10,8,6,4,6,4,2,4),col=c(1,6,2,4,7,8,3,5))
-# also tried to set a limit on x but didn't work xlim=c(1,length(summary_table[,1]))    
-# col is color: 1=black, 2=blue, 3=green, 4=red, 6=magenta, 5=??
-# trying without y limit to see if it shows better
-#,ylim=c(0,1))
+    cex.axis=1.2,cex.lab=1.2,xaxt="n",ylim=c(0,1), lwd=c(10,8,8,4,6,4,4,4),col=c(1,6,2,7,4,8,3,5))
 
-axis(1, summary_table[,1])
-# axis(1, 1:5)
-# axis(1, at=1:length(summary_table[,1]), labels=c("0.33_0.33_0.34","0.2_0.5_0.3","0.45_0.45_0.1","0.49_0.49_0.02","0.8_0.1_0.1"))   #summary_table[,1])
-# axis(1, at=1:5)
-legend("bottomleft",c("Basic Epiclomal True", "Region Epiclomal True", "Basic Epiclomal", "Basic munok", "Region Epiclomal","Region munok","PBALclust","densitycut"),bty="n",cex=.8,col=c(1,6,2,4,7,8,3,5),lty=c(1,1,1,1,1,1,1,1),lwd=c(10,8,6,4,6,4,2,4))
+if(is.numeric(summary_table[,1])){ 
+    axis(1, summary_table[,1])
+} else {
+    axis(1, at=1:length(summary_table[,1]), labels=as.character(summary_table[,1]))   
+}  
+
+legend("bottomleft",c("Basic Epiclomal True", "Region Epiclomal True", "Basic Epiclomal", "Basic munok", "Region Epiclomal","Region munok","PBALclust","densitycut"),bty="n",cex=.8,col=c(1,6,2,7,4,8,3,5),lty=c(1,1,1,1,1,1,1,1),lwd=c(10,8,8,4,6,4,4,4))
 grid()
-# not sure how to add text
-#text(pos=2,"NCELLS=100\nNLOCI=10000")
-
-}
-
-if(!is.numeric(summary_table[,1])){
-  
-  x_tmp  <- (1:dim(tmp)[1])
-  matplot(x_tmp,tmp,lty=1,type='l', 
-          ylab="Average V-measure",
-          xlab=paste0(colnames(summary_table)[1]," ",criterion),
-          main=title,
-          cex.axis=1.2,cex.lab=1.2,ylim=c(0,1),xaxt="n",lwd=c(10,8,6,4,2,4),col=c(1,6,2,4,3,5))
-  # also tried to set a limit on x but didn't work xlim=c(1,length(summary_table[,1]))    
-  # col is color: 1=black, 2=blue, 3=green, 4=red, 6=magenta, 5=??
-  # trying without y limit to see if it shows better
-  #,ylim=c(0,1))
-  
-  #axis(1, as.character(summary_table[,1])) ### doesn't work as well - Camila
-  # axis(1, 1:5)
-  axis(1, at=1:length(summary_table[,1]), labels=as.character(summary_table[,1]))
-  # axis(1, at=1:5)
-  legend("bottomleft",c("Basic Epiclomal True", "Region Epiclomal True", "Basic Epiclomal", "Basic munok", "Region Epiclomal","Region munok", "PBALclust","densitycut"),bty="n",cex=.8,col=c(1,6,2,4,7,8,3,5),lty=c(1,1,1,1,1,1,1,1),lwd=c(10,8,6,4,6,4,2,4))
-  grid()
-  
-  
-}
 
 dev.off()
 
-pdf(paste0(outdir,"/plot_aveHD_basic_VS_region_",criterion,".pdf"),height=7,width=9)
+#################
+### Hamming distance line plot
+#################
+
+
+pdf(paste0(outdir,"/lineplot_aveHD_",criterion,".pdf"),height=7,width=9)
 tmp <- cbind(summary_table$Avg_avgHD_basic,summary_table$Avg_avgHD_region)
 
-  if(is.numeric(summary_table[,1])){
-  matplot(summary_table[,1],tmp,lty=1,type='l',lwd=c(6,4),col=c(2,4),
+if(!is.numeric(summary_table[,1])){
+    x_tmp  <- (1:dim(tmp)[1])
+}    
+
+matplot(x,tmp,lty=1,type='l',lwd=c(8,6),col=c(2,4),
     ylab="Average cell-based mean hamming distance",
-    xlab=paste0(colnames(summary_table)[1]," ",criterion),
-    main=title,
-    cex.axis=1.2,cex.lab=1.2,xaxt="n",ylim=c(0,1))
-  # trying without y limit to see if it shows better
-  # ,ylim=c(0,1))
-  axis(1, summary_table[,1])
-  grid()
-  legend("topleft",c("Basic Epiclomal","Region Epiclomal"),bty="n",col=c(2,4),lty=c(1,1),lwd=c(6,4),cex=.8)
-  }
-
-
-  if(!is.numeric(summary_table[,1])){
-  x_tmp  <- (1:dim(tmp)[1])
-  matplot(x_tmp,tmp,lty=1,type='l',lwd=c(6,4),col=c(2,4),
-          ylab="Average cell-based mean hamming distance",
-          xlab=paste0(colnames(summary_table)[1]," ",criterion),
-          main=title,
-          cex.axis=1.2,cex.lab=1.2,xaxt="n",ylim=c(0,1))
-
-  axis(1, at=1:length(summary_table[,1]), labels=as.character(summary_table[,1]))   #summary_table[,1])
-  grid()
-  legend("topleft",c("Basic Epiclomal","Region Epiclomal"),bty="n",col=c(2,4),lty=c(1,1),lwd=c(6,4),cex=.8)
-  }
+    xlab=xlabel,
+    #xaxt="n",
+    cex.axis=1.2,cex.lab=1.2)
+#,ylim=c(0,1)
+if(is.numeric(summary_table[,1])){
+    axis(1, summary_table[,1])
+} else {
+    axis(1, at=1:length(summary_table[,1]), labels=as.character(summary_table[,1]))
+}  
+  
+grid()
+legend("topright",c("Basic Epiclomal","Region Epiclomal"),bty="n",col=c(2,4),lty=c(1,1),lwd=c(8,6),cex=.8)
 
 dev.off()
 
@@ -157,6 +183,10 @@ dev.off()
 ### box plots ####
 ##################
 
+
+##################
+### box plots hamming distance ####
+##################
 ### hamming distance
 
 number_data_sets <- as.numeric(gsub("_|D", "", str_extract(summary_table_file, "_D[0-9]+_")))
@@ -215,9 +245,12 @@ pHD <- ggplot(big_hD_df, aes(x=method, y=hD,fill=method)) +
         axis.title.y =element_text(size=15), axis.title.x=element_text(size=15),
         strip.text.x = element_text(size =12) )
 
-ggsave(pHD,file=paste0(outdir,"/boxplot_meanHD_basic_VS_region_",criterion,".pdf"),width=13.1,height=10.6)
+ggsave(pHD,file=paste0(outdir,"/boxplot_meanHD_",criterion,".pdf"),width=13.1,height=10.6)
 
 
+##################
+### box plots V-measure ####
+##################
 ### V-measure
 print ("Boxplots for V-measure")
 
@@ -265,7 +298,7 @@ pvmeasure <- ggplot(big_Vmeasure_df, aes(x=method, y=Vmeasure,fill=method)) +
         axis.title.y =element_text(size=15), axis.title.x=element_text(size=15),
         strip.text.x = element_text(size =12) )
 
-ggsave(pvmeasure,file=paste0(outdir,"/boxplot_Vmeasure_basic_VS_region_",criterion,".pdf"),width=13.1,height=10.6)
+ggsave(pvmeasure,file=paste0(outdir,"/boxplot_Vmeasure_",criterion,".pdf"),width=13.1,height=10.6)
 
 # ###############################
 # #### Code for plotting ELBo ###

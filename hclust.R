@@ -24,7 +24,8 @@ parser$add_argument("--methylation_file", type="character", help="Path to methyl
 parser$add_argument("--regions_file", type="character",help="Path to region coordinates")
 parser$add_argument("--max_k", type="integer",default=5, help="maximum number of clusters to be considered when cutting the tree") 
 parser$add_argument("--true_clone_membership_file", type="character",help="Path to true clone membership file")
-# TO Remove the true_clone_membership because I don't use that anymore, I give it in a different file
+parser$add_argument("--evaluate_clustering_software", type="character",help="Path to the file evaluate_clustering.py")
+
 args <- parser$parse_args() 
 
 print(args)
@@ -34,6 +35,7 @@ dir.create(file.path(outdir), showWarnings = FALSE)
 input_CpG_data_file <- args$methylation_file
 input_regions_file <- args$regions_file
 true_clusters_file <- args$true_clone_membership_file
+eval_soft <- args$evaluate_clustering_software
 
 # input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv"
 # input_regions_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
@@ -378,6 +380,9 @@ if (R > 1){
       hcluster_Nb <- NbClust(mean_meth_matrix, diss = pairwisedist_region,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "ch")
     print(hcluster_Nb)}
     
+    hclust_region_bestpartition_crash <- error_ch_index
+    
+    
     if(error_ch_index == 1){
       write.table(error_ch_index,file=paste0(outdir,"/hclust_region_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
       
@@ -501,6 +506,8 @@ if(sum(is.na(diss_matrix_T)) == 0){
     print(hcluster_Nb_T)
   }
   
+  PBALclust_bestpartition_crash <- error_ch_index
+  
   if(error_ch_index == 1){
     write.table(error_ch_index,file=paste0(outdir,"/PBALclust_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
     
@@ -582,32 +589,33 @@ dtempfile <- ""
 
 #hclust
 if(file.exists(paste0(hfile,".gz"))) {
-    print("hclust result exists")
+    print(paste0("hclust result exists ", hfile, ".gz"))
     system(paste0 ("gunzip ", hfile,".gz"))
     htempfile <- paste0(outdir,"/hclust_temp_maxk_",Max_K,".tsv")
     system (paste0 ("cut -f1 ", hfile, " > ", idtempfile))
     system (paste0 ("cut -f2-11 ", hfile, " > ", htempfile))
     system (paste0("gzip --force ", hfile))
+    
 }
 
 # pbal 
 if(file.exists(paste0(pfile,".gz"))) {
-    print("PBALclust result exists")
+    print(paste0("PBALclust result exists ", pfile, ".gz"))
     system (paste0 ("gunzip ", pfile,".gz"))
     ptempfile <- paste0(outdir,"/PBALclust_temp_maxk_",Max_K,".tsv")
     system (paste0 ("cut -f1 ", pfile, " > ", idtempfile))    
     system (paste0 ("cut -f2-11 ", pfile, " > ", ptempfile))
-    system (paste0("gzip --force ", pfile))    
+    system (paste0("gzip --force ", pfile))  
 }
  
 # densitycut 
 if(file.exists(paste0(dfile,".gz"))) {
-    print("densitycut result exists")
+    print(paste0("densitycut result exists ", dfile, ".gz"))
     system (paste0 ("gunzip ", dfile,".gz"))
     dtempfile <- paste0(outdir,"/densitycut_temp_maxpc_",maxpc,".tsv")
     system (paste0 ("cut -f1 ", dfile, " > ", idtempfile))    
     system (paste0 ("cut -f2 ", dfile, " > ", dtempfile))
-    system (paste0("gzip --force ", dfile))    
+    system (paste0("gzip --force ", dfile))      
 } 
  
  # I should add the name of PBAL or HCLUST - added
@@ -625,4 +633,23 @@ if (idtempfile != "")  system (paste0("rm ", idtempfile))
 
 
 
+if (hclust_region_crash == 0 && hclust_region_bestpartition_crash == 0) {
+    print("Calling evaluation software for Hclust")
+    command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --predicted_clusters_file ", hfile, ".gz --clusters_are_probabilities False > ", outdir, "/results_Hclust.txt 2>&1 &")
+    print(command)
+    system(command)
+}
+    
+if (PBAL_crash ==0 && PBALclust_bestpartition_crash == 0) {
+    print("Calling evaluation software for PBALclust")
+    command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --predicted_clusters_file ", pfile, ".gz --clusters_are_probabilities False > ", outdir, "/results_PBALclust.txt 2>&1 &")
+    print(command)
+    system(command)
+}    
 
+if(file.exists(paste0(dfile,".gz"))) {
+    print("Calling evaluation software for densityCut")
+    command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --predicted_clusters_file ", dfile, ".gz --clusters_are_probabilities False > ", outdir, "/results_densitycut.txt 2>&1 &")
+    print(command)
+    system(command)  
+}       
