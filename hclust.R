@@ -23,7 +23,8 @@ parser$add_argument("--output_directory", type="character", help="Path to the ou
 parser$add_argument("--methylation_file", type="character", help="Path to methylation data") 
 parser$add_argument("--regions_file", type="character",help="Path to region coordinates")
 parser$add_argument("--max_k", type="integer",default=5, help="maximum number of clusters to be considered when cutting the tree") 
-parser$add_argument("--true_clone_membership_file", type="character",help="Path to true clone membership file")
+parser$add_argument("--true_clone_membership_file", default=NULL, type="character",help="Path to true clone membership file")
+parser$add_argument("--true_prevalences", default=NULL, type="character",help="The true prevalence, for example 0.33_0.33_0.34")
 parser$add_argument("--evaluate_clustering_software", type="character",help="Path to the file evaluate_clustering.py")
 
 args <- parser$parse_args() 
@@ -120,21 +121,9 @@ if (R == 1){
     # defining some clusters
     mycl <- cutree(hcluster, k=1:Max_K)
     
-    if  (!is.null(args$true_clone_membership_file)){
-      
-      # true clone cell membership
-      tmp <- read.csv(true_clusters_file,sep="\t",header=TRUE,check.names=FALSE)
-      true_membership <- as.matrix(tmp[,-1])
-      rm(tmp)  
-      
-      possible_clusters <- cbind(rownames(input_CpG_data),true_membership,mycl)
-      possible_clusters <- as.data.frame(possible_clusters)
-      colnames(possible_clusters) <- c("cell_id","true_membership",paste0("num_clusters_",1:Max_K))
-    } else{
-      possible_clusters <- cbind(rownames(input_CpG_data),mycl)
-      possible_clusters <- as.data.frame(possible_clusters)
-      colnames(possible_clusters) <- c("cell_id",paste0("hclust_cpg_num_clusters_",1:Max_K))
-    }
+    possible_clusters <- cbind(rownames(input_CpG_data),mycl)
+    possible_clusters <- as.data.frame(possible_clusters)
+    colnames(possible_clusters) <- c("cell_id",paste0("hclust_cpg_num_clusters_",1:Max_K))
     
     #print(possible_clusters)
     
@@ -348,23 +337,10 @@ if (R > 1){
     # defining some clusters
     mycl <- cutree(hcluster, k=1:Max_K)
     
-    if  (!is.null(args$true_clone_membership_file)){
-      
-      # true clone cell membership
-      tmp <- read.csv(true_clusters_file,sep="\t",header=TRUE,check.names=FALSE)
-      true_membership <- as.matrix(tmp[,-1])
-      rm(tmp)  
-      
-      possible_clusters <- cbind(rownames(input_CpG_data),true_membership,mycl)
-      possible_clusters <- as.data.frame(possible_clusters)
-      colnames(possible_clusters) <- c("cell_id","true_membership",paste0("num_clusters_",1:Max_K))
-    
-      
-    } else{
-      possible_clusters <- cbind(rownames(input_CpG_data),mycl)
-      possible_clusters <- as.data.frame(possible_clusters)
-      colnames(possible_clusters) <- c("cell_id",paste0("hclust_region_num_clusters_",1:Max_K))
-    }
+    possible_clusters <- cbind(rownames(input_CpG_data),mycl)
+    possible_clusters <- as.data.frame(possible_clusters)
+    colnames(possible_clusters) <- c("cell_id",paste0("hclust_region_num_clusters_",1:Max_K))
+
     
     ### finding the best number of clusters
     # ### working in this case 
@@ -479,21 +455,9 @@ if(sum(is.na(diss_matrix_T)) == 0){
   # defining some clusters
   mycl_T <- cutree(hcluster_T, k=1:Max_K)
   
-  if  (!is.null(args$true_clone_membership_file)){
-    
-    # true clone cell membership
-    tmp <- read.csv(true_clusters_file,sep="\t",header=TRUE,check.names=FALSE)
-    true_membership <- as.matrix(tmp[,-1])
-    rm(tmp)  
-    
-    possible_clusters_T <- cbind(rownames(input_CpG_data),true_membership,mycl_T)
-    possible_clusters_T <- as.data.frame(possible_clusters_T)
-    colnames(possible_clusters_T) <- c("cell_id","true_membership",paste0("num_clusters_",1:Max_K))
-  } else{
-    possible_clusters_T <- cbind(rownames(input_CpG_data),mycl_T)
-    possible_clusters_T <- as.data.frame(possible_clusters_T)
-    colnames(possible_clusters_T) <- c("cell_id",paste0("pbal_num_clusters_",1:Max_K))
-  }
+  possible_clusters_T <- cbind(rownames(input_CpG_data),mycl_T)
+  possible_clusters_T <- as.data.frame(possible_clusters_T)
+  colnames(possible_clusters_T) <- c("cell_id",paste0("pbal_num_clusters_",1:Max_K))
   
   ## t <- try(NbClust(mean_meth_matrix, diss = diss_matrix,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "cindex"))
   t <- try(NbClust(dist_PBAL, diss = diss_matrix_T,distance=NULL, min.nc=2, max.nc=Max_K,method = "ward.D2",index = "ch")) ### changing to cindex as cindex also works for CpG based clustering
@@ -631,25 +595,31 @@ if (htempfile != "")  system (paste0("rm ", htempfile))
 if (dtempfile != "")  system (paste0("rm ", dtempfile))  
 if (idtempfile != "")  system (paste0("rm ", idtempfile))
 
+# PYTHON3 <- "/home/mandronescu/.local/centos6/anaconda3/bin/python3"
 
+# If there is a true clusters file, then run evaluation software
+if (!is.null(true_clusters_file)) {
 
-if (hclust_region_crash == 0 && hclust_region_bestpartition_crash == 0) {
-    print("Calling evaluation software for Hclust")
-    command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --predicted_clusters_file ", hfile, ".gz --clusters_are_probabilities False > ", outdir, "/results_Hclust.txt 2>&1 &")
-    print(command)
-    system(command)
-}
+    if (hclust_region_crash == 0 && hclust_region_bestpartition_crash == 0) {
+        print("Calling evaluation software for Hclust")
+        command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --true_prevalences ", args$true_prevalences, " --predicted_clusters_file ", hfile, ".gz --clusters_are_probabilities False --results_file ", outdir, "/results_Hclust.txt")
+        print(command)
+        system(command)
+    }
     
-if (PBAL_crash ==0 && PBALclust_bestpartition_crash == 0) {
-    print("Calling evaluation software for PBALclust")
-    command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --predicted_clusters_file ", pfile, ".gz --clusters_are_probabilities False > ", outdir, "/results_PBALclust.txt 2>&1 &")
-    print(command)
-    system(command)
-}    
+    if (PBAL_crash ==0 && PBALclust_bestpartition_crash == 0) {
+        print("Calling evaluation software for PBALclust")
+        command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --true_prevalences ", args$true_prevalences, " --predicted_clusters_file ", pfile, ".gz --clusters_are_probabilities False --results_file ", outdir, "/results_PBALclust.txt")
+        print(command)
+        system(command)
+    }    
 
-if(file.exists(paste0(dfile,".gz"))) {
-    print("Calling evaluation software for densityCut")
-    command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --predicted_clusters_file ", dfile, ".gz --clusters_are_probabilities False > ", outdir, "/results_densitycut.txt 2>&1 &")
-    print(command)
-    system(command)  
-}       
+    if(file.exists(paste0(dfile,".gz"))) {
+        print("Calling evaluation software for densityCut")
+        command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --true_prevalences ", args$true_prevalences, " --predicted_clusters_file ", dfile, ".gz --clusters_are_probabilities False --results_file ", outdir, "/results_densitycut.txt")
+        print(command)
+        system(command)  
+    }       
+}
+
+

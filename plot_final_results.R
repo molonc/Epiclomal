@@ -25,8 +25,6 @@ print(args)
 
 summary_table_file <- args$summary_file
 
-#summary_table_file <- "/Users/cdesouza/Documents/shahlab15/mandronescu/EPI-73_run_synthetic_pipeline/RESULTS_NCELLS/table_NCELLS_D30_R50.txt"
-
 summary_table <- read.table(summary_table_file,header=TRUE,na.strings="NA",sep="\t")
 
 print(summary_table)
@@ -35,270 +33,208 @@ print(class(summary_table))
 
 print(str(summary_table))
 
-#stop()
-
 outdir <- args$output_dir
-#outdir <- "~/Documents/shahlab15/csouza/BS-seq/whole_genome_single_cell/EPI-73"
 
 criterion <- args$criterion
 
-##################
-### line plots ###
-##################
-
-##adding basic_true and region_true to the plot
-info_file <- paste0(outdir, "/info_", args$var, ".txt")
-print(info_file)
-title <- system(paste0("cat ", info_file, " | grep -v DPARPROB | grep -v REGSIZE | grep -v CONFIG | grep -v GPROB | grep -v EPROB | grep -v CPREV | grep -v ", args$var, " | perl -p -e 's/\n/ /g;'"), intern=TRUE)
-title <- sub("multinomial_equal","mnon_eq",title)
-print (paste0("Title is ", title))
-#title <- "Camila"
-
-print(title)
-
-
- 
-#################
-## V-measure line plot with a selection of the models considered
-#################
-
-tmp <- cbind(summary_table$Avg_Vmeasure_basic, summary_table$Avg_Vmeasure_region, summary_table$Avg_Vmeasure_PBAL_Bestcut, summary_table$Avg_Vmeasure_densitycut)
-print(str(tmp))
-print(tmp)
-
-pdf(paste0(outdir,"/lineplot_aveVmeasure_",criterion,".pdf"),height=7,width=9)
-
-if(is.numeric(summary_table[,1])){ 
-    x <- summary_table[,1]
-} else {
-    x <- (1:dim(tmp)[1])    
-}  
-
-
-cexaxis=1.2
-
-
-if(grepl("MISSPB", args$var, fixed=TRUE))   {
-    xlabel <- "Missing data proportion"
-} else if (grepl("NREGIONS", args$var, fixed=TRUE))   {
-    xlabel <- "Percentage of loci different between clusters"
-    x <- 100.0/x
-} else if (grepl("CLONE_PREV", args$var, fixed=TRUE))   {
-    xlabel <- "Clone prevalence"    
-} else if (grepl("ERROR", args$var, fixed=TRUE))   {
-    xlabel <- "Error"
-} else if (grepl("NCELLS", args$var, fixed=TRUE))   {
-    xlabel <- "Number of cells"    
-} else if (grepl("NCLONES", args$var, fixed=TRUE))   {
-    xlabel <- "Number of clones"    
-} else if (grepl("NLOCI", args$var, fixed=TRUE))   {
-    xlabel <- "Number of loci"   
-} else if (grepl("READSIZE", args$var, fixed=TRUE))   {
-    xlabel <- "Read size"     
-}
-
-
-matplot(x, tmp, lty=1,type='l', 
-    ylab="Average V-measure",
-    xlab=xlabel, 
-    cex.axis=1.2,
-    cex.lab=1.2,
-    # xaxt="n",
-    ylim=c(0,1), lwd=c(8,6,4,4),col=c(2,4,3,5))
-
-if(is.numeric(summary_table[,1])){ 
-    print ("IS NUMERIC")
-    axis(1, summary_table[,1])
-} else {
-    axis(1, at=1:length(summary_table[,1]), labels=as.character(summary_table[,1]))   
-    print ("Is NOT Numeric")
-}  
-
-legend("bottomright",c("Basic Epiclomal", "Region Epiclomal","Hclust","DensityCut"),bty="n",cex=.8,col=c(2,4,3,5),lty=c(1,1,1,1),lwd=c(8,6,4,4))
-grid()
-
-dev.off()
-
-#################
-## V-measure line plot with all the models considered 
-#################
-
-tmp <- cbind(summary_table$Avg_Vmeasure_basic_true, summary_table$Avg_Vmeasure_region_true, summary_table$Avg_Vmeasure_basic, summary_table$Avg_Vmeasure_basic_munok, summary_table$Avg_Vmeasure_region, summary_table$Avg_Vmeasure_region_munok, summary_table$Avg_Vmeasure_PBAL_Bestcut, summary_table$Avg_Vmeasure_densitycut)
-print(str(tmp))
-print(tmp)
-
-pdf(paste0(outdir,"/lineplot2_aveVmeasure_",criterion,".pdf"),height=7,width=9)
-
-if(!is.numeric(summary_table[,1])){ 
-    x <- (1:dim(tmp)[1])    
-}  
-
-matplot(x, tmp, lty=1,type='l', 
-    ylab="Average V-measure",
-    xlab=xlabel,
-    main=title,
-    cex.axis=1.2,cex.lab=1.2,xaxt="n",ylim=c(0,1), lwd=c(10,8,8,4,6,4,4,4),col=c(1,6,2,7,4,8,3,5))
-
-if(is.numeric(summary_table[,1])){ 
-    axis(1, summary_table[,1])
-} else {
-    axis(1, at=1:length(summary_table[,1]), labels=as.character(summary_table[,1]))   
-}  
-
-legend("bottomleft",c("Basic Epiclomal True", "Region Epiclomal True", "Basic Epiclomal", "Basic munok", "Region Epiclomal","Region munok","PBALclust","densitycut"),bty="n",cex=.8,col=c(1,6,2,7,4,8,3,5),lty=c(1,1,1,1,1,1,1,1),lwd=c(10,8,8,4,6,4,4,4))
-grid()
-
-dev.off()
-
-#################
-### Hamming distance line plot
-#################
-
-
-pdf(paste0(outdir,"/lineplot_aveHD_",criterion,".pdf"),height=7,width=9)
-tmp <- cbind(summary_table$Avg_avgHD_basic,summary_table$Avg_avgHD_region)
-
-if(!is.numeric(summary_table[,1])){
-    x_tmp  <- (1:dim(tmp)[1])
-}    
-
-matplot(x,tmp,lty=1,type='l',lwd=c(8,6),col=c(2,4),
-    ylab="Average cell-based mean hamming distance",
-    xlab=xlabel,
-    #xaxt="n",
-    cex.axis=1.2,cex.lab=1.2)
-#,ylim=c(0,1)
-if(is.numeric(summary_table[,1])){
-    axis(1, summary_table[,1])
-} else {
-    axis(1, at=1:length(summary_table[,1]), labels=as.character(summary_table[,1]))
-}  
-  
-grid()
-legend("topright",c("Basic Epiclomal","Region Epiclomal"),bty="n",col=c(2,4),lty=c(1,1),lwd=c(8,6),cex=.8)
-
-dev.off()
 
 ##################
 ### box plots ####
 ##################
 
+plot_data <- function(model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, measure_name){
+# measure_name can be HD, Vmeasure, nclusters, cp_error
+
+    variable <- as.character(summary_table[,1])
+    # variable is the value of the changed variable, for example if we are varying misspb, variable is 0.5, 0.6, 0.7, 0.8, 0.9, 0.95
+
+
+    if (measure_name == "HD") {
+        measure_title <- "hamming distance"
+        column <- "mean"
+        fname <- "hdist"
+    } else if (measure_name == "Vmeasure") {
+        measure_title <- " V-measure"
+        column <- "best_vmeasure"
+        fname <- "results"
+    } else if (measure_name == "nclusters") {
+        measure_title <- " number of predicted clusters"
+        column <- "nclusters_pred"
+        fname <- "results"
+    } else if (measure_name == "clone_prev_MAE") {
+        measure_title <- " clone prevalence mean absolute error"
+        column <- "clone_prev_MAE"
+        fname <- "results"
+    } else if (measure_name == "clone_prev_MSE") {
+        measure_title <- " clone prevalence mean squared error"
+        column <- "clone_prev_MSE"
+        fname <- "results"
+    }       
+     
+    if(grepl("MISSPB", args$var, fixed=TRUE))   {
+        xlabel <- "Missing data proportion"
+    } else if (grepl("NREGIONS", args$var, fixed=TRUE))   {
+        xlabel <- "Percentage of loci different between clusters"
+        x <- 100.0/x
+    } else if (grepl("CLONE_PREV", args$var, fixed=TRUE))   {
+        xlabel <- "Clone prevalence"    
+    } else if (grepl("ERROR", args$var, fixed=TRUE))   {
+        xlabel <- "Error"
+    } else if (grepl("NCELLS", args$var, fixed=TRUE))   {
+        xlabel <- "Number of cells"    
+    } else if (grepl("NCLONES", args$var, fixed=TRUE))   {
+        xlabel <- "Number of clones"    
+    } else if (grepl("NLOCI", args$var, fixed=TRUE))   {
+        xlabel <- "Number of loci"   
+    } else if (grepl("READSIZE", args$var, fixed=TRUE))   {
+        xlabel <- "Read size"     
+    }     
+     
+    savedfile <- paste0(outdir,"/data_",measure_name,"_",criterion,".Rda")
+    if (file.exists(savedfile)) {
+        print("File already exists, loading it")
+        load(savedfile)
+    } else {
+        print("File doesn't exist, creating it")
+        method <- NULL
+        VAR <- NULL
+        measure <- NULL
+
+        counts <- c(0,0)
+
+        for(m in 1:length(model)){
+            for(j in 1:length(variable)){
+                print(paste0("Model ", model[m], " value ", variable[j], " number of data sets ", number_data_sets))
+                for(i in 1:number_data_sets){
+                    if (model[m] == "PBALclust" || model[m] == "densitycut") {
+                        results_file <- paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/simple_hclust/results_", model[m], ".txt")
+                    } else {     
+                        results_file <- paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_",model[m],"/",criterion,"/all_",fname,"_bestrun_",model[m],".tsv")
+                    }    
+                    # print (paste0('file is ', results_file))
+                    t <- try(read.table(file=results_file,sep="\t",header=TRUE))   
+                    if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
+                        print("can't find file")
+                        counts[j] <- counts[j]+1 
+                    } else {
+                        f <- read.table(file=results_file,sep="\t",header=TRUE)
+                        measure <- c(measure,f[,column])
+                        VAR <- c(VAR,variable[j])
+                        method <- c(method,model[m]) 
+                    }      
+                }
+            }
+        }
+
+
+        big_df <- cbind(as.data.frame(measure),VAR,method)
+        colnames(big_df) <- c("Measure","VAR","method")
+        str(big_df)
+
+        big_df$method <- factor(big_df$method,levels=model)
+        big_df$VAR <- factor(big_df$VAR,levels=variable)
+
+        #print("Big DF")
+        #print(big_df)
+        # Now saving the data frame
+        save(big_df, file=savedfile)
+    }  # end make the data files  
+
+    # plot the box plots
+    pHD <- ggplot(big_df, aes(x=method, y=Measure, fill=method)) +
+      geom_boxplot() + facet_grid(~VAR) +
+      ggtitle(xlabel) +
+      labs(x="", y = paste0("Cell-based ", measure_title)) 
+      pHD <- pHD + theme(plot.title = element_text(size=20), 
+            axis.text.x  = element_text(angle=90, vjust=0.5, size=16, colour= "black"), 
+            # axis.text.x  = element_blank()
+            axis.text.y  = element_text(size=20, colour= "black"),
+            #panel.background = element_rect(fill="white",colour = 'black'), 
+            axis.title.y =element_text(size=20), 
+            axis.title.x=element_text(size=20),
+            strip.text.x = element_text(size =16) )
+        
+
+    ggsave(pHD,file=paste0(outdir,"/boxplot_",measure_name,"_",criterion,".pdf"),width=13.1,height=10.6)    
+    
+    # plot the mean and median line plots
+    
+    aggre <- c("mean")
+    # TODO For some reason, it doesn't work for median, it says "need numeric data"
+    # aggre <- c("mean", "median")
+    # big_df$Measure <- as.numeric(as.character(big_df$Measure))
+    for (agg in aggre) {
+        agg_df <- aggregate(big_df, by=list(Method=big_df$method, VAR=big_df$VAR), FUN=agg, na.rm=FALSE)    
+        print(paste0(agg, " DF"))
+        print(agg_df)    
+        pHD <- ggplot(agg_df, aes(x=VAR, y=Measure, group=Method)) +
+            geom_line(aes(color=Method), size=3) + 
+            labs(x=xlabel, y = paste0(agg, " ", measure_title)) 
+        pHD <- pHD + theme(axis.text.y  = element_text(size=20, colour= "black"),
+            axis.title.y =element_text(size=20), axis.title.x=element_text(size=20),
+            strip.text.x = element_text(size =16) )    
+
+        ggsave(pHD,file=paste0(outdir,"/lineplot_", agg, "_",measure_name,"_",criterion,".pdf"),width=15,height=10)              
+    }        
+}
+
+
 
 ##################
-### box plots hamming distance ####
+### box plots and line plots ####
 ##################
 ### hamming distance
 
 number_data_sets <- as.numeric(gsub("_|D", "", str_extract(summary_table_file, "_D[0-9]+_")))
 
-variable <- as.character(summary_table[,1])
-
-model <- c("basic","region")
 
 initial_path_to_each_RUN <- paste0(unlist(strsplit(summary_table_file, "/FINAL"))[1],"/RUN/D_")
 print (initial_path_to_each_RUN)
 
+
+##################
+### plots clone_prev_MAE ####
+##################
+print ("Boxplots for clone_prev_MAE")
+model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
+plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "clone_prev_MAE")
+
+##################
+### plots clone_prev_MSE ####
+##################
+print ("Boxplots for clone_prev_MSE")
+model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
+plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "clone_prev_MSE")
+
+##################
+### plots hamming distance ####
+##################
 print ("Boxplots for hamming distance")
+model <- c("basic","basic_munok","region","region_munok")
+plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "HD")
 
-method <- NULL
-VAR <- NULL
-hamming_distance <- NULL
-
-counts <- c(0,0)
-
-for(m in 1:length(model)){
-  for(j in 1:length(variable)){
-    print(j)
-    for(i in 1:number_data_sets){
-      #print(i)
-      t <- try(read.table(file=paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_",model[m],"/",criterion,"/all_hdist_bestrun_",model[m],".tsv"),sep="\t",header=TRUE))   
-      if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
-        print("can't find file")
-        counts[j] <- counts[j]+1 }
-      else {
-        hD <- read.table(file=paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_",model[m],"/",criterion,"/all_hdist_bestrun_",model[m],".tsv"),sep="\t",header=TRUE)
-        
-        hamming_distance <- c(hamming_distance,hD$mean)
-        
-        VAR <- c(VAR,variable[j])
-        
-        method <- c(method,model[m]) }
-      
-    }
-  }
-}
-
-
-big_hD_df <- cbind(as.data.frame(hamming_distance),VAR,method)
-colnames(big_hD_df) <- c("hD","VAR","method")
-
-str(big_hD_df)
-
-big_hD_df$method <- factor(big_hD_df$method,levels=c("basic","region"))
-big_hD_df$VAR <- factor(big_hD_df$VAR,levels=variable)
-
-pHD <- ggplot(big_hD_df, aes(x=method, y=hD,fill=method)) +
-  geom_boxplot() + facet_grid(~VAR) +
-  labs(x=" ", y = "Cell-based mean hamming distance") +
-  theme(axis.text.x  = element_text(angle=0, vjust=0.5, size=12, colour= "black"), axis.text.y  = element_text(size=15, colour= "black"),
-        #panel.background = element_rect(fill="white",colour = 'black'), 
-        axis.title.y =element_text(size=15), axis.title.x=element_text(size=15),
-        strip.text.x = element_text(size =12) )
-
-ggsave(pHD,file=paste0(outdir,"/boxplot_meanHD_",criterion,".pdf"),width=13.1,height=10.6)
-
+##################
+### plots V-measure ####
+##################
+### V-measure
+print ("Boxplots for V-measure")
+model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
+plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "Vmeasure")
 
 ##################
 ### box plots V-measure ####
 ##################
 ### V-measure
-print ("Boxplots for V-measure")
+#print ("Boxplots for V-measure")
+#model <- c("basic","region")
+#boxplot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "Vmeasure")
 
-method <- NULL
-VAR <- NULL
-Vmeasure <- NULL
-
-counts <- c(0,0)
-
-for(m in 1:length(model)){
-  for(j in 1:length(variable)){
-    print(j)
-    for(i in 1:number_data_sets){
-      t <- try(read.table(file=paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_",model[m],"/",criterion,"/all_results_bestrun_",model[m],".tsv"),sep="\t",header=TRUE))   
-      if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
-        print("can't find file")
-        counts[j] <- counts[j]+1 }
-      else {
-        v <- read.table(file=paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_",model[m],"/",criterion,"/all_results_bestrun_",model[m],".tsv"),sep="\t",header=TRUE)
-        
-        Vmeasure <- c(Vmeasure,v$best_vmeasure)
-        
-        VAR <- c(VAR,variable[j])
-        
-        method <- c(method,model[m]) }
-      
-    }
-  }
-}
-
-
-big_Vmeasure_df <- cbind(as.data.frame(Vmeasure),VAR,method)
-colnames(big_Vmeasure_df) <- c("Vmeasure","VAR","method")
-
-str(big_Vmeasure_df)
-
-big_Vmeasure_df$method <- factor(big_Vmeasure_df$method,levels=c("basic","region"))
-big_Vmeasure_df$VAR <- factor(big_Vmeasure_df$VAR,levels=variable)
-
-pvmeasure <- ggplot(big_Vmeasure_df, aes(x=method, y=Vmeasure,fill=method)) +
-  geom_boxplot() + facet_grid(~VAR) +
-  labs(x=" ", y = "V-measure") +
-  theme(axis.text.x  = element_text(angle=0, vjust=0.5, size=12, colour= "black"), axis.text.y  = element_text(size=15, colour= "black"),
-        #panel.background = element_rect(fill="white",colour = 'black'), 
-        axis.title.y =element_text(size=15), axis.title.x=element_text(size=15),
-        strip.text.x = element_text(size =12) )
-
-ggsave(pvmeasure,file=paste0(outdir,"/boxplot_Vmeasure_",criterion,".pdf"),width=13.1,height=10.6)
+##################
+### plots nclusters ####
+##################
+print ("Boxplots for nclusters")
+model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
+plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "nclusters")
 
 # ###############################
 # #### Code for plotting ELBo ###
