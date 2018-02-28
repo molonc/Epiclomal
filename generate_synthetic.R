@@ -7,6 +7,12 @@
 
 # simulate synthetic data
 
+#======================
+# libraries
+#======================
+.libPaths(c("/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos5/3.2", "/clusterapp/software/linux-x86_64-centos5/R-3.2.3/lib64/R/library"))
+
+
 suppressMessages(library("argparse"))
 suppressMessages(library("Matrix"))
 suppressMessages(library("MCMCpack")) # for generating values from a Dirichlet distribution
@@ -19,14 +25,14 @@ parser <- ArgumentParser()
 
 parser$add_argument("--read_size", type="character",default="1_0", help="mean and std dev for the number of CpGs per read when generating data considering a read-based approach, default is no read based approach, that is 1_0") 
 
-parser$add_argument("--num_samples", type="integer", default=2, help="Number different samples") 
+parser$add_argument("--num_samples", type="integer", default=1, help="Number different samples") 
 
 parser$add_argument("--num_loci", type="integer", default=100, help="Number of loci") 
 parser$add_argument("--num_clones", type="integer", default=3, help="Number of clones")
 
-parser$add_argument("--num_cells", type="character", default="10_10", help="Number of cells per sample, starting with sample 1, then sample 2, etc")
+parser$add_argument("--num_cells", type="character", default="10", help="Number of cells per sample, starting with sample 1, then sample 2, etc")
 
-parser$add_argument("--clone_prevalence", type="character", default="0.2_0.5_0.3_0.3_0.34_0.36", help="Probability of clone prevalences for all samples")
+parser$add_argument("--clone_prevalence", type="character", default="0.2_0.5_0.3", help="Probability of clone prevalences for all samples")
 parser$add_argument("--error_probability", type="character", default="0.01_0.01", help="Error probability for each methylation state")
 # error_probability="0.01_0.01" corresponds to P(Y=1|G=0)=0.01 and P(Y=0|G=1)=0.01, respectively
 # If we assume more than 2 states it would be better if error_probability is written as matrix
@@ -498,8 +504,6 @@ print ("GENERATING CELLS")
 clone_prev <- as.double(unlist(strsplit(args$clone_prevalence, split="_"))) ### this is the vector with the pi_k's
 
 num_cells <- as.double(unlist(strsplit(args$num_cells, split="_")))
-
-print(clone_prev)
 
 ### this allows the number of cells to be different between samples
 Z <- NULL

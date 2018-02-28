@@ -59,10 +59,10 @@ eval_soft <- args$evaluate_clustering_software
 # inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci5000_clones3_cells100_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.85_gpbrandom_dirpar1_1_nregs50_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
 # true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci5000_clones3_cells100_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.85_gpbrandom_dirpar1_1_nregs50_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
 
-#input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells50_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.95_gpbrandom_dirpar1_1_nregs50_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv"
-#input_regions_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells50_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.95_gpbrandom_dirpar1_1_nregs50_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
-#inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells50_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.95_gpbrandom_dirpar1_1_nregs50_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
-#true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells50_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.95_gpbrandom_dirpar1_1_nregs50_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
+# input_CpG_data_file <- "/Users/camila/Documents/shahlab15/BS-seq/whole_genome_single_cell/synthetic_data_tests/data/data_incomplete.tsv.gz"
+# input_regions_file <- "/Users/camila/Documents/shahlab15/BS-seq/whole_genome_single_cell/synthetic_data_tests/data/regions_file.tsv.gz"
+# inferred_clusters_file <- "/Users/camila/Documents/shahlab15/BS-seq/whole_genome_single_cell/synthetic_data_tests/data/true_clone_membership.tsv.gz"
+# true_clusters_file <- "/Users/camila/Documents/shahlab15/BS-seq/whole_genome_single_cell/synthetic_data_tests/data/true_clone_membership.tsv.gz"
 
 
 #======================
@@ -318,7 +318,11 @@ if (R > 1){
   
   mean_meth_matrix <- t(apply(input_CpG_data,1,extract_mean_meth_per_cell,region_coord=input_regions))
   
-  pairwisedist_region <- dist(mean_meth_matrix ,method="euclidean")
+  # pairwisedist_region <- dist(mean_meth_matrix ,method="euclidean")
+  
+  ### Feb 27th, 2018
+  ### doing hclust on the (dis)similarity matrix. Similar to PBAL but based on region mean methylation
+  pairwisedist_region <- dist(dist(mean_meth_matrix ,method="euclidean"),method="euclidean")
   
   if(sum(is.na(pairwisedist_region)==TRUE) == 0){
     
@@ -327,7 +331,7 @@ if (R > 1){
     
     hcluster <- hclust(pairwisedist_region,method = "complete")
     
-    pheatmap(mean_meth_matrix,cluster_rows = TRUE,cluster_cols=FALSE, cellwidth = 8,
+    pheatmap(as.matrix(dist(mean_meth_matrix ,method="euclidean")),cluster_rows = TRUE,cluster_cols=FALSE, cellwidth = 8,
              cellheight = 8,fontsize = 8, 
              clustering_distance_rows = "euclidean",
              clustering_method = "complete",
@@ -341,20 +345,19 @@ if (R > 1){
     possible_clusters <- as.data.frame(possible_clusters)
     colnames(possible_clusters) <- c("cell_id",paste0("hclust_region_num_clusters_",1:Max_K))
 
-    
     ### finding the best number of clusters
     # ### working in this case 
     #diss_matrix <- dist(mean_meth_matrix,method="euclidean",diag=FALSE)
     
     ## t <- try(NbClust(mean_meth_matrix, diss = diss_matrix,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "ch"))
-    t <- try(NbClust(mean_meth_matrix, diss = pairwisedist_region, distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "ch")) ### changing to cindex as cindex also works for CpG based clustering
+    t <- try(NbClust(as.matrix(dist(mean_meth_matrix, method="euclidean")), diss = pairwisedist_region, distance=NULL, min.nc=1, max.nc=Max_K,method = "complete",index = "gap")) ### changing to cindex as cindex also works for CpG based clustering
     if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
-      print("can't use ch index") 
-      error_ch_index <- 1 }
-    else { 
+      print("can't use ch or gap index") 
+      error_ch_index <- 1 } else { 
       error_ch_index <- 0
-      hcluster_Nb <- NbClust(mean_meth_matrix, diss = pairwisedist_region,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "ch")
-    print(hcluster_Nb)}
+      hcluster_Nb <- NbClust(as.matrix(dist(mean_meth_matrix, method="euclidean")), diss = pairwisedist_region, distance=NULL, min.nc=1, max.nc=Max_K,method = "complete",index = "gap")
+      print(hcluster_Nb)
+    }
     
     hclust_region_bestpartition_crash <- error_ch_index
     
@@ -460,13 +463,13 @@ if(sum(is.na(diss_matrix_T)) == 0){
   colnames(possible_clusters_T) <- c("cell_id",paste0("pbal_num_clusters_",1:Max_K))
   
   ## t <- try(NbClust(mean_meth_matrix, diss = diss_matrix,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "cindex"))
-  t <- try(NbClust(dist_PBAL, diss = diss_matrix_T,distance=NULL, min.nc=2, max.nc=Max_K,method = "ward.D2",index = "ch")) ### changing to cindex as cindex also works for CpG based clustering
+  t <- try(NbClust(dist_PBAL, diss = diss_matrix_T,distance=NULL, min.nc=1, max.nc=Max_K,method = "ward.D2",index = "gap")) ### changing to cindex as cindex also works for CpG based clustering
   if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
     print("can't find best partition") 
     error_ch_index <- 1 }
   else { 
     error_ch_index <- 0
-    hcluster_Nb_T <- NbClust(dist_PBAL, diss = diss_matrix_T,distance=NULL, min.nc=2, max.nc=Max_K,method = "ward.D2",index = "ch")
+    hcluster_Nb_T <- NbClust(dist_PBAL, diss = diss_matrix_T,distance=NULL, min.nc=1, max.nc=Max_K,method = "ward.D2",index = "gap")
     print(hcluster_Nb_T)
   }
   
