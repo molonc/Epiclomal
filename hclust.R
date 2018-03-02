@@ -40,10 +40,10 @@ input_regions_file <- args$regions_file
 true_clusters_file <- args$true_clone_membership_file
 eval_soft <- args$evaluate_clustering_software
 
-# input_CpG_data_file <- "/Users/cdesouza/Documents/shahlab15/BS-seq/whole_genome_single_cell/synthetic_data_tests/data/data_incomplete.tsv.gz"
-# input_regions_file <- "/Users/cdesouza/Documents/shahlab15/BS-seq/whole_genome_single_cell/synthetic_data_tests/data/regions_file.tsv.gz"
-# inferred_clusters_file <- "/Users/cdesouza/Documents/shahlab15/BS-seq/whole_genome_single_cell/synthetic_data_tests/data/true_clone_membership.tsv.gz"
-# true_clusters_file <- "/Users/cdesouza/Documents/shahlab15/BS-seq/whole_genome_single_cell/synthetic_data_tests/data/true_clone_membership.tsv.gz"
+#input_CpG_data_file <- "/Users/cdesouza/Documents/shahlab15/BS-seq/whole_genome_single_cell/synthetic_data_tests/data/data_incomplete.tsv.gz"
+#input_regions_file <- "/Users/cdesouza/Documents/shahlab15/BS-seq/whole_genome_single_cell/synthetic_data_tests/data/regions_file.tsv.gz"
+#inferred_clusters_file <- "/Users/cdesouza/Documents/shahlab15/BS-seq/whole_genome_single_cell/synthetic_data_tests/data/true_clone_membership.tsv.gz"
+#true_clusters_file <- "/Users/cdesouza/Documents/shahlab15/BS-seq/whole_genome_single_cell/synthetic_data_tests/data/true_clone_membership.tsv.gz"
 
 
 #======================
@@ -189,7 +189,7 @@ if (R > 1){
     
     hcluster <- hclust(pairwisedist_region,method = "complete")
     
-    pheatmap(as.matrix(dist(mean_meth_matrix ,method="euclidean")),cluster_rows = TRUE,cluster_cols=FALSE, cellwidth = 8,
+    pheatmap(as.matrix(dist(mean_meth_matrix ,method="euclidean")),cluster_rows = TRUE,cluster_cols=TRUE, cellwidth = 8,
              cellheight = 8,fontsize = 8, 
              clustering_distance_rows = "euclidean",
              clustering_method = "complete",
@@ -365,117 +365,97 @@ if(sum(is.na(diss_matrix_T)) > 0){
   write.table(PBAL_crash,file=paste0(outdir,"/PBAL_crash.tsv"),row.names=FALSE,col.names=FALSE)}
 
 
-# ############################################################
-# ## Pearson correlation approach similar to scTrio paper  ###
-# ############################################################
-# 
-# dist.pair <- function(v1,v2){
-#   na.idx <- is.na(v1) | is.na(v2) 
-#   v1a  <- v1[!na.idx]
-#   v2a  <- v2[!na.idx]
-#   l.na <- (sum(!na.idx)) ## = length(v1a) = length(v2a), the number of entries with data on both vectors
-#   
-#   d <- (sum(abs(v1a - v2a)) / l.na) ### this should be what dist() does! 
-#   return(d)
-#   
-# }
-# 
-# dist.PBAL <- function(d){ ### d is matrix where the rows correspond to cells and columns to CpGs
-#   dist.data <- matrix(NA,nrow=nrow(d),ncol=nrow(d))
-#   rownames(dist.data) <- rownames(d)
-#   colnames(dist.data) <- rownames(d)
-#   for (i in 1:nrow(d)){
-#     for(j in 1:nrow(d)){
-#       dist.data[i,j] <- dist.pair(v1=d[i,],v2=d[j,])
-#     }
-#   }
-#   return(dist.data)
-# }
-# 
-# 
-# d <- rcorr(x, type=c("pearson"))
-# 
-# d <- cor(x = t(input_CpG_data), method="pearson", use ="pairwise.complete.obs")
-# 
-# 
-# ### from PBAL manuscript: unsupervised learning was done by calculating a Euclidean distance from each cell’s dissimilarity vector and clustered using Ward’s linkage method.
-# 
-# print("Tony's approach - CpG based clustering")
-# 
-# dist_PBAL <- dist.PBAL(d=input_CpG_data)
-# 
-# diss_matrix_T <- dist(dist_PBAL,method="euclidean")
-# 
-# if(sum(is.na(diss_matrix_T)) == 0){
-#   
-#   PBAL_crash <- 0
-#   write.table(PBAL_crash,file=paste0(outdir,"/PBAL_crash.tsv"),row.names=FALSE,col.names=FALSE)
-#   
-#   hcluster_T <- hclust(diss_matrix_T,method = "ward.D2")
-#   
-#   pheatmap(dist_PBAL,cluster_rows = TRUE,cluster_cols=TRUE, cellwidth = 8,
-#            cellheight = 8,fontsize = 8, 
-#            clustering_distance_rows = "euclidean",
-#            clustering_method = "ward.D2",
-#            main = paste0("PBAL approach"),
-#            filename = paste0(outdir,"/PBAL_hclust_PLOT.pdf"))
-#   
-#   # defining some clusters
-#   mycl_T <- cutree(hcluster_T, k=1:Max_K)
-#   
-#   possible_clusters_T <- cbind(rownames(input_CpG_data),mycl_T)
-#   possible_clusters_T <- as.data.frame(possible_clusters_T)
-#   colnames(possible_clusters_T) <- c("cell_id",paste0("pbal_num_clusters_",1:Max_K))
-#   
-#   ## t <- try(NbClust(mean_meth_matrix, diss = diss_matrix,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "cindex"))
-#   t <- try(NbClust(dist_PBAL, diss = diss_matrix_T,distance=NULL, min.nc=1, max.nc=Max_K,method = "ward.D2",index = "gap")) ### changing to cindex as cindex also works for CpG based clustering
-#   if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
-#     print("can't find best partition") 
-#     error_ch_index <- 1 }
-#   else { 
-#     error_ch_index <- 0
-#     hcluster_Nb_T <- NbClust(dist_PBAL, diss = diss_matrix_T,distance=NULL, min.nc=1, max.nc=Max_K,method = "ward.D2",index = "gap")
-#     print(hcluster_Nb_T)
-#   }
-#   
-#   PBALclust_bestpartition_crash <- error_ch_index
-#   
-#   if(error_ch_index == 1){
-#     write.table(error_ch_index,file=paste0(outdir,"/PBALclust_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
-#     
-#     ofile <- paste0(outdir,"/PBALclust_clusters_CpG_based_maxk_",Max_K,".tsv") 
-#     write.table(possible_clusters_T, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
-#     system(paste0("gzip --force ", ofile))
-#     
-#     ofile <- paste0(outdir,"/PBALclust_cell_order_CpG_based_maxk_",Max_K,".tsv")
-#     write.table(hcluster_T$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
-#     system(paste0("gzip --force ", ofile))
-#   }
-#   
-#   if(error_ch_index == 0){
-#     
-#     write.table(error_ch_index,file=paste0(outdir,"/PBALclust_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
-#     
-#     best_cluster <- hcluster_Nb_T$Best.partition
-#     
-#     possible_clusters_T <- cbind(possible_clusters_T,best_cluster)
-#     colnames(possible_clusters_T) <- c(colnames(possible_clusters_T)[1:(dim(possible_clusters_T)[2]-1)],paste0("best_cluster_",hcluster_Nb_T$Best.nc[1]))
-#     
-#     ofile <- paste0(outdir,"/PBALclust_clusters_CpG_based_maxk_",Max_K,".tsv") 
-#     write.table(possible_clusters_T, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
-#     system(paste0("gzip --force ", ofile))
-#     
-#     ofile <- paste0(outdir,"/PBALclust_cell_order_CpG_based_maxk_",Max_K,".tsv")
-#     write.table(hcluster_T$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
-#     system(paste0("gzip --force ", ofile))
-#     
-#   }
-# }
-# 
-# if(sum(is.na(diss_matrix_T)) > 0){
-#   
-#   PBAL_crash <- 1
-#   write.table(PBAL_crash,file=paste0(outdir,"/PBAL_crash.tsv"),row.names=FALSE,col.names=FALSE)}
+############################################################
+## Pearson correlation approach similar to scTrio paper  ###
+############################################################
+
+dist.corr <- function(v1,v2){
+  na.idx <- is.na(v1) | is.na(v2) 
+  v1a  <- v1[!na.idx]
+  v2a  <- v2[!na.idx]
+  d <- cor(x=v1a,y=v2a)
+  return(d)
+  
+}
+
+dist_Pearson <- cor(x=t(input_CpG_data),method="pearson", use ="pairwise.complete.obs")
+
+# d <- dist.corr(v1=input_CpG_data[1,],v2=input_CpG_data[2,]) ### my own way same as above 
+
+### from PBAL manuscript: unsupervised learning was done by calculating a Euclidean distance from each cell’s dissimilarity vector and clustered using Ward’s linkage method.
+
+print("scTrio's approach - CpG based clustering")
+
+diss_matrix_P <- cor(x=dist_Pearson,method="pearson", use ="pairwise.complete.obs")
+
+if(sum(is.na(diss_matrix_P)) == 0){
+
+  Pearson_crash <- 0
+  write.table(Pearson_crash,file=paste0(outdir,"/Pearson_crash.tsv"),row.names=FALSE,col.names=FALSE)
+
+  hcluster_P <- hclust(as.dist(diss_matrix_P),method = "ward.D2")
+
+  pheatmap(dist_Pearson ,cluster_rows = TRUE,cluster_cols=TRUE, cellwidth = 8,
+           cellheight = 8,fontsize = 8,
+           clustering_distance_rows = "correlation",
+           clustering_method = "ward.D2",
+           main = paste0("Pearson corr. approach"),
+           filename = paste0(outdir,"/Pearson_hclust_PLOT.pdf"))
+
+  # defining some clusters
+  mycl_P <- cutree(hcluster_P, k=1:Max_K)
+
+  possible_clusters_P <- cbind(rownames(input_CpG_data),mycl_P)
+  possible_clusters_P <- as.data.frame(possible_clusters_P)
+  colnames(possible_clusters_P) <- c("cell_id",paste0("pearson_num_clusters_",1:Max_K))
+
+  t <- try(NbClust(dist_Pearson , diss = as.dist(diss_matrix_P),distance=NULL, min.nc=1, max.nc=Max_K,method = "ward.D2",index = index_type)) 
+  if("try-error" %in% class(t)) { 
+    print("can't find best partition")
+    error_ch_index <- 1 } else {
+    error_ch_index <- 0
+    hcluster_Nb_P <- NbClust(dist_Pearson , diss = as.dist(diss_matrix_P),distance=NULL, min.nc=1, max.nc=Max_K,method = "ward.D2",index = index_type)
+    print(hcluster_Nb_P)
+  }
+
+ Pearsonclust_bestpartition_crash <- error_ch_index
+
+  if(error_ch_index == 1){
+    write.table(error_ch_index,file=paste0(outdir,"/Pearsonclust_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
+
+    ofile <- paste0(outdir,"/Pearsonclust_clusters_CpG_based_maxk_",Max_K,".tsv")
+    write.table(possible_clusters_P, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
+    system(paste0("gzip --force ", ofile))
+
+    ofile <- paste0(outdir,"/Pearsonclust_cell_order_CpG_based_maxk_",Max_K,".tsv")
+    write.table(hcluster_P$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
+    system(paste0("gzip --force ", ofile))
+  }
+
+  if(error_ch_index == 0){
+
+    write.table(error_ch_index,file=paste0(outdir,"/Pearsonclust_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
+
+    best_cluster <- hcluster_Nb_P$Best.partition
+
+    possible_clusters_P <- cbind(possible_clusters_P,best_cluster)
+    colnames(possible_clusters_P) <- c(colnames(possible_clusters_P)[1:(dim(possible_clusters_P)[2]-1)],paste0("best_cluster_",hcluster_Nb_P$Best.nc[1]))
+
+    ofile <- paste0(outdir,"/Pearsonclust_clusters_CpG_based_maxk_",Max_K,".tsv")
+    write.table(possible_clusters_P, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
+    system(paste0("gzip --force ", ofile))
+
+    ofile <- paste0(outdir,"/Pearsonclust_cell_order_CpG_based_maxk_",Max_K,".tsv")
+    write.table(hcluster_P$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
+    system(paste0("gzip --force ", ofile))
+
+  }
+}
+
+if(sum(is.na(diss_matrix_P)) > 0){
+
+  Pearson_crash <- 1
+  write.table(Pearson_crash,file=paste0(outdir,"/Pearson_crash.tsv"),row.names=FALSE,col.names=FALSE)}
 
 
 ####################
