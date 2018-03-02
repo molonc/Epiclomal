@@ -393,11 +393,12 @@ if(sum(is.na(diss_matrix_P)) == 0){
   Pearson_crash <- 0
   write.table(Pearson_crash,file=paste0(outdir,"/Pearson_crash.tsv"),row.names=FALSE,col.names=FALSE)
 
-  hcluster_P <- hclust(as.dist(diss_matrix_P),method = "ward.D2")
+  hcluster_P <- hclust(as.dist(1-diss_matrix_P),method = "ward.D2") ### BECAUSE IT IS CORRELATION diss_matrix_P IS ACTUALLY A SIMILARITY MATRIX, SO HAVE TO DO 1 - diss_matrix_P
 
   pheatmap(dist_Pearson ,cluster_rows = TRUE,cluster_cols=TRUE, cellwidth = 8,
            cellheight = 8,fontsize = 8,
            clustering_distance_rows = "correlation",
+           #clustering_distance_rows = as.dist(1-diss_matrix_P),
            clustering_method = "ward.D2",
            main = paste0("Pearson corr. approach"),
            filename = paste0(outdir,"/Pearson_hclust_PLOT.pdf"))
@@ -409,12 +410,12 @@ if(sum(is.na(diss_matrix_P)) == 0){
   possible_clusters_P <- as.data.frame(possible_clusters_P)
   colnames(possible_clusters_P) <- c("cell_id",paste0("pearson_num_clusters_",1:Max_K))
 
-  t <- try(NbClust(dist_Pearson , diss = as.dist(diss_matrix_P),distance=NULL, min.nc=1, max.nc=Max_K,method = "ward.D2",index = index_type)) 
+  t <- try(NbClust(dist_Pearson , diss = as.dist(1-diss_matrix_P),distance=NULL, min.nc=1, max.nc=Max_K,method = "ward.D2",index = index_type)) 
   if("try-error" %in% class(t)) { 
     print("can't find best partition")
     error_ch_index <- 1 } else {
     error_ch_index <- 0
-    hcluster_Nb_P <- NbClust(dist_Pearson , diss = as.dist(diss_matrix_P),distance=NULL, min.nc=1, max.nc=Max_K,method = "ward.D2",index = index_type)
+    hcluster_Nb_P <- NbClust(dist_Pearson , diss = as.dist(1-diss_matrix_P),distance=NULL, min.nc=1, max.nc=Max_K,method = "ward.D2",index = index_type)
     print(hcluster_Nb_P)
   }
 
