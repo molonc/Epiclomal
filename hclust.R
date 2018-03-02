@@ -45,7 +45,6 @@ eval_soft <- args$evaluate_clustering_software
 #inferred_clusters_file <- "/Users/cdesouza/Documents/shahlab15/BS-seq/whole_genome_single_cell/synthetic_data_tests/data/true_clone_membership.tsv.gz"
 #true_clusters_file <- "/Users/cdesouza/Documents/shahlab15/BS-seq/whole_genome_single_cell/synthetic_data_tests/data/true_clone_membership.tsv.gz"
 
-
 #======================
 # auxiliar functions
 #======================
