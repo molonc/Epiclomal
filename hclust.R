@@ -487,6 +487,7 @@ system(command)
 
 hfile <- paste0(outdir,"/hclust_clusters_region_based_maxk_",Max_K,".tsv")
 pfile <- paste0(outdir,"/PBALclust_clusters_CpG_based_maxk_",Max_K,".tsv")
+peafile <- paste0(outdir,"Pearsonclust_clusters_CpG_based_maxk_",Max_K,".tsv")
 dfile <- paste0(outdir,"/densityCut_clusters_Region_based_maxPC_",maxpc,".tsv")
 outfile <- paste0(outdir, "/hclust_region_PBAL_CpG_clusters_maxk_",Max_K,"_densitycut_PC", maxpc, ".tsv")
 print (paste0("Hfile ", hfile))
@@ -520,7 +521,7 @@ if(file.exists(paste0(pfile,".gz"))) {
     system (paste0 ("cut -f2-11 ", pfile, " > ", ptempfile))
     system (paste0("gzip --force ", pfile))  
 }
- 
+# For now I am not using Pearsonclust as initialization
 # densitycut 
 if(file.exists(paste0(dfile,".gz"))) {
     print(paste0("densitycut result exists ", dfile, ".gz"))
@@ -562,6 +563,14 @@ if (!is.null(true_clusters_file)) {
         print(command)
         system(command)
     }    
+
+    if (Pearson_crash ==0 && Pearsonclust_bestpartition_crash == 0) {
+        print("Calling evaluation software for Pearsonclust")
+        command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --true_prevalences ", args$true_prevalences, " --predicted_clusters_file ", pfile, ".gz --clusters_are_probabilities False --results_file ", outdir, "/results_Pearsonclust.txt")
+        print(command)
+        system(command)
+    }    
+
 
     if(file.exists(paste0(dfile,".gz"))) {
         print("Calling evaluation software for densityCut")

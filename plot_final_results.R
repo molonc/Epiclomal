@@ -106,7 +106,7 @@ plot_data <- function(model, number_data_sets, initial_path_to_each_RUN, summary
             for(j in 1:length(variable)){
                 print(paste0("Model ", model[m], " value ", variable[j], " number of data sets ", number_data_sets))
                 for(i in 1:number_data_sets){
-                    if (model[m] == "PBALclust" || model[m] == "densitycut") {
+                    if (model[m] == "PBALclust" || model[m] == "densitycut" || model[m] == "Pearsonclust" || model[m] == "Hclust") {
                         results_file <- paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/simple_hclust/results_", model[m], ".txt")
                     } else {     
                         results_file <- paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_",model[m],"/",criterion,"/all_",fname,"_bestrun_",model[m],".tsv")
@@ -195,30 +195,34 @@ print (initial_path_to_each_RUN)
 ##################
 ### plots clone_prev_MAE ####
 ##################
-print ("Boxplots for clone_prev_MAE")
-model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
+print ("Plots for clone_prev_MAE")
+# model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
+model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
 plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "clone_prev_MAE")
 
 ##################
 ### plots clone_prev_MSE ####
 ##################
-print ("Boxplots for clone_prev_MSE")
-model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
-plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "clone_prev_MSE")
+# print ("Boxplots for clone_prev_MSE")
+# model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
+# plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "clone_prev_MSE")
 
 ##################
 ### plots hamming distance ####
 ##################
-print ("Boxplots for hamming distance")
-model <- c("basic","basic_munok","region","region_munok")
+print ("Plots for hamming distance")
+# model <- c("basic","basic_munok","region","region_munok")
+model <- c("region", "basic")
 plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "HD")
 
 ##################
 ### plots V-measure ####
 ##################
 ### V-measure
-print ("Boxplots for V-measure")
-model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
+print ("Plots for V-measure")
+# 
+# model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
+model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
 plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "Vmeasure")
 
 ##################
@@ -232,8 +236,9 @@ plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, cri
 ##################
 ### plots nclusters ####
 ##################
-print ("Boxplots for nclusters")
-model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
+print ("Plots for nclusters")
+# model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
+model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
 plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "nclusters")
 
 # ###############################
