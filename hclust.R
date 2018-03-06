@@ -566,7 +566,7 @@ if (!is.null(true_clusters_file)) {
 
     if (Pearson_crash ==0 && Pearsonclust_bestpartition_crash == 0) {
         print("Calling evaluation software for Pearsonclust")
-        command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --true_prevalences ", args$true_prevalences, " --predicted_clusters_file ", pfile, ".gz --clusters_are_probabilities False --results_file ", outdir, "/results_Pearsonclust.txt")
+        command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --true_prevalences ", args$true_prevalences, " --predicted_clusters_file ", peafile, ".gz --clusters_are_probabilities False --results_file ", outdir, "/results_Pearsonclust.txt")
         print(command)
         system(command)
     }    

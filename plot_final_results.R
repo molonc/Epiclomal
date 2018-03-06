@@ -75,7 +75,7 @@ plot_data <- function(model, number_data_sets, initial_path_to_each_RUN, summary
         xlabel <- "Missing data proportion"
     } else if (grepl("NREGIONS", args$var, fixed=TRUE))   {
         xlabel <- "Percentage of loci different between clusters"
-        x <- 100.0/x
+        #variable <- 100.0/variable
     } else if (grepl("CLONE_PREV", args$var, fixed=TRUE))   {
         xlabel <- "Clone prevalence"    
     } else if (grepl("ERROR", args$var, fixed=TRUE))   {
