@@ -24,7 +24,7 @@ parser$add_argument("--methylation_file", type="character", help="Path to methyl
 parser$add_argument("--regions_file", type="character",help="Path to region coordinates")
 parser$add_argument("--max_k", type="integer",default=5, help="maximum number of clusters to be considered when cutting the tree") 
 parser$add_argument("--true_clone_membership_file", default=NULL, type="character",help="Path to true clone membership file")
-parser$add_argument("--true_prevalences", default=NULL, type="character",help="The true prevalence, for example 0.33_0.33_0.34")
+parser$add_argument("--true_prevalences", default="None", type="character",help="The true prevalence, for example 0.33_0.33_0.34")
 parser$add_argument("--evaluate_clustering_software", type="character",help="Path to the file evaluate_clustering.py")
 
 parser$add_argument("--index", type="character",default="ch",help="Index to be used to choose number of clusters, default = ch")
@@ -577,7 +577,6 @@ if (!is.null(true_clusters_file)) {
         print(command)
         system(command)
     }    
-
 
     if(file.exists(paste0(dfile,".gz"))) {
         print("Calling evaluation software for densityCut")
