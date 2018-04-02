@@ -135,11 +135,14 @@ if ( !is.null(inferred_clusters_file)) {
     colnames(tmp) <- c("cell_id","inferred_clusters") 
     inferred_cell_clusters <- as.matrix(tmp[,2])
     rownames(inferred_cell_clusters) <- tmp$cell_id
+    # MA: reordering inferred_cell_clusters so it matches the order of input_CpG_data
+    inferred_cell_clusters <- inferred_cell_clusters[rownames(input_CpG_data),,drop=FALSE]
     inferred_cell_clusters <- as.data.frame(inferred_cell_clusters)
     colnames(inferred_cell_clusters) <- "inferred_clusters"
     #tmp[47:49,] <- tmp[c(48,49,47),]
+
     if(sum(rownames(input_CpG_data) != rownames(inferred_cell_clusters)) > 0){
-        stop("order of cell IDs doesn't match")
+        stop("order of cell IDs 1 doesn't match")
     }
     rm(tmp)
 }    
@@ -161,11 +164,13 @@ if ( !is.null(true_clusters_file)) {
     colnames(tmp) <- c("cell_id","true_clusters") 
     true_cell_clusters <- as.matrix(tmp[,2])
     rownames(true_cell_clusters) <- tmp$cell_id
+    # MA: reordering inferred_cell_clusters so it matches the order of input_CpG_data
+    true_cell_clusters <- true_cell_clusters[rownames(input_CpG_data),,drop=FALSE]    
     true_cell_clusters <- as.data.frame(true_cell_clusters)
     colnames(true_cell_clusters) <- "true_clusters"
     #tmp[47:49,] <- tmp[c(48,49,47),]
     if(sum(rownames(input_CpG_data) != rownames(true_cell_clusters)) > 0){
-        stop("order of cell IDs doesn't match")
+        stop("order of cell IDs 2 doesn't match")
     }
     rm(tmp)
 }

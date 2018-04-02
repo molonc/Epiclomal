@@ -88,7 +88,11 @@ plot_data <- function(model, number_data_sets, initial_path_to_each_RUN, summary
         xlabel <- "Number of loci"   
     } else if (grepl("READSIZE", args$var, fixed=TRUE))   {
         xlabel <- "Read size"     
+    } else if (grepl("PROP_CPG_FLIP", args$var, fixed=TRUE))   {
+        xlabel <- "Proportions of CpGs flipped in the different region"     
     }     
+ 
+    
      
     savedfile <- paste0(outdir,"/data_",measure_name,"_",criterion,".Rda")
     if (file.exists(savedfile)) {

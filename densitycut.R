@@ -213,6 +213,7 @@ if (R > 1){
   
   checking_warning <- capture.output(DensityCut(pc_scores))
   
+  print(checking_warning)
   if(checking_warning[1] == "WARNING! not converged "){
     print("densitycut didn't converge, not saving results")}else{
   
@@ -223,7 +224,9 @@ if (R > 1){
   #col <- AssignLabelColor(label=cluster.out$cluster, col=distinct.col) # Assign colour to clusters
   #NeatPlot(x=pc_scores, col=col) # Scatter plots
   
-  possible_clusters <- cbind(as.numeric(rownames(input_CpG_data)),cluster.out$cluster)
+  # possible_clusters <- cbind(as.numeric(rownames(input_CpG_data)),cluster.out$cluster)
+  # MA: removing as.numeric, otherwise it replaces the cell ids with NAs whenever the cell ids are not numeric
+  possible_clusters <- cbind(rownames(input_CpG_data),cluster.out$cluster)
   colnames(possible_clusters) <- c("cell_id","densitycut")
   
   ofile <- paste0(outdir,"/densityCut_clusters_Region_based_maxPC_",max_comp,".tsv") 
