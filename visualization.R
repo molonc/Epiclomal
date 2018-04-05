@@ -319,7 +319,7 @@ if (M > 250) {
   
   if (R > 1){
     
-    if (M < 10000) {
+    if (M < 8000) {
         print("plotting CpG based methylation data for R > 1")
         
         if (args$order_by_true == 1) {
@@ -364,13 +364,20 @@ if (M > 250) {
         data <- mean_meth_matrix[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
     }    
     
+    if (nrow(data) < 100) {
+        fontrow = 8
+    } else if (nrow(data) < 200) {
+        fontrow = 4
+    }  else {
+        fontrow = 1
+    } 
     
     pheatmap(data,cluster_cols=FALSE,
            cluster_rows=FALSE,
            annotation_row = annotation_row,
            #cellwidth = 5,cellheight = 5,
            fontsize = 8, main = paste0("Region-based mean methylation fraction data for ", args$name),
-           gaps_row = index_gaps,fontsize_row=8,fontsize_col=6,
+           gaps_row = index_gaps,fontsize_row=fontrow,fontsize_col=6,
            annotation_names_row = FALSE,
            #annotation_colors = ann_colors,
            border_color=NA,show_colnames=FALSE,
