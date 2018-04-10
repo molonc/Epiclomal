@@ -69,7 +69,11 @@ plot_data <- function(model, number_data_sets, initial_path_to_each_RUN, summary
         measure_title <- " clone prevalence mean squared error"
         column <- "clone_prev_MSE"
         fname <- "results"
-    }       
+    } else if (measure_name == "uncertainty") {
+        measure_title <- " uncertainty true positive rate"
+        column <- "uncertainty"
+        fname <- "results"
+    }      
      
     if(grepl("MISSPB", args$var, fixed=TRUE))   {
         xlabel <- "Missing data proportion"
@@ -112,9 +116,11 @@ plot_data <- function(model, number_data_sets, initial_path_to_each_RUN, summary
                 for(i in 1:number_data_sets){
                     if (model[m] == "PBALclust" || model[m] == "densitycut" || model[m] == "Pearsonclust" || model[m] == "Hclust") {
                         results_file <- paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/simple_hclust/results_", model[m], ".txt")
+                    } else if (model[m] == "region_bulk") {     
+                        results_file <- paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_region/",criterion,"/all_",fname,"_bestrun_region.tsv")
                     } else {     
                         results_file <- paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_",model[m],"/",criterion,"/all_",fname,"_bestrun_",model[m],".tsv")
-                    }    
+                    }                      
                     # print (paste0('file is ', results_file))
                     t <- try(read.table(file=results_file,sep="\t",header=TRUE))   
                     if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
@@ -122,6 +128,21 @@ plot_data <- function(model, number_data_sets, initial_path_to_each_RUN, summary
                         counts[j] <- counts[j]+1 
                     } else {
                         f <- read.table(file=results_file,sep="\t",header=TRUE)
+                        if (model[m] == "region_bulk") {
+                            if (measure_name == "Vmeasure") {
+                                column <- "slsbulk_vmeasure"
+                            }   
+                            if (measure_name == "clone_prev_MAE") {
+                                column <- "slsbulk_clone_prev_MAE"
+                            } 
+                        } else {
+                            if (measure_name == "Vmeasure") {
+                                column <- "best_vmeasure"
+                            }   
+                            if (measure_name == "clone_prev_MAE") {
+                                column <- "clone_prev_MAE"
+                            }                                                
+                        }   
                         measure <- c(measure,f[,column])
                         VAR <- c(VAR,variable[j])
                         method <- c(method,model[m]) 
@@ -201,7 +222,7 @@ print (initial_path_to_each_RUN)
 ##################
 print ("Plots for clone_prev_MAE")
 # model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
-model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
+model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust", "region_bulk")
 plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "clone_prev_MAE")
 
 ##################
@@ -226,7 +247,7 @@ plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, cri
 print ("Plots for V-measure")
 # 
 # model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
-model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
+model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust", "region_bulk")
 plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "Vmeasure")
 
 ##################
@@ -244,6 +265,14 @@ print ("Plots for nclusters")
 # model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
 model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
 plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "nclusters")
+
+##################
+### plots uncertainty ####
+##################
+
+print ("Plots for uncertainty")
+model <- c("region")
+plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "uncertainty")
 
 # ###############################
 # #### Code for plotting ELBo ###

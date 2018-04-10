@@ -15,21 +15,21 @@ parser$add_argument("--output_dir", type="character", default="output", help="En
 
 parser$add_argument("--criterion", type="character", help="The selection criterion for the best run: DIC_measure_gainthr0.05 DIC_measure_gainthr0.1")
 
-datasets <- c("Smallwood2014",
+datasets <- c("Aparicio",
+    "Smallwood2014",
     "Hou2016",
     "Luo2017",
-    "Farlik2016",
-    "Aparicio")
-datapaths <- c("../EPI-70_Smallwood2014/FINAL_RESULTS",
+    "Farlik2016")
+datapaths <- c("../EPI-112_inhouse_data/FINAL_RESULTS",
+    "../EPI-70_Smallwood2014/FINAL_RESULTS",
     "../EPI-105_scTrio/FINAL_RESULTS",
     "../EPI-106_Luo2017/FINAL_RESULTS",
-    "../EPI-89_Farlik2016_all_union/FINAL_RESULTS",
-    "../EPI-112_inhouse_data/FINAL_RESULTS")
-simplepaths <- c("../EPI-70_Smallwood2014/OUTPUT_epiclomal_Smallwood2014/RUN/epiclomal_Smallwood2014_",
+    "../EPI-89_Farlik2016_all_union/FINAL_RESULTS")
+simplepaths <- c("../EPI-112_inhouse_data/OUTPUT_epiclomal_INHOUSE/RUN/epiclomal_INHOUSE_",
+    "../EPI-70_Smallwood2014/OUTPUT_epiclomal_Smallwood2014/RUN/epiclomal_Smallwood2014_",
     "../EPI-105_scTrio/OUTPUT_epiclomal_scTrio/RUN/epiclomal_scTrio_",
-    "../EPI-106_Luo2017/OUTPUT_epiclomal_Luo2017_genebodies_500cells/RUN/epiclomal_Luo2017_genebodies_500cells_",
-    "../EPI-89_Farlik2016_all_union/OUTPUT_epiclomal_Farlik2016_all_union/RUN/epiclomal_Farlik2016_all_union_",
-    "../EPI-112_inhouse_data/OUTPUT_epiclomal_INHOUSE/RUN/epiclomal_INHOUSE_")
+    "../EPI-106_Luo2017/OUTPUT_epiclomal_Luo2017_genebodies_500_clean_random_cells/RUN/epiclomal_Luo2017_genebodies_500_clean_random_cells_",
+    "../EPI-89_Farlik2016_all_union/OUTPUT_epiclomal_Farlik2016_all_union/RUN/epiclomal_Farlik2016_all_union_")
 
 # each replicate file should be in inputs, for example inputs/Smallwood2014_replicates.txt
 
