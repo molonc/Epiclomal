@@ -15,7 +15,7 @@ parser$add_argument("--output_dir", type="character", default="output", help="En
 
 parser$add_argument("--criterion", type="character", help="The selection criterion for the best run: DIC_measure_gainthr0.05 DIC_measure_gainthr0.1")
 
-datasets <- c("Aparicio",
+datasets <- c("InHouse",
     "Smallwood2014",
     "Hou2016",
     "Luo2017",
