@@ -3,7 +3,10 @@
 
 suppressMessages(library("argparse"))
 library(ggplot2)
+library(gridExtra)
 library(stringr)
+library(plyr)
+#library(ggpubr)
 
 # create parser object
 parser <- ArgumentParser()
@@ -15,7 +18,7 @@ parser$add_argument("--output_dir", type="character", default="output", help="En
 
 parser$add_argument("--criterion", type="character", help="The selection criterion for the best run: DIC_measure_gainthr0.05 DIC_measure_gainthr0.1")
 
-datasets <- c("InHouse",
+datasets <- c("Aparicio",
     "Smallwood2014",
     "Hou2016",
     "Luo2017",
@@ -31,9 +34,8 @@ simplepaths <- c("../EPI-112_inhouse_data/OUTPUT_epiclomal_INHOUSE/RUN/epiclomal
     "../EPI-106_Luo2017/OUTPUT_epiclomal_Luo2017_genebodies_500_clean_random_cells/RUN/epiclomal_Luo2017_genebodies_500_clean_random_cells_",
     "../EPI-89_Farlik2016_all_union/OUTPUT_epiclomal_Farlik2016_all_union/RUN/epiclomal_Farlik2016_all_union_")
 
+
 # each replicate file should be in inputs, for example inputs/Smallwood2014_replicates.txt
-
-
 
 args <- parser$parse_args() 
 
@@ -50,12 +52,11 @@ outdir <- paste0(outdir,"/",criterion)
 ### box plots ####
 ##################
 
-plot_data <- function(model, criterion, measure_name){
+plot_data <- function(model,label,criterion, measure_name){
 # measure_name can be HD, Vmeasure, nclusters, cp_error
 
     variable <- datasets
     # variable is the value of the changed variable, for example if we are varying misspb, variable is 0.5, 0.6, 0.7, 0.8, 0.9, 0.95
-
 
     if (measure_name == "HD") {
         measure_title <- "hamming distance"
@@ -82,7 +83,7 @@ plot_data <- function(model, criterion, measure_name){
     xlabel = "Data set"
          
     savedfile <- paste0(outdir,"/data_",measure_name,"_",criterion,".Rda")
-    if (file.exists(savedfile)) {
+   if (file.exists(savedfile)) {
         print("File already exists, loading it")
         load(savedfile)
     } else {
@@ -91,8 +92,8 @@ plot_data <- function(model, criterion, measure_name){
         VAR <- NULL
         measure <- NULL
 
-        counts <- c(0,0)
-
+        crash <- NULL
+    
         for(m in 1:length(model)){
             for(j in 1:length(variable)){
                 replicate_file <- paste0("inputs/", variable[j], "_replicates.txt")
@@ -109,11 +110,17 @@ plot_data <- function(model, criterion, measure_name){
                     t <- try(read.table(file=results_file,sep="\t",header=TRUE))   
                     if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
                         print("can't find file")
-                        counts[j] <- counts[j]+1 
-                        # Consider this for the bar plots
-                        # Add up the counts of failures, make the bars 0-100%                                                        
+                        crash <- c(crash,0)
+                      
+                        measure <- c(measure,NA)
+                        
+                        VAR <- c(VAR,variable[j])
+                        method <- c(method,model[m]) 
+                                                                       
                     } else {
                         f <- read.table(file=results_file,sep="\t",header=TRUE)
+                        crash <- c(crash,1)
+                     
                         measure <- c(measure,f[,column])
                         VAR <- c(VAR,variable[j])
                         method <- c(method,model[m]) 
@@ -122,39 +129,90 @@ plot_data <- function(model, criterion, measure_name){
             }
         }
 
-
-        big_df <- cbind(as.data.frame(measure),VAR,method)
-        colnames(big_df) <- c("Measure","VAR","method")
+        
+        big_df <- cbind(as.data.frame(measure),as.data.frame(crash),VAR,method)
+        colnames(big_df) <- c("Measure","crash","VAR","method")
         str(big_df)
-
-        big_df$method <- factor(big_df$method,levels=model)
+        
+        ### changing variable names
+        
+        for (i in 1:length(model)){
+          
+          big_df$method <- sub(pattern=model[i],x=big_df$method,replacement=label[i])
+          
+        }
+        
+        big_df$method <- factor(big_df$method,levels=label)
+        
         big_df$VAR <- factor(big_df$VAR,levels=variable)
 
         print("Big DF")
+        
         print(big_df)
+    
+        print(str(big_df))
+        
+        
         # Now saving the data frame
         save(big_df, file=savedfile)
-    }  # end make the data files  
+ }  # end make the data files  
+  
+  
+    
+  sub_big_df <- ddply(big_df, .(VAR,method),summarise,crash_perc=100*(1-mean(crash)))
 
+  print(sub_big_df)
+  
     # plot the box plots
     pHD <- ggplot(big_df, aes(x=method, y=Measure, fill=method)) +
-      geom_boxplot() + facet_grid(~VAR) +
-      ggtitle(xlabel) +
+      geom_boxplot() + 
+      #geom_boxplot(show.legend=F) + 
+      facet_grid(~VAR) +
+      #ggtitle(xlabel) +
       labs(x="", y = paste0("Cell-based ", measure_title)) 
-      pHD <- pHD + theme(plot.title = element_text(size=20), 
+      pHD <- pHD + 
+            #guides(fill=FALSE) +
+            theme(plot.title = element_text(size=20), 
             axis.text.x  = element_text(angle=90, vjust=0.5, size=16, colour= "black"), 
             # axis.text.x  = element_blank()
-            axis.text.y  = element_text(size=20, colour= "black"),
+            axis.text.y  = element_text(size=16, colour= "black"),
             #panel.background = element_rect(fill="white",colour = 'black'), 
-            axis.title.y =element_text(size=20), 
+            axis.title.y =element_text(size=16), 
             axis.title.x=element_text(size=20),
-            strip.text.x = element_text(size =16) )
-        
+            strip.background = element_blank(),
+            strip.text.x = element_blank()
+            #legend.position="none",
+            #strip.text.x = element_text(size =16)
+            )
 
-    ggsave(pHD,file=paste0(outdir,"/boxplot_",measure_name,"_",criterion,".pdf"),width=13.1,height=10.6)    
+# ggsave(pHD,file=paste0(outdir,"/boxplot_",measure_name,"_",criterion,".pdf"),width=13.1,height=10.6)  
+     
+
+    # plot bar plots for crash
+    bHD <-ggplot(sub_big_df, aes(x=method, y=crash_perc, fill=method)) +
+      geom_bar(stat="identity") + facet_grid(~VAR) +
+      ggtitle(xlabel) +
+      labs(x="", y = paste0("Unsuccessful runs %")) 
+    bHD <- bHD + theme(plot.title = element_text(size=20), 
+                   #axis.text.x  = element_text(angle=90, vjust=0.5, size=16, colour= "black"), 
+                   axis.text.x  = element_blank(),
+                   axis.text.y  = element_text(size=10, colour= "black"),
+                   #panel.background = element_rect(fill="white",colour = 'black'), 
+                   axis.title.y =element_text(size=12), 
+                   axis.title.x=element_text(size=20),
+                   strip.text.x = element_text(size =16) )
+
+# ggsave(bHD,file=paste0(outdir,"/barplot_",measure_name,"_",criterion,".pdf"),width=13.1,height=10.6)  
+
+pdf(file=paste0(outdir,"/boxplot_",measure_name,"_",criterion,".pdf"),onefile=TRUE,width=13.1,height=10.6)
+grid.arrange(arrangeGrob(bHD,nrow=1,ncol=1), arrangeGrob(pHD,nrow=1,ncol=1),heights=c(2.5,10.6))
+dev.off()
+
+#figure <- ggarrange(bHD, pHD,
+#                    ncol = 1, nrow = 2) ## this function ggarrange may be useful one day
+
     
     # plot the mean and median line plots
-    
     aggre <- c("mean")
     # TODO For some reason, it doesn't work for median, it says "need numeric data"
     # aggre <- c("mean", "median")
@@ -185,20 +243,26 @@ plot_data <- function(model, criterion, measure_name){
 ### plots clone_prev_MAE ####
 ##################
 print ("Plots for clone_prev_MAE")
-model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
-plot_data (model, criterion, "clone_prev_MAE")
+model <- c("region", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
+label <- c("Epiclomal","EuclideanClust","DensityCut","HammingClust","PearsonClust")
+plot_data (model, label,criterion, "clone_prev_MAE")
+
+
 
 ##################
 ### plots V-measure ####
 ##################
 ### V-measure
 print ("Plots for V-measure")
-model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
-plot_data (model, criterion, "Vmeasure")
+model <- c("region", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
+label <- c("Epiclomal","EuclideanClust","DensityCut","HammingClust","PearsonClust")
+plot_data (model,label, criterion, "Vmeasure")
+
 
 ##################
 ### plots nclusters ####
 ##################
 print ("Plots for nclusters")
-model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
-plot_data (model, criterion, "nclusters")
+model <- c("region", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
+label <- c("Epiclomal","EuclideanClust","DensityCut","HammingClust","PearsonClust")
+plot_data (model, label,criterion, "nclusters")
