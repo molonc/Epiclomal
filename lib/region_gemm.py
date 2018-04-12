@@ -25,13 +25,16 @@ class RegionGeMM(BasicGeMM):
                  beta_prior,
                  X,
                  regions,
-                 initial_clusters_data):
+                 initial_clusters_data,
+                 mu_has_k,
+                 Bishop_model_selection,
+                 slsbulk_data=None):
                  
         self.Rstart = {}
         self.Rend = {}
         self.L = {}          
                  
-        BasicGeMM.__init__(self, gamma_prior, alpha_prior, beta_prior, X, regions, initial_clusters_data)   
+        BasicGeMM.__init__(self, gamma_prior, alpha_prior, beta_prior, X, regions, initial_clusters_data, mu_has_k, Bishop_model_selection, slsbulk_data)   
                          
     ###################### 
     
