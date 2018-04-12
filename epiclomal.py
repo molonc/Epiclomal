@@ -55,6 +55,7 @@ analysis_parser.add_argument('--true_prevalences', default=None,
 analysis_parser.add_argument('--repeat_id', default=1, type=int,
                             help='''A number >= 0. If there is a column with this number (excluding the first column and starting from 0) in the initial_clusters_file, use that column as initial clusters, else use random initialization.''')
                             
+# Not used any more                            
 analysis_parser.add_argument('--bulk_file', default=None,
                             help='''A file with 3 columns: locus, #methylated reads, #unmethylated reads. The beta prior will be initialized with these values''')
 

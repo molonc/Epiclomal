@@ -15,6 +15,7 @@ import operator
 import csv
 import os.path
 import sys
+import random
 from sklearn.metrics.cluster import v_measure_score, homogeneity_score, completeness_score
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
@@ -383,9 +384,7 @@ def load_data(args, include_regions=False):
     if args.K is not None:
         num_clusters = int(args.K)
     else:
-        num_clusters = config['num_clusters']        
-    
-    print ('Num clusters: ', num_clusters)
+        num_clusters = config['num_clusters']            
     
     cell_ids = []
     
@@ -400,6 +399,12 @@ def load_data(args, include_regions=False):
     
     if (args.initial_clusters_file != None):
         initial_clusters_data = _load_initial_clusters_frame(args.initial_clusters_file, args.repeat_id)
+
+    # 12 Apr 2018: If it's a random initialization, also make num_clusters be random from 1 to K
+    if (initial_clusters_data is None):
+        print ('Selecting a random number of clusters from 1 to ', num_clusters)    
+        num_clusters = random.randint(1,num_clusters)
+    print ('Num clusters: ', num_clusters)
 
     # print initial_clusters_data
 
