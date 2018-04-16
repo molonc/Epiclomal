@@ -5,6 +5,13 @@
 
 suppressMessages(library(argparse))
 
+# Renaming the simple methods
+# hclust -> EuclideanClust
+# PBALclust -> HammingClust
+# Pearsonclust -> Pearsonclust
+# densitycut -> DensityCut
+
+
 ### libraries to find the best number of clusters
 #suppressMessages(library(factoextra))
 suppressMessages(library(NbClust))
@@ -100,7 +107,7 @@ if (R == 1){
   if(sum(is.na(pairwisedist)==TRUE) == 0){
     
     hclust_CpG_crash <- 0
-    write.table(hclust_CpG_crash,file=paste0(outdir,"/hclust_CpG_crash.tsv"),row.names=FALSE,col.names=FALSE)
+    write.table(hclust_CpG_crash,file=paste0(outdir,"/EuclideanClust_CpG_crash.tsv"),row.names=FALSE,col.names=FALSE)
     
     hcluster <- hclust(pairwisedist,method = "complete")
     
@@ -109,7 +116,7 @@ if (R == 1){
     
     possible_clusters <- cbind(rownames(input_CpG_data),mycl)
     possible_clusters <- as.data.frame(possible_clusters)
-    colnames(possible_clusters) <- c("cell_id",paste0("hclust_cpg_num_clusters_",1:Max_K))
+    colnames(possible_clusters) <- c("cell_id",paste0("EuclideanClust_cpg_num_clusters_",1:Max_K))
     
     #print(possible_clusters)
     
@@ -122,31 +129,31 @@ if (R == 1){
       hcluster_Nb <- NbClust(input_CpG_data, diss = pairwisedist,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "cindex")
       print(hcluster_Nb)}
     if(error_ch_index == 1){
-      write.table(error_ch_index,file=paste0(outdir,"/hclust_CpGbased_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
+      write.table(error_ch_index,file=paste0(outdir,"/EuclideanClust_CpGbased_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
       
-      ofile <- paste0(outdir,"/hclust_clusters_CpG_based_maxk_",Max_K,".tsv")
+      ofile <- paste0(outdir,"/EuclideanClust_clusters_CpG_based_maxk_",Max_K,".tsv")
       write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
       system(paste0("gzip --force ", ofile))
       
-      ofile <- paste0(outdir,"/hclust_cell_order_CpG_based_maxk_",Max_K,".tsv")
+      ofile <- paste0(outdir,"/EuclideanClust_cell_order_CpG_based_maxk_",Max_K,".tsv")
       write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
       system(paste0("gzip --force ", ofile))
     }
     
     if(error_ch_index == 0){
       
-      write.table(error_ch_index,file=paste0(outdir,"/hclust_CpGbased_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
+      write.table(error_ch_index,file=paste0(outdir,"/EuclideanClust_CpGbased_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
       
       best_cluster <- hcluster_Nb$Best.partition
       
       possible_clusters <- cbind(possible_clusters,best_cluster)
       colnames(possible_clusters) <- c(colnames(possible_clusters)[1:(dim(possible_clusters)[2]-1)],paste0("best_cluster_",hcluster_Nb$Best.nc[1]))
       
-      ofile <- paste0(outdir,"/hclust_clusters_CpG_based_maxk_",Max_K,".tsv") 
+      ofile <- paste0(outdir,"/EuclideanClust_clusters_CpG_based_maxk_",Max_K,".tsv") 
       write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
       system(paste0("gzip --force ", ofile))    
       
-      ofile <- paste0(outdir,"/hclust_cell_order_CpG_based_maxk_",Max_K,".tsv") 
+      ofile <- paste0(outdir,"/EuclideanClust_cell_order_CpG_based_maxk_",Max_K,".tsv") 
       write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
       system(paste0("gzip --force ", ofile))    
       
@@ -161,8 +168,7 @@ if (R == 1){
     print("some pairs of cells have no CpG with data in common")
     
     hclust_CpG_crash <- 1
-    write.table(hclust_CpG_crash,file=paste0(outdir,"/hclust_CpG_crash.tsv"),row.names=FALSE,col.names=FALSE)
-    # system(paste0("gzip --force ", paste0(outdir,"/hclust_crash.tsv"))) 
+    write.table(hclust_CpG_crash,file=paste0(outdir,"/EuclideanClust_CpG_crash.tsv"),row.names=FALSE,col.names=FALSE)
   }
   
 }
@@ -188,7 +194,7 @@ if (R > 1){
   if(sum(is.na(pairwisedist_region)==TRUE) == 0){
     
     hclust_region_crash <- 0
-    write.table(hclust_region_crash,file=paste0(outdir,"/hclust_region_crash.tsv"),row.names=FALSE,col.names=FALSE)
+    write.table(hclust_region_crash,file=paste0(outdir,"/EuclideanClust_region_crash.tsv"),row.names=FALSE,col.names=FALSE)
     
     hcluster <- hclust(pairwisedist_region,method = "complete")
     
@@ -196,15 +202,15 @@ if (R > 1){
              cellheight = 8,fontsize = 8, 
              clustering_distance_rows = "euclidean",
              clustering_method = "complete",
-             main = paste0("Region-based hclust"),
-             filename = paste0(outdir,"/Region_based_hclust_PLOT.pdf"))
+             main = paste0("Region-based EuclideanClust"),
+             filename = paste0(outdir,"/Region_based_EuclideanClust_PLOT.pdf"))
     
     # defining some clusters
     mycl <- cutree(hcluster, k=1:Max_K)
     
     possible_clusters <- cbind(rownames(input_CpG_data),mycl)
     possible_clusters <- as.data.frame(possible_clusters)
-    colnames(possible_clusters) <- c("cell_id",paste0("hclust_region_num_clusters_",1:Max_K))
+    colnames(possible_clusters) <- c("cell_id",paste0("EuclideanClust_region_num_clusters_",1:Max_K))
 
     t <- try(NbClust(as.matrix(dist(mean_meth_matrix, method="euclidean")), diss = pairwisedist_region, distance=NULL, min.nc=1, max.nc=Max_K,method = "complete",index = index_type)) 
     if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
@@ -219,31 +225,31 @@ if (R > 1){
     
     
     if(error_ch_index == 1){
-      write.table(error_ch_index,file=paste0(outdir,"/hclust_region_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
+      write.table(error_ch_index,file=paste0(outdir,"/EuclideanClust_region_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
       
-      ofile <- paste0(outdir,"/hclust_clusters_region_based_maxk_",Max_K,".tsv")
+      ofile <- paste0(outdir,"/EuclideanClust_clusters_region_based_maxk_",Max_K,".tsv")
       write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
       system(paste0("gzip --force ", ofile))
       
-      ofile <- paste0(outdir,"/hclust_cell_order_region_based_maxk_",Max_K,".tsv")
+      ofile <- paste0(outdir,"/EuclideanClust_cell_order_region_based_maxk_",Max_K,".tsv")
       write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
       system(paste0("gzip --force ", ofile))
     }
     
     if(error_ch_index == 0){
       
-      write.table(error_ch_index,file=paste0(outdir,"/hclust_region_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
+      write.table(error_ch_index,file=paste0(outdir,"/EuclideanClust_region_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
       
       best_cluster <- hcluster_Nb$Best.partition
       
       possible_clusters <- cbind(possible_clusters,best_cluster)
       colnames(possible_clusters) <- c(colnames(possible_clusters)[1:(dim(possible_clusters)[2]-1)],paste0("best_cluster_",hcluster_Nb$Best.nc[1]))
       
-      ofile <- paste0(outdir,"/hclust_clusters_region_based_maxk_",Max_K,".tsv")
+      ofile <- paste0(outdir,"/EuclideanClust_clusters_region_based_maxk_",Max_K,".tsv")
       write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
       system(paste0("gzip --force ", ofile))
       
-      ofile <- paste0(outdir,"/hclust_cell_order_region_based_maxk_",Max_K,".tsv")
+      ofile <- paste0(outdir,"/EuclideanClust_cell_order_region_based_maxk_",Max_K,".tsv")
       write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
       system(paste0("gzip --force ", ofile))
       
@@ -256,7 +262,7 @@ if (R > 1){
   if(sum(is.na(pairwisedist_region)==TRUE) > 0){
     print("some pairs of cells have no region with data in common")
     hclust_region_crash <- 1
-    write.table(hclust_region_crash,file=paste0(outdir,"/hclust_region_crash.tsv"),row.names=FALSE,col.names=FALSE)
+    write.table(hclust_region_crash,file=paste0(outdir,"/EuclideanClust_region_crash.tsv"),row.names=FALSE,col.names=FALSE)
   }
   
 }
@@ -291,7 +297,7 @@ dist.PBAL <- function(d){ ### d is matrix where the rows correspond to cells and
 
 ### from PBAL manuscript: unsupervised learning was done by calculating a Euclidean distance from each cell’s dissimilarity vector and clustered using Ward’s linkage method.
 
-print("Tony's approach - CpG based clustering")
+print("Tony's approach - CpG based clustering (HammingClust)")
 
 dist_PBAL <- dist.PBAL(d=input_CpG_data)
 
@@ -300,7 +306,7 @@ diss_matrix_T <- dist(dist_PBAL,method="euclidean")
 if(sum(is.na(diss_matrix_T)) == 0){
   
   PBAL_crash <- 0
-  write.table(PBAL_crash,file=paste0(outdir,"/PBAL_crash.tsv"),row.names=FALSE,col.names=FALSE)
+  write.table(PBAL_crash,file=paste0(outdir,"/HammingClust_crash.tsv"),row.names=FALSE,col.names=FALSE)
   
   hcluster_T <- hclust(diss_matrix_T,method = "ward.D2")
   
@@ -308,15 +314,15 @@ if(sum(is.na(diss_matrix_T)) == 0){
            cellheight = 8,fontsize = 8, 
            clustering_distance_rows = "euclidean",
            clustering_method = "ward.D2",
-           main = paste0("PBAL approach"),
-           filename = paste0(outdir,"/PBAL_hclust_PLOT.pdf"))
+           main = paste0("HammingClust"),
+           filename = paste0(outdir,"/HammingClust_PLOT.pdf"))
   
   ## defining some clusters
   mycl_T <- cutree(hcluster_T, k=1:Max_K)
   
   possible_clusters_T <- cbind(rownames(input_CpG_data),mycl_T)
   possible_clusters_T <- as.data.frame(possible_clusters_T)
-  colnames(possible_clusters_T) <- c("cell_id",paste0("pbal_num_clusters_",1:Max_K))
+  colnames(possible_clusters_T) <- c("cell_id",paste0("HammingClust_num_clusters_",1:Max_K))
   
   t <- try(NbClust(dist_PBAL, diss = diss_matrix_T,distance=NULL, min.nc=1, max.nc=Max_K,method = "ward.D2",index = index_type)) ### changing to cindex as cindex also works for CpG based clustering
   if("try-error" %in% class(t)) { 
@@ -330,31 +336,31 @@ if(sum(is.na(diss_matrix_T)) == 0){
   PBALclust_bestpartition_crash <- error_ch_index
   
   if(error_ch_index == 1){
-    write.table(error_ch_index,file=paste0(outdir,"/PBALclust_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
+    write.table(error_ch_index,file=paste0(outdir,"/HammingClust_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
     
-    ofile <- paste0(outdir,"/PBALclust_clusters_CpG_based_maxk_",Max_K,".tsv") 
+    ofile <- paste0(outdir,"/HammingClust_clusters_CpG_based_maxk_",Max_K,".tsv") 
     write.table(possible_clusters_T, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
     system(paste0("gzip --force ", ofile))
     
-    ofile <- paste0(outdir,"/PBALclust_cell_order_CpG_based_maxk_",Max_K,".tsv")
+    ofile <- paste0(outdir,"/HammingClust_cell_order_CpG_based_maxk_",Max_K,".tsv")
     write.table(hcluster_T$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
     system(paste0("gzip --force ", ofile))
   }
   
   if(error_ch_index == 0){
     
-    write.table(error_ch_index,file=paste0(outdir,"/PBALclust_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
+    write.table(error_ch_index,file=paste0(outdir,"/HammingClust_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
     
     best_cluster <- hcluster_Nb_T$Best.partition
     
     possible_clusters_T <- cbind(possible_clusters_T,best_cluster)
     colnames(possible_clusters_T) <- c(colnames(possible_clusters_T)[1:(dim(possible_clusters_T)[2]-1)],paste0("best_cluster_",hcluster_Nb_T$Best.nc[1]))
     
-    ofile <- paste0(outdir,"/PBALclust_clusters_CpG_based_maxk_",Max_K,".tsv") 
+    ofile <- paste0(outdir,"/HammingClust_clusters_CpG_based_maxk_",Max_K,".tsv") 
     write.table(possible_clusters_T, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
     system(paste0("gzip --force ", ofile))
     
-    ofile <- paste0(outdir,"/PBALclust_cell_order_CpG_based_maxk_",Max_K,".tsv")
+    ofile <- paste0(outdir,"/HammingClust_cell_order_CpG_based_maxk_",Max_K,".tsv")
     write.table(hcluster_T$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
     system(paste0("gzip --force ", ofile))
     
@@ -364,7 +370,7 @@ if(sum(is.na(diss_matrix_T)) == 0){
 if(sum(is.na(diss_matrix_T)) > 0){
   
   PBAL_crash <- 1
-  write.table(PBAL_crash,file=paste0(outdir,"/PBAL_crash.tsv"),row.names=FALSE,col.names=FALSE)}
+  write.table(PBAL_crash,file=paste0(outdir,"/HammingClust_crash.tsv"),row.names=FALSE,col.names=FALSE)}
 
 
 ############################################################
@@ -393,7 +399,7 @@ diss_matrix_P <- 1 - cor(x=dist_Pearson,method="pearson", use ="pairwise.complet
 if(sum(is.na(diss_matrix_P)) == 0){
   
   Pearson_crash <- 0
-  write.table(Pearson_crash,file=paste0(outdir,"/Pearson_crash.tsv"),row.names=FALSE,col.names=FALSE)
+  write.table(Pearson_crash,file=paste0(outdir,"/PearsonClust_crash.tsv"),row.names=FALSE,col.names=FALSE)
   
   hcluster_P <- hclust(as.dist(diss_matrix_P),method = "ward.D2") ### BECAUSE IT IS CORRELATION diss_matrix_P IS ACTUALLY A SIMILARITY MATRIX, SO HAVE TO DO 1 - diss_matrix_P
   
@@ -405,14 +411,14 @@ if(sum(is.na(diss_matrix_P)) == 0){
            clustering_distance_rows = as.dist(diss_matrix_P),
            clustering_method = "ward.D2",
            main = paste0("Pearson corr. approach"),
-           filename = paste0(outdir,"/Pearson_hclust_PLOT.pdf"))
+           filename = paste0(outdir,"/PearsonClust_PLOT.pdf"))
   
   # defining some clusters
   mycl_P <- cutree(hcluster_P, k=1:Max_K)
   
   possible_clusters_P <- cbind(rownames(input_CpG_data),mycl_P)
   possible_clusters_P <- as.data.frame(possible_clusters_P)
-  colnames(possible_clusters_P) <- c("cell_id",paste0("pearson_num_clusters_",1:Max_K))
+  colnames(possible_clusters_P) <- c("cell_id",paste0("PearsonClust_num_clusters_",1:Max_K))
   
   t <- try(NbClust(dist_Pearson, diss = as.dist(diss_matrix_P),distance=NULL, min.nc=1, max.nc=Max_K,method = "ward.D2",index = index_type)) 
   if("try-error" %in% class(t)) { 
@@ -426,31 +432,31 @@ if(sum(is.na(diss_matrix_P)) == 0){
   Pearsonclust_bestpartition_crash <- error_ch_index
     
   if(error_ch_index == 1){
-    write.table(error_ch_index,file=paste0(outdir,"/Pearsonclust_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
+    write.table(error_ch_index,file=paste0(outdir,"/PearsonClust_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
     
-    ofile <- paste0(outdir,"/Pearsonclust_clusters_CpG_based_maxk_",Max_K,".tsv")
+    ofile <- paste0(outdir,"/PearsonClust_clusters_CpG_based_maxk_",Max_K,".tsv")
     write.table(possible_clusters_P, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
     system(paste0("gzip --force ", ofile))
     
-    ofile <- paste0(outdir,"/Pearsonclust_cell_order_CpG_based_maxk_",Max_K,".tsv")
+    ofile <- paste0(outdir,"/PearsonClust_cell_order_CpG_based_maxk_",Max_K,".tsv")
     write.table(hcluster_P$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
     system(paste0("gzip --force ", ofile))
   }
   
   if(error_ch_index == 0){
     
-    write.table(error_ch_index,file=paste0(outdir,"/Pearsonclust_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
+    write.table(error_ch_index,file=paste0(outdir,"/PearsonClust_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
     
     best_cluster <- hcluster_Nb_P$Best.partition
     
     possible_clusters_P <- cbind(possible_clusters_P,best_cluster)
     colnames(possible_clusters_P) <- c(colnames(possible_clusters_P)[1:(dim(possible_clusters_P)[2]-1)],paste0("best_cluster_",hcluster_Nb_P$Best.nc[1]))
     
-    ofile <- paste0(outdir,"/Pearsonclust_clusters_CpG_based_maxk_",Max_K,".tsv")
+    ofile <- paste0(outdir,"/PearsonClust_clusters_CpG_based_maxk_",Max_K,".tsv")
     write.table(possible_clusters_P, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
     system(paste0("gzip --force ", ofile))
     
-    ofile <- paste0(outdir,"/Pearsonclust_cell_order_CpG_based_maxk_",Max_K,".tsv")
+    ofile <- paste0(outdir,"/PearsonClust_cell_order_CpG_based_maxk_",Max_K,".tsv")
     write.table(hcluster_P$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
     system(paste0("gzip --force ", ofile))
     
@@ -460,7 +466,7 @@ if(sum(is.na(diss_matrix_P)) == 0){
 if(sum(is.na(diss_matrix_P)) > 0){
   
   Pearson_crash <- 1
-  write.table(Pearson_crash,file=paste0(outdir,"/Pearson_crash.tsv"),row.names=FALSE,col.names=FALSE)}
+  write.table(Pearson_crash,file=paste0(outdir,"/PearsonClust_crash.tsv"),row.names=FALSE,col.names=FALSE)}
 
 ####################
 # Now call densitycut
@@ -492,11 +498,11 @@ system(command)
 # Note: I am unzipping so I zip again after, I should not zip earlier, TODO
 # TODO: skip the best column, this file will be used only for initialization, not for evaluation
 
-hfile <- paste0(outdir,"/hclust_clusters_region_based_maxk_",Max_K,".tsv")
-pfile <- paste0(outdir,"/PBALclust_clusters_CpG_based_maxk_",Max_K,".tsv")
-peafile <- paste0(outdir,"/Pearsonclust_clusters_CpG_based_maxk_",Max_K,".tsv")
-dfile <- paste0(outdir,"/densityCut_clusters_Region_based_maxPC_",maxpc,".tsv")
-outfile <- paste0(outdir, "/hclust_region_PBAL_CpG_clusters_maxk_",Max_K,"_densitycut_PC", maxpc, ".tsv")
+hfile <- paste0(outdir,"/EuclideanClust_clusters_region_based_maxk_",Max_K,".tsv")
+pfile <- paste0(outdir,"/HammingClust_clusters_CpG_based_maxk_",Max_K,".tsv")
+peafile <- paste0(outdir,"/PearsonClust_clusters_CpG_based_maxk_",Max_K,".tsv")
+dfile <- paste0(outdir,"/DensityCut_clusters_Region_based_maxPC_",maxpc,".tsv")
+outfile <- paste0(outdir, "/all_hclust_maxk_",Max_K,"_DensityCut_PC", maxpc, ".tsv")
 print (paste0("Hfile ", hfile))
 print (paste0("Pfile ", pfile))
 print (paste0("Dfile ", dfile))
@@ -512,7 +518,7 @@ dtempfile <- ""
 if(file.exists(paste0(hfile,".gz"))) {
     print(paste0("hclust result exists ", hfile, ".gz"))
     system(paste0 ("gunzip ", hfile,".gz"))
-    htempfile <- paste0(outdir,"/hclust_temp_maxk_",Max_K,".tsv")
+    htempfile <- paste0(outdir,"/EuclideanClust_temp_maxk_",Max_K,".tsv")
     system (paste0 ("cut -f1 ", hfile, " > ", idtempfile))
     system (paste0 ("cut -f2-11 ", hfile, " > ", htempfile))
     system (paste0("gzip --force ", hfile))
@@ -528,12 +534,23 @@ if(file.exists(paste0(pfile,".gz"))) {
     system (paste0 ("cut -f2-11 ", pfile, " > ", ptempfile))
     system (paste0("gzip --force ", pfile))  
 }
-# For now I am not using Pearsonclust as initialization
+
+# 12 Apr 2018, adding the Pearsonclust results too
+# Pearsonclust 
+if(file.exists(paste0(peafile,".gz"))) {
+    print(paste0("PearsonClust result exists ", peafile, ".gz"))
+    system (paste0 ("gunzip ", peafile,".gz"))
+    peatempfile <- paste0(outdir,"/PearsonClust_temp_maxk_",Max_K,".tsv")
+    system (paste0 ("cut -f1 ", peafile, " > ", idtempfile))    
+    system (paste0 ("cut -f2-11 ", peafile, " > ", peatempfile))
+    system (paste0("gzip --force ", peafile))  
+}
+
 # densitycut 
 if(file.exists(paste0(dfile,".gz"))) {
     print(paste0("densitycut result exists ", dfile, ".gz"))
     system (paste0 ("gunzip ", dfile,".gz"))
-    dtempfile <- paste0(outdir,"/densitycut_temp_maxpc_",maxpc,".tsv")
+    dtempfile <- paste0(outdir,"/DensityCut_temp_maxpc_",maxpc,".tsv")
     system (paste0 ("cut -f1 ", dfile, " > ", idtempfile))    
     system (paste0 ("cut -f2 ", dfile, " > ", dtempfile))
     system (paste0("gzip --force ", dfile))      
@@ -541,13 +558,14 @@ if(file.exists(paste0(dfile,".gz"))) {
  
  # I should add the name of PBAL or HCLUST - added
 # Write the file only when at least one of the files exists
-if(file.exists(paste0(hfile,".gz")) || file.exists(paste0(pfile,".gz")) || file.exists(paste0(dfile,".gz")))  {
-    command <- paste0 ("paste ", idtempfile, " ", htempfile, " ", ptempfile, " ", dtempfile, " > ", outfile)
+if(file.exists(paste0(hfile,".gz")) || file.exists(paste0(pfile,".gz")) || file.exists(paste0(peafile,".gz")) || file.exists(paste0(dfile,".gz")))  {
+    command <- paste0 ("paste ", idtempfile, " ", htempfile, " ", ptempfile,  " ", peatempfile, " ", dtempfile, " > ", outfile)
     system(command)
     system (paste0("gzip --force ", outfile))    
 }    
 
 if (ptempfile != "")  system (paste0("rm ", ptempfile))
+if (peatempfile != "")  system (paste0("rm ", peatempfile))
 if (htempfile != "")  system (paste0("rm ", htempfile))
 if (dtempfile != "")  system (paste0("rm ", dtempfile))  
 if (idtempfile != "")  system (paste0("rm ", idtempfile))
@@ -558,28 +576,28 @@ if (idtempfile != "")  system (paste0("rm ", idtempfile))
 if (!is.null(true_clusters_file)) {
 
     if (hclust_region_crash == 0 && hclust_region_bestpartition_crash == 0) {
-        print("Calling evaluation software for Hclust")
+        print("Calling evaluation software for Hclust (EuclideanClust)")
         command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --true_prevalences ", args$true_prevalences, " --predicted_clusters_file ", hfile, ".gz --clusters_are_probabilities False --results_file ", outdir, "/results_Hclust.txt")
         print(command)
         system(command)
     }
     
     if (PBAL_crash ==0 && PBALclust_bestpartition_crash == 0) {
-        print("Calling evaluation software for PBALclust")
+        print("Calling evaluation software for PBALclust (HammingClust)")
         command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --true_prevalences ", args$true_prevalences, " --predicted_clusters_file ", pfile, ".gz --clusters_are_probabilities False --results_file ", outdir, "/results_PBALclust.txt")
         print(command)
         system(command)
     }    
 
     if (Pearson_crash ==0 && Pearsonclust_bestpartition_crash == 0) {
-        print("Calling evaluation software for Pearsonclust")
+        print("Calling evaluation software for PearsonClust")
         command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --true_prevalences ", args$true_prevalences, " --predicted_clusters_file ", peafile, ".gz --clusters_are_probabilities False --results_file ", outdir, "/results_Pearsonclust.txt")
         print(command)
         system(command)
     }    
 
     if(file.exists(paste0(dfile,".gz"))) {
-        print("Calling evaluation software for densityCut")
+        print("Calling evaluation software for DensityCut")
         command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --true_prevalences ", args$true_prevalences, " --predicted_clusters_file ", dfile, ".gz --clusters_are_probabilities False --results_file ", outdir, "/results_densitycut.txt")
         print(command)
         system(command)  
