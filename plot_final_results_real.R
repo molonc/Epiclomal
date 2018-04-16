@@ -34,7 +34,6 @@ simplepaths <- c("../EPI-112_inhouse_data/OUTPUT_epiclomal_INHOUSE/RUN/epiclomal
     "../EPI-106_Luo2017/OUTPUT_epiclomal_Luo2017_genebodies_500_clean_random_cells/RUN/epiclomal_Luo2017_genebodies_500_clean_random_cells_",
     "../EPI-89_Farlik2016_all_union/OUTPUT_epiclomal_Farlik2016_all_union/RUN/epiclomal_Farlik2016_all_union_")
 
-
 # each replicate file should be in inputs, for example inputs/Smallwood2014_replicates.txt
 
 args <- parser$parse_args() 
@@ -51,6 +50,82 @@ outdir <- paste0(outdir,"/",criterion)
 ##################
 ### box plots ####
 ##################
+
+
+summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+                      conf.interval=.95, .drop=TRUE) {
+
+  # New version of length which can handle NA's: if na.rm==T, don't count them
+  length2 <- function (x, na.rm=FALSE) {
+    if (na.rm) sum(!is.na(x))
+    else       length(x)
+  }
+  
+  # This does the summary. For each group's data frame, return a vector with
+  # N, mean, and sd
+  datac <- ddply(data, groupvars, .drop=.drop,
+                 .fun = function(xx, col) {
+                   c(N    = length2(xx[[col]], na.rm=na.rm),
+                     mean = mean   (xx[[col]], na.rm=na.rm),
+                     sd   = sd     (xx[[col]], na.rm=na.rm)
+                   )
+                 },
+                 measurevar
+  )
+  
+  # Rename the "mean" column    
+  datac <- rename(datac, c("mean" = measurevar))
+  
+  datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
+  
+  # Confidence interval multiplier for standard error
+  # Calculate t-statistic for confidence interval: 
+  # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
+  ciMult <- qt(conf.interval/2 + .5, datac$N-1)
+  datac$ci <- datac$se * ciMult
+  
+  return(datac)
+}
+
+summarySE_new <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+                      conf.interval=.95, .drop=TRUE) {
+  
+  # New version of length which can handle NA's: if na.rm==T, don't count them
+  length2 <- function (x, na.rm=FALSE) {
+    if (na.rm) sum(!is.na(x))
+    else       length(x)
+  }
+  
+  # This does the summary. For each group's data frame, return a vector with
+  # N, mean, and sd
+  datac <- ddply(data, groupvars, .drop=.drop,
+                 .fun = function(xx, col) {
+                   c(N    = length2(xx[[col]], na.rm=na.rm),
+                     mean = mean   (xx[[col]], na.rm=na.rm),
+                     sd   = sd     (xx[[col]], na.rm=na.rm),
+                     median = median (xx[[col]], na.rm=na.rm),
+                     first_quartile = as.vector(quantile (xx[[col]], probs=0.25, na.rm=na.rm)),
+                     third_quartile = as.vector(quantile (xx[[col]], probs=0.75, na.rm=na.rm))
+                   )
+                 },
+                 measurevar
+  )
+  
+  # Rename the "mean" column    
+  datac <- rename(datac, c("mean" = measurevar))
+  
+  datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
+  
+  # Confidence interval multiplier for standard error
+  # Calculate t-statistic for confidence interval: 
+  # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
+  ciMult <- qt(conf.interval/2 + .5, datac$N-1)
+  datac$ci <- datac$se * ciMult
+  
+  return(datac)
+}
+
+
 
 plot_data <- function(model,label,criterion, measure_name){
 # measure_name can be HD, Vmeasure, nclusters, cp_error
@@ -213,23 +288,66 @@ dev.off()
 
     
     # plot the mean and median line plots
-    aggre <- c("mean")
+    #aggre <- c("mean")
     # TODO For some reason, it doesn't work for median, it says "need numeric data"
-    # aggre <- c("mean", "median")
-    big_df$Measure <- as.numeric(as.character(big_df$Measure))
+    aggre <- c("mean", "median")
+  
+    print(str(big_df))  ### Measure is numeric!
+    #big_df$Measure <- as.numeric(as.character(big_df$Measure))
+    
+    agg_df <- summarySE_new(big_df, measurevar="Measure", groupvars=c("VAR","method"),na.rm=TRUE)
+    print(agg_df)
+
     for (agg in aggre) {
-        agg_df <- aggregate(big_df, by=list(Method=big_df$method, VAR=big_df$VAR), FUN=agg, na.rm=FALSE)    
-        print(paste0(agg, " DF"))
-        print(agg_df)    
-        pHD <- ggplot(agg_df, aes(x=VAR, y=Measure, group=Method)) +
-            geom_line(aes(color=Method), size=3) + 
+       
+        # agg_df <- aggregate(big_df, by=list(Method=big_df$method, VAR=big_df$VAR), FUN=agg, na.rm=FALSE)   
+        # print(paste0(agg, " DF"))
+        # print(agg_df)    
+        
+        # agg_df <- summarySE(big_df, measurevar="Measure", groupvars=c("VAR","method"),na.rm=TRUE)
+        # print(agg_df)
+                
+        # agg_df <- summarySE_new(big_df, measurevar="Measure", groupvars=c("VAR","method"),na.rm=TRUE)
+        # print(agg_df)
+        # 
+        print(agg)
+      
+      
+      
+        # The errorbars overlapped, so use position_dodge to move them horizontally
+        pd <- position_dodge(0.1) # move them .05 to the left and right, if 0 no move happens
+        
+        if (agg == "mean" ){
+        
+        pHD <- ggplot(agg_df, aes(x=VAR, y=Measure, group=method,colour=method)) +
+            geom_errorbar(aes(ymin=Measure-se, ymax=Measure+se), width=.1,position=pd) +
+            geom_line(aes(color=method), size=3,position=pd) + 
+            geom_point(position=pd,size=4) +
             labs(x=xlabel, y = paste0(agg, " ", measure_title)) 
         pHD <- pHD + theme(axis.text.y  = element_text(size=20, colour= "black"),
             axis.title.y =element_text(size=20), axis.title.x=element_text(size=20),
             strip.text.x = element_text(size =16) )    
+    
 
+        }
+        
+        if(agg == "median"){
+          
+          pHD <- ggplot(agg_df, aes(x=VAR, y=median, group=method)) +
+            geom_errorbar(aes(ymin=(median-(median-first_quartile)), ymax=(median+(third_quartile-median))), width=.1) +
+            geom_line(aes(color=method), size=3) + 
+            #geom_point() +
+            labs(x=xlabel, y = paste0(agg, " ", measure_title)) 
+          pHD <- pHD + theme(axis.text.y  = element_text(size=20, colour= "black"),
+                             axis.title.y =element_text(size=20), axis.title.x=element_text(size=20),
+                             strip.text.x = element_text(size =16) )    
+      
+          
+        }
+        
         ggsave(pHD,file=paste0(outdir,"/lineplot_", agg, "_",measure_name,"_",criterion,".pdf"),width=15,height=10)              
-    }        
+    }
+    
 }
 
 
@@ -246,8 +364,6 @@ print ("Plots for clone_prev_MAE")
 model <- c("region", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
 label <- c("Epiclomal","EuclideanClust","DensityCut","HammingClust","PearsonClust")
 plot_data (model, label,criterion, "clone_prev_MAE")
-
-
 
 ##################
 ### plots V-measure ####
