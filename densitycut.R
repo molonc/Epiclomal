@@ -227,9 +227,9 @@ if (R > 1){
   # possible_clusters <- cbind(as.numeric(rownames(input_CpG_data)),cluster.out$cluster)
   # MA: removing as.numeric, otherwise it replaces the cell ids with NAs whenever the cell ids are not numeric
   possible_clusters <- cbind(rownames(input_CpG_data),cluster.out$cluster)
-  colnames(possible_clusters) <- c("cell_id","densitycut")
+  colnames(possible_clusters) <- c("cell_id","DensityCut")
   
-  ofile <- paste0(outdir,"/densityCut_clusters_Region_based_maxPC_",max_comp,".tsv") 
+  ofile <- paste0(outdir,"/DensityCut_clusters_Region_based_maxPC_",max_comp,".tsv") 
   write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
   system(paste0("gzip --force ", ofile))   
   

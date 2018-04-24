@@ -470,7 +470,7 @@ if(sum(is.na(diss_matrix_P)) > 0){
 
 ####################
 # Now call densitycut
-print("Calling densitycut")
+print("Calling DensityCut")
 
 ### TO TEST
 #stop()
@@ -512,6 +512,7 @@ print (paste0("Outfile ", outfile))
 idtempfile <- paste0(outdir,"/cellid_temp_maxk_",Max_K,".tsv")
 htempfile <- ""
 ptempfile <- ""
+peatempfile <- ""
 dtempfile <- ""
 
 #hclust
@@ -527,9 +528,9 @@ if(file.exists(paste0(hfile,".gz"))) {
 
 # pbal 
 if(file.exists(paste0(pfile,".gz"))) {
-    print(paste0("PBALclust result exists ", pfile, ".gz"))
+    print(paste0("HammingClust result exists ", pfile, ".gz"))
     system (paste0 ("gunzip ", pfile,".gz"))
-    ptempfile <- paste0(outdir,"/PBALclust_temp_maxk_",Max_K,".tsv")
+    ptempfile <- paste0(outdir,"/HammingClust_temp_maxk_",Max_K,".tsv")
     system (paste0 ("cut -f1 ", pfile, " > ", idtempfile))    
     system (paste0 ("cut -f2-11 ", pfile, " > ", ptempfile))
     system (paste0("gzip --force ", pfile))  
@@ -548,7 +549,7 @@ if(file.exists(paste0(peafile,".gz"))) {
 
 # densitycut 
 if(file.exists(paste0(dfile,".gz"))) {
-    print(paste0("densitycut result exists ", dfile, ".gz"))
+    print(paste0("DensityCut result exists ", dfile, ".gz"))
     system (paste0 ("gunzip ", dfile,".gz"))
     dtempfile <- paste0(outdir,"/DensityCut_temp_maxpc_",maxpc,".tsv")
     system (paste0 ("cut -f1 ", dfile, " > ", idtempfile))    
@@ -577,28 +578,28 @@ if (!is.null(true_clusters_file)) {
 
     if (hclust_region_crash == 0 && hclust_region_bestpartition_crash == 0) {
         print("Calling evaluation software for Hclust (EuclideanClust)")
-        command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --true_prevalences ", args$true_prevalences, " --predicted_clusters_file ", hfile, ".gz --clusters_are_probabilities False --results_file ", outdir, "/results_Hclust.txt")
+        command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --true_prevalences ", args$true_prevalences, " --predicted_clusters_file ", hfile, ".gz --clusters_are_probabilities False --results_file ", outdir, "/results_EuclideanClust.txt")
         print(command)
         system(command)
     }
     
     if (PBAL_crash ==0 && PBALclust_bestpartition_crash == 0) {
-        print("Calling evaluation software for PBALclust (HammingClust)")
-        command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --true_prevalences ", args$true_prevalences, " --predicted_clusters_file ", pfile, ".gz --clusters_are_probabilities False --results_file ", outdir, "/results_PBALclust.txt")
+        print("Calling evaluation software for HammingClust")
+        command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --true_prevalences ", args$true_prevalences, " --predicted_clusters_file ", pfile, ".gz --clusters_are_probabilities False --results_file ", outdir, "/results_HammingClust.txt")
         print(command)
         system(command)
     }    
 
     if (Pearson_crash ==0 && Pearsonclust_bestpartition_crash == 0) {
         print("Calling evaluation software for PearsonClust")
-        command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --true_prevalences ", args$true_prevalences, " --predicted_clusters_file ", peafile, ".gz --clusters_are_probabilities False --results_file ", outdir, "/results_Pearsonclust.txt")
+        command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --true_prevalences ", args$true_prevalences, " --predicted_clusters_file ", peafile, ".gz --clusters_are_probabilities False --results_file ", outdir, "/results_PearsonClust.txt")
         print(command)
         system(command)
     }    
 
     if(file.exists(paste0(dfile,".gz"))) {
         print("Calling evaluation software for DensityCut")
-        command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --true_prevalences ", args$true_prevalences, " --predicted_clusters_file ", dfile, ".gz --clusters_are_probabilities False --results_file ", outdir, "/results_densitycut.txt")
+        command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --true_prevalences ", args$true_prevalences, " --predicted_clusters_file ", dfile, ".gz --clusters_are_probabilities False --results_file ", outdir, "/results_DensityCut.txt")
         print(command)
         system(command)  
     }       

@@ -114,7 +114,7 @@ plot_data <- function(model, number_data_sets, initial_path_to_each_RUN, summary
             for(j in 1:length(variable)){
                 print(paste0("Model ", model[m], " value ", variable[j], " number of data sets ", number_data_sets))
                 for(i in 1:number_data_sets){
-                    if (model[m] == "PBALclust" || model[m] == "densitycut" || model[m] == "Pearsonclust" || model[m] == "Hclust") {
+                    if (model[m] == "HammingClust" || model[m] == "DensityCut" || model[m] == "PearsonClust" || model[m] == "EuclideanClust") {
                         results_file <- paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/simple_hclust/results_", model[m], ".txt")
                     } else if (model[m] == "region_bulk") {     
                         results_file <- paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_region/",criterion,"/all_",fname,"_bestrun_region.tsv")
@@ -222,7 +222,9 @@ print (initial_path_to_each_RUN)
 ##################
 print ("Plots for clone_prev_MAE")
 # model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
-model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust", "region_bulk")
+# model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust", "region_bulk")
+model <- c("region","basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
+#label <- c("Epiclomal","EuclideanClust","DensityCut","HammingClust","PearsonClust")
 plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "clone_prev_MAE")
 
 ##################
@@ -247,7 +249,8 @@ plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, cri
 print ("Plots for V-measure")
 # 
 # model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
-model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust", "region_bulk")
+#model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust", "region_bulk")
+model <- c("region","basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
 plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "Vmeasure")
 
 ##################
@@ -263,7 +266,8 @@ plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, cri
 ##################
 print ("Plots for nclusters")
 # model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
-model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
+#model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
+model <- c("region","basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
 plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "nclusters")
 
 ##################
@@ -273,173 +277,5 @@ plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, cri
 print ("Plots for uncertainty")
 model <- c("region")
 plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "uncertainty")
-
-# ###############################
-# #### Code for plotting ELBo ###
-# ###############################
-# 
-# path_to_elbo <- "/Users/cdesouza/Documents/shahlab15/mandronescu/EPI-73_run_synthetic_pipeline/OUTPUT_MISSPB_10CLONES/RUN/D_MISSPB_0.9_1_epiclomal_synthetic"
-# 
-# 
-# big_df <- NULL
-# 
-# initials <- seq(0:49) -1
-# 
-# method <- NULL
-# 
-# for( i in 1:length(initials)){
-#   
-#   print(i)
-#   print(initials[i])
-#   
-#   if(initials[i] >= 0 & initials[i] <= 9 ){
-# 
-#   hclust_crash <- as.numeric(read.table(file=paste0(path_to_elbo,"/outputs/simple_hclust/hclust_region_crash.tsv")))
-# 
-#   if(hclust_crash == 0){
-#     
-#   file <- paste0(path_to_elbo,"/outputs/epiclomal_basic/",initials[i],"/params.yaml")
-#   
-#   lines <- readLines(file)
-# 
-#   converged <- sum(sapply(sapply(lines, grep, pattern = "converged: true", value = TRUE), length) == 1)
-#   
-#   if(converged == 1){
-#   
-#   tmp <- as.numeric(sub("lower_bound: ", "", sapply(lines, grep, pattern = "lower_bound", value = TRUE)))
-#   elbo <- tmp[!is.na(tmp)]
-#   rm(tmp)
-#   
-#   tmp <- as.numeric(sub("CPU_time_seconds: ", "", sapply(lines, grep, pattern = "CPU_time_seconds", value = TRUE)))
-#   cpu_time <- tmp[!is.na(tmp)]
-#   rm(tmp)
-#   
-#   tmp <- as.numeric(sub("Vmeasure: ", "", sapply(lines, grep, pattern = "Vmeasure", value = TRUE)))
-#   vmeasure <- tmp[!is.na(tmp)]
-#   rm(tmp)
-#   
-#   big_df <- rbind(big_df,c(elbo,cpu_time,vmeasure))
-#   
-#   method <- c(method,"hclust")
-#   
-#   } 
-#  
-# }
-# 
-#   }
-#   
-#   if(initials[i] >= 10 & initials[i] <= 19 ){
-#     
-#     pbal_crash <- as.numeric(read.table(file=paste0(path_to_elbo,"/outputs/simple_hclust/PBAL_crash.tsv")))
-#     
-#     if(pbal_crash == 0){
-#       
-#       file <- paste0(path_to_elbo,"/outputs/epiclomal_basic/",initials[i],"/params.yaml")
-#       
-#       lines <- readLines(file)
-#       
-#       converged <- sum(sapply(sapply(lines, grep, pattern = "converged: true", value = TRUE), length) == 1)
-#       
-#       if(converged == 1){
-#         
-#         tmp <- as.numeric(sub("lower_bound: ", "", sapply(lines, grep, pattern = "lower_bound", value = TRUE)))
-#         elbo <- tmp[!is.na(tmp)]
-#         rm(tmp)
-#         
-#         tmp <- as.numeric(sub("CPU_time_seconds: ", "", sapply(lines, grep, pattern = "CPU_time_seconds", value = TRUE)))
-#         cpu_time <- tmp[!is.na(tmp)]
-#         rm(tmp)
-#         
-#         tmp <- as.numeric(sub("Vmeasure: ", "", sapply(lines, grep, pattern = "Vmeasure", value = TRUE)))
-#         vmeasure <- tmp[!is.na(tmp)]
-#         rm(tmp)
-#         
-#         big_df <- rbind(big_df,c(elbo,cpu_time,vmeasure))
-#         
-#         method <- c(method,"pbal")
-#         
-#       } 
-#       
-#     }
-#     
-#   }
-#   
-#   
-#   if(initials[i] > 19 ){
-#     
-#     
-#       
-#       file <- paste0(path_to_elbo,"/outputs/epiclomal_basic/",initials[i],"/params.yaml")
-#       
-#       lines <- readLines(file)
-#       
-#       converged <- sum(sapply(sapply(lines, grep, pattern = "converged: true", value = TRUE), length) == 1)
-#       
-#       if(converged == 1){
-#         
-#         tmp <- as.numeric(sub("lower_bound: ", "", sapply(lines, grep, pattern = "lower_bound", value = TRUE)))
-#         elbo <- tmp[!is.na(tmp)]
-#         rm(tmp)
-#         
-#         tmp <- as.numeric(sub("CPU_time_seconds: ", "", sapply(lines, grep, pattern = "CPU_time_seconds", value = TRUE)))
-#         cpu_time <- tmp[!is.na(tmp)]
-#         rm(tmp)
-#         
-#         tmp <- as.numeric(sub("Vmeasure: ", "", sapply(lines, grep, pattern = "Vmeasure", value = TRUE)))
-#         vmeasure <- tmp[!is.na(tmp)]
-#         rm(tmp)
-#         
-#         big_df <- rbind(big_df,c(elbo,cpu_time,vmeasure))
-#         
-#         method <- c(method,"random")
-#         
-#       } 
-#       
-#     }
-# 
-# }
-# 
-# colnames(big_df) <- c("elbo","cpu_time","vmeasure")
-# big_df <- cbind(as.data.frame(big_df),method)
-# 
-# outdir <- "/Users/cdesouza/Documents/"
-# 
-# pelbo <- ggplot(big_df, aes(x=method, y=elbo,fill=method)) +
-#   geom_boxplot() + 
-#   labs(x="initialization method", y = "elbo") +
-#   theme(axis.text.x  = element_text(angle=0, vjust=0.5, size=12, colour= "black"), axis.text.y  = element_text(size=15, colour= "black"),
-#         #panel.background = element_rect(fill="white",colour = 'black'), 
-#         axis.title.y =element_text(size=15), axis.title.x=element_text(size=15),
-#         strip.text.x = element_text(size =12) )
-# 
-# ggsave(pelbo,file=paste0(outdir,"boxplot_elbo_initialization.pdf"),width=13.1,height=10.6)
-# 
-# pcpu <- ggplot(big_df, aes(x=method, y=cpu_time,fill=method)) +
-#   geom_boxplot() + 
-#   labs(x="initialization method", y = "cpu time") +
-#   theme(axis.text.x  = element_text(angle=0, vjust=0.5, size=12, colour= "black"), axis.text.y  = element_text(size=15, colour= "black"),
-#         #panel.background = element_rect(fill="white",colour = 'black'), 
-#         axis.title.y =element_text(size=15), axis.title.x=element_text(size=15),
-#         strip.text.x = element_text(size =12) )
-# 
-# ggsave(pcpu,file=paste0(outdir,"boxplot_cpu_initialization.pdf"),width=13.1,height=10.6)
-# 
-# 
-# pv <- ggplot(big_df, aes(x=method, y=vmeasure,fill=method)) +
-#   geom_boxplot() + 
-#   labs(x="initialization method", y = "V measure") +
-#   theme(axis.text.x  = element_text(angle=0, vjust=0.5, size=12, colour= "black"), axis.text.y  = element_text(size=15, colour= "black"),
-#         #panel.background = element_rect(fill="white",colour = 'black'), 
-#         axis.title.y =element_text(size=15), axis.title.x=element_text(size=15),
-#         strip.text.x = element_text(size =12) )
-# 
-# ggsave(pv,file=paste0(outdir,"boxplot_vmeasure_initialization.pdf"),width=13.1,height=10.6)
-
-
-
-
-
-
-
 
 
