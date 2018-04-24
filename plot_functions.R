@@ -77,6 +77,17 @@ summarySE_new <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
   return(datac)
 }
 
+# I tryed to write this function for the case when we have 10.00 clusters, but it doesn't work
+reformat <- function(x) {
+    rx <- 0
+    if(max(x, na.rm=T)>=10) {
+        rx <- format(round(x,1),nsmall=1)
+    } else {
+        rx <- format(round(x,2),nsmall=2)
+    }
+    return (rx)
+}
+
 ##########################################
 
 plot_data <- function(model, label, ourcolors, criterion, measure_name){
@@ -98,11 +109,11 @@ plot_data <- function(model, label, ourcolors, criterion, measure_name){
     column <- "nclusters_pred"
     fname <- "results"
   } else if (measure_name == "clone_prev_MAE") {
-    measure_title <- "Cell-based clone prevalence mean absolute error"
+    measure_title <- "Clone prevalence MAE"
     column <- "clone_prev_MAE"
     fname <- "results"
   } else if (measure_name == "clone_prev_MSE") {
-    measure_title <- "Cell-based clone prevalence mean squared error"
+    measure_title <- "Clone prevalence MSE"
     column <- "clone_prev_MSE"
     fname <- "results"
   }       
@@ -186,12 +197,15 @@ plot_data <- function(model, label, ourcolors, criterion, measure_name){
   
   
   
-  sub_big_df <- ddply(big_df, .(VAR,method),summarise,crash_perc=100*(1-mean(crash)))
+  # sub_big_df <- ddply(big_df, .(VAR,method),summarise,crash_perc=100*(1-mean(crash)))
+  sub_big_df <- ddply(big_df, .(VAR,method),summarise,crash_perc=(1-mean(crash)))
   
   print(sub_big_df)
   
   # plot the box plots
   pHD <- ggplot(big_df, aes(x=method, y=Measure, fill=method)) +
+    # The next line writes the y labels in the format x.xx so it aligns well with the bar plot.
+    scale_y_continuous(labels = function(x) format(round(x,2),nsmall=2)) +
     geom_boxplot() + 
     #geom_boxplot(show.legend=F) + 
     facet_grid(~VAR) +
@@ -200,15 +214,16 @@ plot_data <- function(model, label, ourcolors, criterion, measure_name){
   pHD <- pHD + 
     #guides(fill=FALSE) +
     theme(plot.title = element_text(size=20), 
-          axis.text.x  = element_text(angle=90, vjust=0.5, size=16, colour= "black"), 
+          axis.text.x  = element_text(angle=90, vjust=0.5, size=20, colour= "black"), 
           # axis.text.x  = element_blank()
           axis.text.y  = element_text(size=16, colour= "black"),
           #panel.background = element_rect(fill="white",colour = 'black'), 
-          axis.title.y =element_text(size=16), 
+          axis.title.y =element_text(size=20), 
           axis.title.x=element_text(size=20),
           strip.background = element_blank(),
           strip.text.x = element_blank(),
-          legend.position="bottom"
+          legend.position="none",
+          legend.text=element_text(size=16)
           #strip.text.x = element_text(size =16)
     )
   pHD <- pHD + scale_fill_manual(values=ourcolors)  
@@ -218,25 +233,27 @@ plot_data <- function(model, label, ourcolors, criterion, measure_name){
   
   # plot bar plots for crash
   bHD <-ggplot(sub_big_df, aes(x=method, y=crash_perc, fill=method)) +
+    scale_y_continuous(breaks=seq(0,1,0.50), labels = function(x) format(round(x,2),nsmall=2)) +
     geom_bar(stat="identity") + facet_grid(~VAR) +
-    ggtitle(xlabel) +
-    labs(x="", y = paste0("Unsuccessful runs %")) 
+    # ggtitle(xlabel) +
+    labs(x="", y = paste0("Unsuccess")) 
   bHD <- bHD + theme(plot.title = element_text(size=20), 
                      #axis.text.x  = element_text(angle=90, vjust=0.5, size=16, colour= "black"), 
                      axis.text.x  = element_blank(),
-                     axis.text.y  = element_text(size=10, colour= "black"),
+                     axis.text.y  = element_text(size=16, colour= "black"),
                      #panel.background = element_rect(fill="white",colour = 'black'), 
-                     axis.title.y =element_text(size=12), 
+                     axis.title.y =element_text(size=20), 
                      axis.title.x=element_text(size=20),
-                     legend.position="none",
-                     strip.text.x = element_text(size =16) )
+                     legend.position="top",
+                     legend.text=element_text(size=16),
+                     strip.text.x = element_text(size =20) )
                      
   bHD <- bHD +  scale_fill_manual(values=ourcolors)                   
   
   # ggsave(bHD,file=paste0(outdir,"/barplot_",measure_name,"_",criterion,".pdf"),width=13.1,height=10.6)  
   
   pdf(file=paste0(outdir,"/boxplot_",measure_name,"_",criterion,".pdf"),onefile=TRUE,width=13.1,height=10.6)
-  grid.arrange(arrangeGrob(bHD,nrow=1,ncol=1), arrangeGrob(pHD,nrow=1,ncol=1),heights=c(2.5,10.6))
+  grid.arrange(arrangeGrob(bHD,nrow=1,ncol=1), arrangeGrob(pHD,nrow=1,ncol=1),heights=c(2.9,10.6))
   dev.off()
   
   # print("using ggarrange")
@@ -286,9 +303,13 @@ plot_data <- function(model, label, ourcolors, criterion, measure_name){
         geom_errorbar(aes(ymin=Measure-se, ymax=Measure+se), width=.1,position=pd) +
         geom_line(aes(color=method), size=3,position=pd) + 
         geom_point(position=pd,size=4) +
-        labs(x=xlabel, y = paste0(agg, " ", measure_title)) 
+        labs(x=xlabel, y = paste0(measure_title, " (", agg, ")")) 
       pHD <- pHD + theme(axis.text.y  = element_text(size=20, colour= "black"),
-                         axis.title.y =element_text(size=20), axis.title.x=element_text(size=20),
+                         axis.text.x  = element_text(size=20, colour= "black"),      
+                         axis.title.y =element_text(size=22), 
+                         axis.title.x=element_text(size=22),
+                         legend.text=element_text(size=16),
+                         legend.position="top",
                          strip.text.x = element_text(size =16) )  
       pHD <- pHD + scale_color_manual(values=ourcolors)                           
       
@@ -308,15 +329,19 @@ plot_data <- function(model, label, ourcolors, criterion, measure_name){
         geom_errorbar(aes(ymin=Measure-se, ymax=Measure+se), width=.1,position=pd) +
         geom_line(aes(color=method), size=3,position=pd) + 
         geom_point(position=pd,size=4) +
-        labs(x=xlabel, y = paste0(agg, " ", measure_title)) 
+        labs(x=xlabel, y = paste0(measure_title, " (", agg, ")")) 
       pHD <- pHD + theme(axis.text.y  = element_text(size=20, colour= "black"),
-                         axis.title.y =element_text(size=20), axis.title.x=element_text(size=20),
+                         axis.text.x  = element_text(size=20, colour= "black"),
+                         axis.title.y =element_text(size=22), 
+                         axis.title.x=element_text(size=22),
+                         legend.text=element_text(size=16),
+                         legend.position="top",
                          strip.text.x = element_text(size =16) )    
       pHD <- pHD + scale_color_manual(values=ourcolors)
       
     }
     
-    ggsave(pHD,file=paste0(outdir,"/lineplot_", agg, "_",measure_name,"_",criterion,".pdf"),width=15,height=10)              
+    ggsave(pHD,file=paste0(outdir,"/lineplot_", agg, "_",measure_name,"_",criterion,".pdf"),width=13,height=10)              
   }
   
 }
