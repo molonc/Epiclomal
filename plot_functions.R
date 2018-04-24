@@ -86,23 +86,23 @@ plot_data <- function(model, label, ourcolors, criterion, measure_name){
   # variable is the value of the changed variable, for example if we are varying misspb, variable is 0.5, 0.6, 0.7, 0.8, 0.9, 0.95
   
   if (measure_name == "HD") {
-    measure_title <- "hamming distance"
+    measure_title <- "Hamming Distance"
     column <- "mean"
     fname <- "hdist"
   } else if (measure_name == "Vmeasure") {
-    measure_title <- " V-measure"
+    measure_title <- "V-measure"
     column <- "best_vmeasure"
     fname <- "results"
   } else if (measure_name == "nclusters") {
-    measure_title <- " number of predicted clusters"
+    measure_title <- "Number of predicted clusters"
     column <- "nclusters_pred"
     fname <- "results"
   } else if (measure_name == "clone_prev_MAE") {
-    measure_title <- " clone prevalence mean absolute error"
+    measure_title <- "Cell-based clone prevalence mean absolute error"
     column <- "clone_prev_MAE"
     fname <- "results"
   } else if (measure_name == "clone_prev_MSE") {
-    measure_title <- " clone prevalence mean squared error"
+    measure_title <- "Cell-based clone prevalence mean squared error"
     column <- "clone_prev_MSE"
     fname <- "results"
   }       
@@ -196,7 +196,7 @@ plot_data <- function(model, label, ourcolors, criterion, measure_name){
     #geom_boxplot(show.legend=F) + 
     facet_grid(~VAR) +
     #ggtitle(xlabel) +
-    labs(x="", y = paste0("Cell-based ", measure_title)) 
+    labs(x="", y = measure_title) 
   pHD <- pHD + 
     #guides(fill=FALSE) +
     theme(plot.title = element_text(size=20), 
@@ -207,8 +207,8 @@ plot_data <- function(model, label, ourcolors, criterion, measure_name){
           axis.title.y =element_text(size=16), 
           axis.title.x=element_text(size=20),
           strip.background = element_blank(),
-          strip.text.x = element_blank()
-          #legend.position="none",
+          strip.text.x = element_blank(),
+          legend.position="bottom"
           #strip.text.x = element_text(size =16)
     )
   pHD <- pHD + scale_fill_manual(values=ourcolors)  
@@ -228,6 +228,7 @@ plot_data <- function(model, label, ourcolors, criterion, measure_name){
                      #panel.background = element_rect(fill="white",colour = 'black'), 
                      axis.title.y =element_text(size=12), 
                      axis.title.x=element_text(size=20),
+                     legend.position="none",
                      strip.text.x = element_text(size =16) )
                      
   bHD <- bHD +  scale_fill_manual(values=ourcolors)                   
@@ -238,9 +239,16 @@ plot_data <- function(model, label, ourcolors, criterion, measure_name){
   grid.arrange(arrangeGrob(bHD,nrow=1,ncol=1), arrangeGrob(pHD,nrow=1,ncol=1),heights=c(2.5,10.6))
   dev.off()
   
-  #figure <- ggarrange(bHD, pHD,
-  #                    ncol = 1, nrow = 2) ## this function ggarrange may be useful one day
-  
+  # print("using ggarrange")
+  #
+  # figure <- ggarrange(bHD, pHD,labels=NULL,
+  #                     ncol = 1, nrow = 2) ## this function ggarrange may be useful one day
+  #
+  # print("saving plot done with ggarrange")
+  #
+  # ggsave(figure,file=paste0(outdir,"/TEST.pdf"),width=13.1,height=10.6) 
+  #
+  # stop()
   
   # plot the mean and median line plots
   #aggre <- c("mean")
@@ -289,10 +297,17 @@ plot_data <- function(model, label, ourcolors, criterion, measure_name){
     
     if(agg == "median"){
       
-      pHD <- ggplot(agg_df, aes(x=VAR, y=median, group=method)) +
-        geom_errorbar(aes(ymin=(median-(median-first_quartile)), ymax=(median+(third_quartile-median))), width=.1) +
-        geom_line(aes(color=method), size=3) + 
-        #geom_point() +
+      # The black error bars
+      # pHD <- ggplot(agg_df, aes(x=VAR, y=median, group=method)) +
+      #  geom_errorbar(aes(ymin=(median-(median-first_quartile)), ymax=(median+(third_quartile-median))), width=.1) +
+      #   geom_line(aes(color=method), size=3) + 
+      #   #geom_point() +
+      #   labs(x=xlabel, y = paste0(agg, " ", measure_title))       
+      
+      pHD <- ggplot(agg_df, aes(x=VAR, y=median, group=method,colour=method)) +
+        geom_errorbar(aes(ymin=Measure-se, ymax=Measure+se), width=.1,position=pd) +
+        geom_line(aes(color=method), size=3,position=pd) + 
+        geom_point(position=pd,size=4) +
         labs(x=xlabel, y = paste0(agg, " ", measure_title)) 
       pHD <- pHD + theme(axis.text.y  = element_text(size=20, colour= "black"),
                          axis.title.y =element_text(size=20), axis.title.x=element_text(size=20),

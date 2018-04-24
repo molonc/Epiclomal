@@ -1,10 +1,16 @@
 # plotting Vmeasure, Hamming Distance, number of clusters, cluster prevalence mean absolute error and mean squared error
 
+#.libPaths(c("/home/mandronescu/R/x86_64-pc-linux-gnu-library/3.2", 
+#            "/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos6/3.2", "/clusterapp/software/linux-x86_64-centos6/R-3.2.3/lib64/R/library","/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos6/3.3"))
+
+
+
 suppressMessages(library("argparse"))
 library(ggplot2)
 library(gridExtra)
 library(stringr)
 library(plyr)
+# library(ggpubr,lib.loc = "/clusterapp/clusterhome/csouza/R/x86_64-pc-linux-gnu-library/3.3")
 
 
 # function to get the script path
@@ -75,7 +81,7 @@ print ("Plots for clone_prev_MAE")
 model <- c("region", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
 ourcolors <- c("red", "blue", "green", "purple", "cyan")
 label <- c("Epiclomal","EuclideanClust","DensityCut","HammingClust","PearsonClust")
-plot_data (model, label, ourcolors, criterion, "clone_prev_MAE")
+plot_data(model, label, ourcolors, criterion, "clone_prev_MAE")
 
 ##################
 ### plots V-measure ####
