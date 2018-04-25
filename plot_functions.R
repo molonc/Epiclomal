@@ -1,4 +1,8 @@
 
+library(ggplot2)
+library(gridExtra)
+library(plyr)
+
 # plotting functions for the plot_final_results*.R files
 ##########################################
 
@@ -88,117 +92,30 @@ reformat <- function(x) {
     return (rx)
 }
 
-##########################################
-
-plot_data <- function(model, label, ourcolors, criterion, measure_name){
-  # measure_name can be HD, Vmeasure, nclusters, cp_error
+########################################## 
   
-  variable <- datasets
-  # variable is the value of the changed variable, for example if we are varying misspb, variable is 0.5, 0.6, 0.7, 0.8, 0.9, 0.95
+plot_data <- function(big_df, crash, measure_name) {  
   
   if (measure_name == "HD") {
     measure_title <- "Hamming Distance"
-    column <- "mean"
     fname <- "hdist"
   } else if (measure_name == "Vmeasure") {
     measure_title <- "V-measure"
-    column <- "best_vmeasure"
     fname <- "results"
   } else if (measure_name == "nclusters") {
     measure_title <- "Number of predicted clusters"
-    column <- "nclusters_pred"
     fname <- "results"
   } else if (measure_name == "clone_prev_MAE") {
     measure_title <- "Clone prevalence MAE"
-    column <- "clone_prev_MAE"
     fname <- "results"
   } else if (measure_name == "clone_prev_MSE") {
     measure_title <- "Clone prevalence MSE"
-    column <- "clone_prev_MSE"
     fname <- "results"
   }       
   
-  xlabel = "Data set"
-  
-  savedfile <- paste0(outdir,"/data_",measure_name,"_",criterion,".Rda")
-  if (file.exists(savedfile)) {
-    print("File already exists, loading it")
-    load(savedfile)
-  } else {
-    print("File doesn't exist, creating it")
-    method <- NULL
-    VAR <- NULL
-    measure <- NULL
-    
-    crash <- NULL
-    
-    for(m in 1:length(model)){
-      for(j in 1:length(variable)){
-        replicate_file <- paste0("inputs/", variable[j], "_replicates.txt")
-        replicates <- read.table (replicate_file, header=FALSE, sep="\t")
-        number_replicates <- nrow(replicates)
-        print(paste0("Model ", model[m], " data set ", variable[j], " number of replicates ", number_replicates))
-        for(i in 1:number_replicates){
-          if (model[m] == "PBALclust" || model[m] == "densitycut" || model[m] == "Pearsonclust" || model[m] == "Hclust") {
-            results_file <- paste0(simplepaths[j],replicates[i,],"_K1_epiclomal_real/outputs/simple_hclust/results_", model[m], ".txt")                        
-          } else {     
-            results_file <- paste0(datapaths[j],"/",replicates[i,],"_",model[m],"/",criterion,"/all_results_bestrun_",model[m],".tsv")
-          }    
-          print (paste0('Results file is ', results_file))
-          t <- try(read.table(file=results_file,sep="\t",header=TRUE))   
-          if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
-            print("can't find file")
-            crash <- c(crash,0)
-            
-            measure <- c(measure,NA)
-            
-            VAR <- c(VAR,variable[j])
-            method <- c(method,model[m]) 
-            
-          } else {
-            f <- read.table(file=results_file,sep="\t",header=TRUE)
-            crash <- c(crash,1)
-            
-            measure <- c(measure,f[,column])
-            VAR <- c(VAR,variable[j])
-            method <- c(method,model[m]) 
-          }      
-        }
-      }
-    }
-    
-    
-    big_df <- cbind(as.data.frame(measure),as.data.frame(crash),VAR,method)
-    colnames(big_df) <- c("Measure","crash","VAR","method")
-    str(big_df)
-    
-    ### changing variable names
-    
-    for (i in 1:length(model)){
-      
-      big_df$method <- sub(pattern=model[i],x=big_df$method,replacement=label[i])
-      
-    }
-    
-    big_df$method <- factor(big_df$method,levels=label)
-    
-    big_df$VAR <- factor(big_df$VAR,levels=variable)
-    
-    print("Big DF")
-    
-    print(big_df)
-    
-    print(str(big_df))
-    
-    
-    # Now saving the data frame
-    save(big_df, file=savedfile)
-  }  # end make the data files  
-  
-  
-  
+  xlabel = "Data set"  
   # sub_big_df <- ddply(big_df, .(VAR,method),summarise,crash_perc=100*(1-mean(crash)))
-  sub_big_df <- ddply(big_df, .(VAR,method),summarise,crash_perc=(1-mean(crash)))
+  sub_big_df <- ddply(big_df, .(VAR,method),summarise,crash_perc=(1-mean(crash)))   # big_df[['crash']])))
   
   print(sub_big_df)
   

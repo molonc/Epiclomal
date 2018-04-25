@@ -2,8 +2,9 @@
 # plotting Vmeasure, Hamming Distance, number of clusters, cluster prevalence mean absolute error and mean squared error
 
 suppressMessages(library("argparse"))
-library(ggplot2)
+
 library(stringr)
+
 
 # create parser object
 parser <- ArgumentParser()
@@ -38,11 +39,23 @@ outdir <- args$output_dir
 criterion <- args$criterion
 
 
-##################
-### box plots ####
-##################
+# function to get the script path
+getScriptPath <- function(){
+    cmd.args <- commandArgs()
+    m <- regexpr("(?<=^--file=).+", cmd.args, perl=TRUE)
+    script.dir <- dirname(regmatches(cmd.args, m))
+    if(length(script.dir) == 0) stop("can't determine script dir: please call the script with Rscript")
+    if(length(script.dir) > 1) stop("can't determine script dir: more than one '--file' argument detected")
+    return(script.dir)
+}
 
-plot_data <- function(model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, measure_name){
+
+
+scriptPath <- getScriptPath()
+source(paste0(scriptPath, "/plot_functions.R"))
+
+
+collect_data <- function(model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, measure_name){
 # measure_name can be HD, Vmeasure, nclusters, cp_error
 
     variable <- as.character(summary_table[,1])
@@ -107,8 +120,7 @@ plot_data <- function(model, number_data_sets, initial_path_to_each_RUN, summary
         method <- NULL
         VAR <- NULL
         measure <- NULL
-
-        counts <- c(0,0)
+        crash <- NULL
 
         for(m in 1:length(model)){
             for(j in 1:length(variable)){
@@ -125,9 +137,13 @@ plot_data <- function(model, number_data_sets, initial_path_to_each_RUN, summary
                     t <- try(read.table(file=results_file,sep="\t",header=TRUE))   
                     if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
                         print("can't find file")
-                        counts[j] <- counts[j]+1 
+                        crash <- c(crash,0)
+                        measure <- c(measure,NA)
+                        VAR <- c(VAR,variable[j])
+                        method <- c(method,model[m])                         
                     } else {
                         f <- read.table(file=results_file,sep="\t",header=TRUE)
+                        crash <- c(crash,1)
                         if (model[m] == "region_bulk") {
                             if (measure_name == "Vmeasure") {
                                 column <- "slsbulk_vmeasure"
@@ -151,9 +167,8 @@ plot_data <- function(model, number_data_sets, initial_path_to_each_RUN, summary
             }
         }
 
-
-        big_df <- cbind(as.data.frame(measure),VAR,method)
-        colnames(big_df) <- c("Measure","VAR","method")
+        big_df <- cbind(as.data.frame(measure),as.data.frame(crash),VAR,method)
+        colnames(big_df) <- c("Measure","crash","VAR","method")
         str(big_df)
 
         big_df$method <- factor(big_df$method,levels=model)
@@ -165,44 +180,8 @@ plot_data <- function(model, number_data_sets, initial_path_to_each_RUN, summary
         save(big_df, file=savedfile)
     }  # end make the data files  
 
-    # plot the box plots
-    pHD <- ggplot(big_df, aes(x=method, y=Measure, fill=method)) +
-      geom_boxplot() + facet_grid(~VAR) +
-      ggtitle(xlabel) +
-      labs(x="", y = paste0("Cell-based ", measure_title)) 
-      pHD <- pHD + theme(plot.title = element_text(size=20), 
-            axis.text.x  = element_text(angle=90, vjust=0.5, size=16, colour= "black"), 
-            # axis.text.x  = element_blank()
-            axis.text.y  = element_text(size=20, colour= "black"),
-            #panel.background = element_rect(fill="white",colour = 'black'), 
-            axis.title.y =element_text(size=20), 
-            axis.title.x=element_text(size=20),
-            strip.text.x = element_text(size =16) )
-        
-
-    ggsave(pHD,file=paste0(outdir,"/boxplot_",measure_name,"_",criterion,".pdf"),width=13.1,height=10.6)    
-    
-    # plot the mean and median line plots
-    
-    aggre <- c("mean")
-    # TODO For some reason, it doesn't work for median, it says "need numeric data"
-    # aggre <- c("mean", "median")
-    # big_df$Measure <- as.numeric(as.character(big_df$Measure))
-    for (agg in aggre) {
-        agg_df <- aggregate(big_df, by=list(Method=big_df$method, VAR=big_df$VAR), FUN=agg, na.rm=FALSE)    
-        print(paste0(agg, " DF"))
-        print(agg_df)    
-        pHD <- ggplot(agg_df, aes(x=VAR, y=Measure, group=Method)) +
-            geom_line(aes(color=Method), size=3) + 
-            labs(x=xlabel, y = paste0(agg, " ", measure_title)) 
-        pHD <- pHD + theme(axis.text.y  = element_text(size=20, colour= "black"),
-            axis.title.y =element_text(size=20), axis.title.x=element_text(size=20),
-            strip.text.x = element_text(size =16) )    
-
-        ggsave(pHD,file=paste0(outdir,"/lineplot_", agg, "_",measure_name,"_",criterion,".pdf"),width=15,height=10)              
-    }        
-}
-
+    return(big_df)
+}    
 
 
 ##################
@@ -224,15 +203,10 @@ print ("Plots for clone_prev_MAE")
 # model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
 # model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust", "region_bulk")
 model <- c("region","basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
+# To add custom labels
 #label <- c("Epiclomal","EuclideanClust","DensityCut","HammingClust","PearsonClust")
-plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "clone_prev_MAE")
-
-##################
-### plots clone_prev_MSE ####
-##################
-# print ("Boxplots for clone_prev_MSE")
-# model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
-# plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "clone_prev_MSE")
+big_df <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "clone_prev_MAE")
+plot_data(big_df, "clone_prev_MAE")
 
 ##################
 ### plots hamming distance ####
@@ -240,7 +214,8 @@ plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, cri
 print ("Plots for hamming distance")
 # model <- c("basic","basic_munok","region","region_munok")
 model <- c("region", "basic")
-plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "HD")
+big_df <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "HD")
+plot_data(big_df, "HD")
 
 ##################
 ### plots V-measure ####
@@ -251,15 +226,8 @@ print ("Plots for V-measure")
 # model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
 #model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust", "region_bulk")
 model <- c("region","basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
-plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "Vmeasure")
-
-##################
-### box plots V-measure ####
-##################
-### V-measure
-#print ("Boxplots for V-measure")
-#model <- c("basic","region")
-#boxplot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "Vmeasure")
+big_df <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "Vmeasure")
+plot_data(big_df, "Vmeasure")
 
 ##################
 ### plots nclusters ####
@@ -268,7 +236,8 @@ print ("Plots for nclusters")
 # model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
 #model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
 model <- c("region","basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
-plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "nclusters")
+big_df <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "nclusters")
+plot_data(big_df, "nclusters")
 
 ##################
 ### plots uncertainty ####
@@ -276,6 +245,6 @@ plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, cri
 
 print ("Plots for uncertainty")
 model <- c("region")
-plot_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "uncertainty")
-
+big_df <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "uncertainty")
+plot_data(big_df, "uncertainty")
 
