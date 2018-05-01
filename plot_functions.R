@@ -92,9 +92,55 @@ reformat <- function(x) {
     return (rx)
 }
 
+##########################################
+
+set_colors_and_labels <- function(model) {
+    ourcolors <- vector(mode = "character", length = length(model))
+    label <- vector(mode = "character", length = length(model))
+    for (m in 1:length(model)) {
+        if (model[m] == "region") {
+            ourcolors[m] <- "red"
+            label[m] <- "EpiclomalRegion"
+        } else if (model[m] == "region_bulk") {
+            ourcolors[m] <- "orange"
+            label[m] <- "EpiclomalBulk"            
+        } else if (model[m] == "basic") {
+            ourcolors[m] <- "yellow"
+            label[m] <- "EpiclomalBasic"            
+        } else if (model[m] == "EuclideanClust" || model[m] == "Hclust") {
+            ourcolors[m] <- "green"
+            label[m] <- "EuclideanClust"            
+        } else if (model[m] == "DensityCut" || model[m] == "densitycut") {
+            ourcolors[m] <- "skyblue"
+            label[m] <- "DensityCut"               
+        } else if (model[m] == "HammingClust" || model[m] == "PBALclust") {
+            ourcolors[m] <- "royalblue3"
+            label[m] <- "HammingClust"               
+        } else if (model[m] == "PearsonClust" || model[m] == "Pearsonclust") {
+            ourcolors[m] <- "purple"
+            label[m] <- "PearsonClust"               
+        }        
+    }
+    print(model)
+    print(ourcolors)
+    print(label)
+    return(list("colors"=ourcolors,"labels"=label))
+}
+
 ########################################## 
   
-plot_data <- function(big_df, crash, measure_name) {  
+plot_data <- function(big_df, crash, model, measure_name) {  
+  
+  our <- set_colors_and_labels(model)    
+  ourcolors <- our$colors
+  label <- our$label
+  
+  ## changing variable names    
+  for (i in 1:length(model)){
+      big_df$method <- sub(pattern=paste0("^",model[i],"$"),x=big_df$method,replacement=label[i])
+  }    
+  big_df$method <- factor(big_df$method,levels=label)
+  #big_df$method <- factor(big_df$method,levels=method)
   
   if (measure_name == "HD") {
     measure_title <- "Hamming Distance"
@@ -111,7 +157,10 @@ plot_data <- function(big_df, crash, measure_name) {
   } else if (measure_name == "clone_prev_MSE") {
     measure_title <- "Clone prevalence MSE"
     fname <- "results"
-  }       
+  } else if (measure_name == "uncertainty") {
+    measure_title <- "Uncertainty true positive rate"
+    fname <- "results"
+  }      
   
   xlabel = "Data set"  
   # sub_big_df <- ddply(big_df, .(VAR,method),summarise,crash_perc=100*(1-mean(crash)))
@@ -145,8 +194,6 @@ plot_data <- function(big_df, crash, measure_name) {
     )
   pHD <- pHD + scale_fill_manual(values=ourcolors)  
   
-  # ggsave(pHD,file=paste0(outdir,"/boxplot_",measure_name,"_",criterion,".pdf"),width=13.1,height=10.6)  
-  
   
   # plot bar plots for crash
   bHD <-ggplot(sub_big_df, aes(x=method, y=crash_perc, fill=method)) +
@@ -167,9 +214,7 @@ plot_data <- function(big_df, crash, measure_name) {
                      
   bHD <- bHD +  scale_fill_manual(values=ourcolors)                   
   
-  # ggsave(bHD,file=paste0(outdir,"/barplot_",measure_name,"_",criterion,".pdf"),width=13.1,height=10.6)  
-  
-  pdf(file=paste0(outdir,"/boxplot_",measure_name,"_",criterion,".pdf"),onefile=TRUE,width=13.1,height=10.6)
+  pdf(file=paste0(outdir,"/boxplot_",measure_name,".pdf"),onefile=TRUE,width=13.1,height=10.6)
   grid.arrange(arrangeGrob(bHD,nrow=1,ncol=1), arrangeGrob(pHD,nrow=1,ncol=1),heights=c(2.9,10.6))
   dev.off()
   
@@ -258,7 +303,7 @@ plot_data <- function(big_df, crash, measure_name) {
       
     }
     
-    ggsave(pHD,file=paste0(outdir,"/lineplot_", agg, "_",measure_name,"_",criterion,".pdf"),width=13,height=10)              
+    ggsave(pHD,file=paste0(outdir,"/lineplot_", agg, "_",measure_name,".pdf"),width=13,height=10)              
   }
   
 }

@@ -170,17 +170,23 @@ collect_data <- function(model, number_data_sets, initial_path_to_each_RUN, summ
         big_df <- cbind(as.data.frame(measure),as.data.frame(crash),VAR,method)
         colnames(big_df) <- c("Measure","crash","VAR","method")
         str(big_df)
+#label <- c("EpiclomalRegion","EpiclomalBulk","EpiclomalBasic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
+        #for (i in 1:length(model)){      
+        #  big_df$method <- sub(pattern=model[i],x=big_df$method,replacement=label[i])      
+        #}    
+        #big_df$method <- factor(big_df$method,levels=label)
 
-        big_df$method <- factor(big_df$method,levels=model)
+        # big_df$method <- factor(big_df$method,levels=model)
         big_df$VAR <- factor(big_df$VAR,levels=variable)
 
-        #print("Big DF")
-        #print(big_df)
         # Now saving the data frame
-        save(big_df, file=savedfile)
+        save(big_df, crash, file=savedfile)
     }  # end make the data files  
 
-    return(big_df)
+    print("Big DF")
+    print(big_df)
+
+    return(list("big_df"=big_df, "crash"=crash))
 }    
 
 
@@ -200,44 +206,37 @@ print (initial_path_to_each_RUN)
 ### plots clone_prev_MAE ####
 ##################
 print ("Plots for clone_prev_MAE")
-# model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
-# model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust", "region_bulk")
-model <- c("region","basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
+model <- c("region","region_bulk", "basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
 # To add custom labels
-#label <- c("Epiclomal","EuclideanClust","DensityCut","HammingClust","PearsonClust")
-big_df <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "clone_prev_MAE")
-plot_data(big_df, "clone_prev_MAE")
+# label <- c("EpiclomalRegion","EpiclomalBulk","EpiclomalBasic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
+mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "clone_prev_MAE")
+plot_data(mylist$big_df, mylist$crash, model, "clone_prev_MAE")
+
 
 ##################
 ### plots hamming distance ####
 ##################
 print ("Plots for hamming distance")
-# model <- c("basic","basic_munok","region","region_munok")
 model <- c("region", "basic")
-big_df <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "HD")
-plot_data(big_df, "HD")
+mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "HD")
+plot_data(mylist$big_df, mylist$crash, model, "HD")
 
 ##################
 ### plots V-measure ####
 ##################
 ### V-measure
 print ("Plots for V-measure")
-# 
-# model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
-#model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust", "region_bulk")
-model <- c("region","basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
-big_df <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "Vmeasure")
-plot_data(big_df, "Vmeasure")
+model <- c("region","region_bulk", "basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
+mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "Vmeasure")
+plot_data(mylist$big_df, mylist$crash, model, "Vmeasure")
 
 ##################
 ### plots nclusters ####
 ##################
 print ("Plots for nclusters")
-# model <- c("basic","basic_munok","region","region_munok","PBALclust","densitycut")
-#model <- c("region", "basic", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
 model <- c("region","basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
-big_df <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "nclusters")
-plot_data(big_df, "nclusters")
+mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "nclusters")
+plot_data(mylist$big_df, mylist$crash, model, "nclusters")
 
 ##################
 ### plots uncertainty ####
@@ -245,6 +244,6 @@ plot_data(big_df, "nclusters")
 
 print ("Plots for uncertainty")
 model <- c("region")
-big_df <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "uncertainty")
-plot_data(big_df, "uncertainty")
+mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "uncertainty")
+plot_data(mylist$big_df, mylist$crash, model, "uncertainty")
 

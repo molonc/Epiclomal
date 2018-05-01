@@ -42,12 +42,12 @@ datasets <- c("InHouse",
               "Luo2017",
               "Farlik2016")
 datapaths <- c("../EPI-112_inhouse_data/FINAL_RESULTS",
-               "../EPI-70_Smallwood2014/FINAL_RESULTS_IQR",
+               "../EPI-70_Smallwood2014/FINAL_RESULTS",
                "../EPI-105_scTrio/FINAL_RESULTS",
                "../EPI-106_Luo2017/FINAL_RESULTS",
                "../EPI-89_Farlik2016_all_union_IQR/FINAL_RESULTS")
 simplepaths <- c("../EPI-112_inhouse_data/OUTPUT_epiclomal_INHOUSE/RUN/epiclomal_INHOUSE_",
-                 "../EPI-70_Smallwood2014/OUTPUT_epiclomal_Smallwood2014_IQR/RUN/epiclomal_Smallwood2014_",
+                 "../EPI-70_Smallwood2014/OUTPUT_epiclomal_Smallwood2014/RUN/epiclomal_Smallwood2014_",
                  "../EPI-105_scTrio/OUTPUT_epiclomal_scTrio/RUN/epiclomal_scTrio_",
                  "../EPI-106_Luo2017/OUTPUT_epiclomal_Luo2017_genebodies_500_clean_random_cells/RUN/epiclomal_Luo2017_genebodies_500_clean_random_cells_",
                  "../EPI-89_Farlik2016_all_union_IQR/OUTPUT_epiclomal_Farlik2016_all_union/RUN/epiclomal_Farlik2016_all_union_")
@@ -72,7 +72,7 @@ outdir <- paste0(outdir,"/",criterion)
 
 
 
-collect_data <- function(model, label, ourcolors, criterion, measure_name){
+collect_data <- function(model, label, criterion, measure_name){
   # measure_name can be HD, Vmeasure, nclusters, cp_error
   
   if (measure_name == "HD") {
@@ -139,15 +139,8 @@ collect_data <- function(model, label, ourcolors, criterion, measure_name){
     colnames(big_df) <- c("Measure","crash","VAR","method")
     str(big_df)
     
-    ### changing variable names
-    
-    for (i in 1:length(model)){
-      
-      big_df$method <- sub(pattern=model[i],x=big_df$method,replacement=label[i])
-      
-    }
-    
-    big_df$method <- factor(big_df$method,levels=label)
+
+
     
     big_df$VAR <- factor(big_df$VAR,levels=variable)
     
@@ -161,7 +154,7 @@ collect_data <- function(model, label, ourcolors, criterion, measure_name){
     # Now saving the data frame
     save(big_df, crash, file=savedfile)
   }  # end make the data files  
-  return (list(big_df, crash))
+  return (list("big_df"=big_df, "crash"=crash))
 }  
 
 ##################
@@ -169,10 +162,8 @@ collect_data <- function(model, label, ourcolors, criterion, measure_name){
 ##################
 print ("Plots for clone_prev_MAE")
 model <- c("region", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
-ourcolors <- c("red", "blue", "green", "purple", "cyan")
-label <- c("Epiclomal","EuclideanClust","DensityCut","HammingClust","PearsonClust")
-list[big_df, crash] <- collect_data(model, label, ourcolors, criterion, "clone_prev_MAE")
-plot_data(big_df, crash, "clone_prev_MAE")
+mylist <- collect_data(model, label, criterion, "clone_prev_MAE")
+plot_data(mylist$big_df, mylist$crash, model, "clone_prev_MAE")
 
 ##################
 ### plots V-measure ####
@@ -180,17 +171,15 @@ plot_data(big_df, crash, "clone_prev_MAE")
 ### V-measure
 print ("Plots for V-measure")
 model <- c("region", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
-ourcolors <- c("red", "blue", "green", "purple", "cyan")
-label <- c("Epiclomal","EuclideanClust","DensityCut","HammingClust","PearsonClust")
-list[big_df, crash] <- collect_data (model, label, ourcolors, criterion, "Vmeasure")
-plot_data(big_df, crash, "Vmeasure")
+mylist <- collect_data (model, label, criterion, "Vmeasure")
+plot_data(mylist$big_df, mylist$crash, model, "Vmeasure")
 
 ##################
 ### plots nclusters ####
 ##################
 print ("Plots for nclusters")
 model <- c("region", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
-ourcolors <- c("red", "blue", "green", "purple", "cyan")
-label <- c("Epiclomal","EuclideanClust","DensityCut","HammingClust","PearsonClust")
-list[big_df, crash] <- collect_data (model, label, ourcolors, criterion, "nclusters")
-plot_data(big_df, crash, "nclusters")
+# ourcolors <- c("red", "blue", "green", "purple", "cyan")
+# label <- c("Epiclomal","EuclideanClust","DensityCut","HammingClust","PearsonClust")
+mylist <- collect_data (model, label, criterion, "nclusters")
+plot_data(mylist$big_df, mylist$crash, model, "nclusters")
