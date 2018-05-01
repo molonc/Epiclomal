@@ -10,13 +10,13 @@
 #======================
 # libraries
 #======================
-#.libPaths(c("/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos5/3.2", "/clusterapp/software/linux-x86_64-centos5/R-3.2.3/lib64/R/library"))
+.libPaths(c("/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos5/3.2", "/clusterapp/software/linux-x86_64-centos5/R-3.2.3/lib64/R/library"))
 
 
 suppressMessages(library("argparse"))
 suppressMessages(library("Matrix"))
 suppressMessages(library("MCMCpack")) # for generating values from a Dirichlet distribution
- 
+
 # create parser object
 parser <- ArgumentParser()
 
@@ -46,7 +46,7 @@ parser$add_argument("--genotype_prob", type="character", default="dirichlet", he
 ### Generate them using a Dirichlet distribution
 parser$add_argument("--dirichlet_param_genotype_prob", type="character", default="1_1", help="Dirichlet parameters to draw genotype probabilities for each region r and clone k") 
 parser$add_argument("--percent_regions_dirichlet_param", type="character", default="0.9", 
-	help="The percentage of the regions that have methylation drawn from the above distribution. For example if I want 90% of the regions to be hypermethylated and 10% to be hypomethylated, I will set dirichlet_param_genotype_prob=99_1 and percent_regions_dirichlet_param=0.9") 
+                    help="The percentage of the regions that have methylation drawn from the above distribution. For example if I want 90% of the regions to be hypermethylated and 10% to be hypomethylated, I will set dirichlet_param_genotype_prob=99_1 and percent_regions_dirichlet_param=0.9") 
 
 
 parser$add_argument("--num_regions", type="double", default=5, help="Number of regions")  
@@ -57,6 +57,8 @@ parser$add_argument("--given_dir_complete", type="integer", default=0, help="If 
 
 parser$add_argument("--plot_data", type="character", default=0, help="If this is 1, use the visualization software to plot the data")
 parser$add_argument("--visualization_software", type="character", default=NULL, help="Use this visualization software to plot the data if requested")
+
+parser$add_argument("--prop_add_var", type="character", default="0_0.5", help="proportion (0-1) of non-flipped regions to have their methylation calls changed with prob = 0.5, default is to NO cell to cell variability") 
 
 parser$add_argument("--bulk_depth", type="integer", default=60, help="Number of cells that will be used to generate bulk methylation levels. If zero no bulk data will be saved.")
 
@@ -127,31 +129,31 @@ if (length(args$seed) > 0) {
 ### when genotype_prob="dirichlet" we generate different mu_krs's for each k and r
 ### Important note: when R=1 and region_sizes[1] = num_loci we have the basic-GeMM as in that case we assumed P(G_km = s) = mu_k (probability does not depend on the locus)
 if (args$genotype_prob=="0.5_fixed") {
-    mu_array <- array(0.5,c(S,args$num_regions,args$num_clones))
+  mu_array <- array(0.5,c(S,args$num_regions,args$num_clones))
 }
 if (args$genotype_prob=="dirichlet") {
-    dirichlet_param <- as.double(unlist(strsplit(args$dirichlet_param_genotype_prob, split="_")))
-    mu_array <- array(NA,c(S,args$num_regions,args$num_clones))
-    # Note: if phylogeny is used, only the first row from mu_array is used. For no phylogeny, the entire mu_array is used.
-    for (k in 1:args$num_clones) {
-        # MA: The following command was executed before we introduced the argument  percent_regions_dirichlet_param
-        # mu_array[,,k] <- t(round(rdirichlet(args$num_regions, alpha=c(dirichlet_param[1],dirichlet_param[2])),2))
-        # MA: adding the percent_regions_dirichlet_param argument here
-        # first generating num_regions random numbers
-        random_methylation <- runif (args$num_regions, 0, 1)
-        for (r in 1:args$num_regions) {            
-            if (random_methylation[r] <= as.double(args$percent_regions_dirichlet_param))  {
-                mu_array[,r,k] <- t(round(rdirichlet(1, alpha=c(dirichlet_param[1],dirichlet_param[2])),2))
-            } else {
-                mu_array[,r,k] <- t(round(rdirichlet(1, alpha=c(dirichlet_param[2],dirichlet_param[1])),2))
-            }
-        } 
-    }
+  dirichlet_param <- as.double(unlist(strsplit(args$dirichlet_param_genotype_prob, split="_")))
+  mu_array <- array(NA,c(S,args$num_regions,args$num_clones))
+  # Note: if phylogeny is used, only the first row from mu_array is used. For no phylogeny, the entire mu_array is used.
+  for (k in 1:args$num_clones) {
+    # MA: The following command was executed before we introduced the argument  percent_regions_dirichlet_param
+    # mu_array[,,k] <- t(round(rdirichlet(args$num_regions, alpha=c(dirichlet_param[1],dirichlet_param[2])),2))
+    # MA: adding the percent_regions_dirichlet_param argument here
+    # first generating num_regions random numbers
+    random_methylation <- runif (args$num_regions, 0, 1)
+    for (r in 1:args$num_regions) {            
+      if (random_methylation[r] <= as.double(args$percent_regions_dirichlet_param))  {
+        mu_array[,r,k] <- t(round(rdirichlet(1, alpha=c(dirichlet_param[1],dirichlet_param[2])),2))
+      } else {
+        mu_array[,r,k] <- t(round(rdirichlet(1, alpha=c(dirichlet_param[2],dirichlet_param[1])),2))
+      }
+    } 
+  }
 }
 
 if(args$verbose) {
-    print("mu_array")
-    print(mu_array)
+  print("mu_array")
+  print(mu_array)
 }    
 
 
@@ -164,51 +166,51 @@ if (args$num_regions == 1){
   reg_coord<- as.matrix(t(c(1,region_sizes)))
   #print(reg_coord)
   #print("number of regions equal to 1")
-  } 
+} 
 
 if (args$num_regions > 1) {
-    print("number of regions greater than 1")
-
-    if (args$region_size_type=="multinomial_equal") {
-      region_sizes <- rmultinom(1,size=M,p=rep(1/(args$num_regions),args$num_regions))
-      reg_coord <- NULL
-      for(r in 1:args$num_regions){
-        if(r==1){
-          reg_coord <- rbind(reg_coord,c(1 , region_sizes[r]))} else{
-            reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) ) }
-      }    
-    } else if (args$region_size_type=="uniform"){
-            breaks_unif <- c(0,sort(round(runif(args$num_regions-1,min=0,max=M))),M)
-            while(sum(duplicated(breaks_unif))!=0){
-                print("generating regions again")
-                breaks_unif <- c(0,sort(round(runif(args$num_regions-1,min=0,max=M))),M)
-            }
-            region_sizes <- diff(breaks_unif)
-            reg_coord <- NULL
-            for(r in 1:args$num_regions){
-                reg_coord <- rbind(reg_coord,c(breaks_unif[r]+1,breaks_unif[r+1])) 
-            }
-    } else if(args$region_size_type=="multinomial_nonequal") {  # NOT USED
-            #print("nonuniform")
-            p_reg <- rep(c(0.1,0.2,0.5,0.1,0.1),args$num_regions/5)
-            region_sizes <- rmultinom(1,size=M,p=p_reg) ### unbalanced sizes  
+  print("number of regions greater than 1")
   
-            ### when R is big we will need a dirichlet if you want some control on which regions to be big or small
-            ### Example for R=500
-            #p_reg <- t(rdirichlet(1, alpha=c(rep(1,100),rep(4,100),rep(50,100),rep(8,100),rep(6,100))))
-    
-            reg_coord <- NULL
-            for(r in 1:R){
-                if(r==1){
-                    reg_coord <- rbind(reg_coord,c(1 , region_sizes[r]))
-                } 
-                else{
-                    reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) ) 
-                  }
-              }    
-    } else {
-        stop("region_size_type has to be multinomial_equal, uniform or multinomial_nonequal")
+  if (args$region_size_type=="multinomial_equal") {
+    region_sizes <- rmultinom(1,size=M,p=rep(1/(args$num_regions),args$num_regions))
+    reg_coord <- NULL
+    for(r in 1:args$num_regions){
+      if(r==1){
+        reg_coord <- rbind(reg_coord,c(1 , region_sizes[r]))} else{
+          reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) ) }
+    }    
+  } else if (args$region_size_type=="uniform"){
+    breaks_unif <- c(0,sort(round(runif(args$num_regions-1,min=0,max=M))),M)
+    while(sum(duplicated(breaks_unif))!=0){
+      print("generating regions again")
+      breaks_unif <- c(0,sort(round(runif(args$num_regions-1,min=0,max=M))),M)
     }
+    region_sizes <- diff(breaks_unif)
+    reg_coord <- NULL
+    for(r in 1:args$num_regions){
+      reg_coord <- rbind(reg_coord,c(breaks_unif[r]+1,breaks_unif[r+1])) 
+    }
+  } else if(args$region_size_type=="multinomial_nonequal") {  # NOT USED
+    #print("nonuniform")
+    p_reg <- rep(c(0.1,0.2,0.5,0.1,0.1),args$num_regions/5)
+    region_sizes <- rmultinom(1,size=M,p=p_reg) ### unbalanced sizes  
+    
+    ### when R is big we will need a dirichlet if you want some control on which regions to be big or small
+    ### Example for R=500
+    #p_reg <- t(rdirichlet(1, alpha=c(rep(1,100),rep(4,100),rep(50,100),rep(8,100),rep(6,100))))
+    
+    reg_coord <- NULL
+    for(r in 1:R){
+      if(r==1){
+        reg_coord <- rbind(reg_coord,c(1 , region_sizes[r]))
+      } 
+      else{
+        reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) ) 
+      }
+    }    
+  } else {
+    stop("region_size_type has to be multinomial_equal, uniform or multinomial_nonequal")
+  }
 }
 
 
@@ -216,62 +218,62 @@ if (args$num_regions > 1) {
 # ==========================
 # function that flips all the positions_to_flip in vector from 0 to 1 or from 1 to 0
 flip <- function (vector, positions_to_flip) {
-    for (locus in positions_to_flip) {
-        if (vector[locus] == 0) {
-            vector [locus] <- 1
-        } else if (vector[locus] == 1) {
-            vector [locus] <- 0
-        } else {
-            print ("ERROR: value of vector is not 0 or 1!!")    
-        }         
-    }            
-    return (c(vector))        
+  for (locus in positions_to_flip) {
+    if (vector[locus] == 0) {
+      vector [locus] <- 1
+    } else if (vector[locus] == 1) {
+      vector [locus] <- 0
+    } else {
+      print ("ERROR: value of vector is not 0 or 1!!")    
+    }         
+  }            
+  return (c(vector))        
 }
 
 parent_child_flip <- function(parent,region_coord,region_flip,prop_flip){
   ### flipping only a region at a time
   ##for(i in 1:length(region_flip)){
-    if(prop_flip == 1){
-      pos_flip <- region_coord[region_flip,1]:region_coord[region_flip,2]
-      child <- flip(vector = parent, positions_to_flip = pos_flip)
-    }
+  if(prop_flip == 1){
+    pos_flip <- region_coord[region_flip,1]:region_coord[region_flip,2]
+    child <- flip(vector = parent, positions_to_flip = pos_flip)
+  }
   
-    if(prop_flip != 1){
-      pos_flip <- sort(sample(region_coord[region_flip,1]:region_coord[region_flip,2],size=rbinom(1,size=(region_coord[region_flip,2]-region_coord[region_flip,1]),prob=prop_flip)))
-      child <- flip(vector = parent, positions_to_flip = pos_flip)  
-    }
-    
+  if(prop_flip != 1){
+    pos_flip <- sort(sample(region_coord[region_flip,1]:region_coord[region_flip,2],size=rbinom(1,size=(region_coord[region_flip,2]-region_coord[region_flip,1]),prob=prop_flip)))
+    child <- flip(vector = parent, positions_to_flip = pos_flip)  
+  }
+  
   ##}
   return(child)
 }
 
 #function that generates the observed data for each cell
 xobs.function <- function(z,epsilon,genotype_matrix){
-    g <- genotype_matrix[z,] ### that's Step 2 - assigning the cell a true genotype 
-    x <-rep(NA,length(g))
+  g <- genotype_matrix[z,] ### that's Step 2 - assigning the cell a true genotype 
+  x <-rep(NA,length(g))
   
-    ### one way of generating the x's - that's Step 3
-    #ptm = proc.time()
-    x1 <- g[g==1]
-    x1[sample(1:sum(g==1),size=rbinom(n=1,size=sum(g==1),prob=epsilon[2]))] <- 0 ### epsilon[2] = P(Y=0|G=1)
-    x[g==1] <- x1
+  ### one way of generating the x's - that's Step 3
+  #ptm = proc.time()
+  x1 <- g[g==1]
+  x1[sample(1:sum(g==1),size=rbinom(n=1,size=sum(g==1),prob=epsilon[2]))] <- 0 ### epsilon[2] = P(Y=0|G=1)
+  x[g==1] <- x1
   
-    x0 <- g[g==0]
-    x0[sample(1:sum(g==0),size=rbinom(n=1,size=sum(g==0),prob=epsilon[1]))] <- 1 ### epsilon[1] = P(Y=1|G=0)
-    x[g==0] <- x0
-    #(f1 <- proc.time() - ptm)
+  x0 <- g[g==0]
+  x0[sample(1:sum(g==0),size=rbinom(n=1,size=sum(g==0),prob=epsilon[1]))] <- 1 ### epsilon[1] = P(Y=1|G=0)
+  x[g==0] <- x0
+  #(f1 <- proc.time() - ptm)
   
-    ### another of way of doing it - sampling each obs from a bernoulli distribution
-    ### it is a bit slower than above when considering M=1e+6
-    ### If we consider more than 2 states it is easier to do this way sampling from a multinomial distribution
-    #ptm = proc.time()
-    #x1 <- rbinom(n=sum(g==1),size=1,prob=(1-epsilon[2,1])) ### prob of success --> P(Y=1|G=1) == 1-epsilon[2,1]
-    #x[g==1] <- x1
+  ### another of way of doing it - sampling each obs from a bernoulli distribution
+  ### it is a bit slower than above when considering M=1e+6
+  ### If we consider more than 2 states it is easier to do this way sampling from a multinomial distribution
+  #ptm = proc.time()
+  #x1 <- rbinom(n=sum(g==1),size=1,prob=(1-epsilon[2,1])) ### prob of success --> P(Y=1|G=1) == 1-epsilon[2,1]
+  #x[g==1] <- x1
   
-    #x0 <- rbinom(n=sum(g==0),size=1,prob=epsilon[1,2]) ### prob of success --> P(Y=1|G=0) == epsilon[1,2]
-    #x[g==0] <- x0
-    #(f2 <- proc.time() - ptm)
-    return(x)
+  #x0 <- rbinom(n=sum(g==0),size=1,prob=epsilon[1,2]) ### prob of success --> P(Y=1|G=0) == epsilon[1,2]
+  #x[g==0] <- x0
+  #(f2 <- proc.time() - ptm)
+  return(x)
 }
 
 
@@ -282,13 +284,13 @@ genotype_reg <- function(r,region_sizes,mu_k){
 }
 
 write_data_file <- function (data_matrix, output_file, index="cell_id") {
-    # first write the header into the file
-    # write the \n separately, otherwise it adds an extra tab
-    cat(sapply(c(index,1:ncol(data_matrix)), toString), file=output_file, sep="\t")
-    cat("\n", file=output_file, append=TRUE)
-    rownames(data_matrix) <- c(1:nrow(data_matrix))
-    write.table (data_matrix, output_file , sep="\t", col.names=FALSE, quote=FALSE, append=TRUE)    
-    system(paste0("gzip --force ", output_file))
+  # first write the header into the file
+  # write the \n separately, otherwise it adds an extra tab
+  cat(sapply(c(index,1:ncol(data_matrix)), toString), file=output_file, sep="\t")
+  cat("\n", file=output_file, append=TRUE)
+  rownames(data_matrix) <- c(1:nrow(data_matrix))
+  write.table (data_matrix, output_file , sep="\t", col.names=FALSE, quote=FALSE, append=TRUE)    
+  system(paste0("gzip --force ", output_file))
 }
 
 # END FUNCTIONS
@@ -298,7 +300,7 @@ write_data_file <- function (data_matrix, output_file, index="cell_id") {
 
 # if argument given_dir_complete is 1, then just use the given output_dir
 if (args$given_dir_complete)
-    output_dir<-args$output_dir
+  output_dir<-args$output_dir
 
 print(paste0("Output dir is: ", output_dir))
 
@@ -316,8 +318,8 @@ save(mu_array,file=paste0(output_dir, "/mu_array.Rdata"))
 # ===================================================
 reg_coord<-reg_coord-1      # I want the coordinates to start from 0
 if (args$verbose)   {
-     print ("Region coordinates")
-     print (reg_coord)         
+  print ("Region coordinates")
+  print (reg_coord)         
 }
 reg_file <- paste0(output_dir, "/regions_file.tsv")
 # write_data_file(as.matrix(reg_coord)-1, reg_file, index="region_id")
@@ -384,105 +386,105 @@ if (args$phylogenetic_generation == 0){
 }
 
 if (args$phylogenetic_generation == 1){
-
+  
+  if (args$verbose) {
+    print ("Generating epigenotypes using phylogeny")
+  }  
+  
+  
+  if (args$num_regions == 1){
+    
     if (args$verbose) {
-        print ("Generating epigenotypes using phylogeny")
-    }  
-  
-  
-    if (args$num_regions == 1){
-    
-        if (args$verbose) {
-            print ("Number of regions > 1, it does not work for phylogenies")
-        }
-    
-        stop()
+      print ("Number of regions > 1, it does not work for phylogenies")
     }
-
-  
-    genotype_matrix <- NULL
-    flipped_regions <- NULL
-
-    for(k in 1:K){
-  
-        print(k)
-  
-        if(k==1){
-            g_k <- as.vector(unlist(sapply(1:R,genotype_reg,region_sizes=region_sizes,mu_k=mu_array[,,k]))) ### the S element of mu_array[,r,k] is the probability of sucess
-            genotype_matrix <- rbind(genotype_matrix,g_k)
-             #if (args$verbose)   {
-             #     print ("First clone of epigenotype matrix")
-             #    print (genotype_matrix) }
     
-        }
+    stop()
+  }
   
-        if(k==2){
-
-            region_flip <- sort(sample(1:R,1)) ### selection one region to flip per lineage      
-            print("region to flip")
-            print(region_flip)
-            flipped_regions <- region_flip
-
-            g_k <- parent_child_flip(parent=genotype_matrix[k-1,],region_coord=(reg_coord+1),region_flip = region_flip,prop_flip=args$prop_cpg_flip)
-            genotype_matrix <- rbind(genotype_matrix,g_k)
-
-        }
   
-        if(k > 2){
-   
-            ## picking a parent epigenotype
-    
-            parent_k <- sample(1:(k-1),size=1)       
-            print("parent epigenotype")
-            print(parent_k)
-    
-            region_flip <- sort(sample(1:R,1))       
-            print("region to flip")
-            print(region_flip)
-    
-            g_k <- parent_child_flip(parent=genotype_matrix[parent_k,],region_coord=(reg_coord+1),region_flip = region_flip,prop_flip=args$prop_cpg_flip)
-    
-            while (sum(duplicated(rbind(genotype_matrix,g_k))==TRUE) != 0) { 
-            ### making sure there all genotype vectors are different from each other
-    
-                print ("Clone is already there, regenerate")
-
-                parent_k <- sample(1:(k-1),size=1)       
-                print("parent epigenotype")
-                print(parent_k)
+  genotype_matrix <- NULL
+  flipped_regions <- NULL
   
-                region_flip <- sort(sample(1:R,1))
-     
-                print("region to flip")
-                print(region_flip)
-
-                g_k <- parent_child_flip(parent=genotype_matrix[parent_k,],region_coord=(reg_coord+1),region_flip = region_flip,prop_flip=args$prop_cpg_flip)    
-            }
-            # here region_flip is surely accepted as unique
-            flipped_regions <- c(flipped_regions, region_flip)    
+  for(k in 1:K){
+    
+    print(k)
+    
+    if(k==1){
+      g_k <- as.vector(unlist(sapply(1:R,genotype_reg,region_sizes=region_sizes,mu_k=mu_array[,,k]))) ### the S element of mu_array[,r,k] is the probability of sucess
+      genotype_matrix <- rbind(genotype_matrix,g_k)
+      #if (args$verbose)   {
+      #     print ("First clone of epigenotype matrix")
+      #    print (genotype_matrix) }
+      
+    }
+    
+    if(k==2){
+      
+      region_flip <- sort(sample(1:R,1)) ### selection one region to flip per lineage      
+      print("region to flip")
+      print(region_flip)
+      flipped_regions <- region_flip
+      
+      g_k <- parent_child_flip(parent=genotype_matrix[k-1,],region_coord=(reg_coord+1),region_flip = region_flip,prop_flip=args$prop_cpg_flip)
+      genotype_matrix <- rbind(genotype_matrix,g_k)
+      
+    }
+    
+    if(k > 2){
+      
+      ## picking a parent epigenotype
+      
+      parent_k <- sample(1:(k-1),size=1)       
+      print("parent epigenotype")
+      print(parent_k)
+      
+      region_flip <- sort(sample(1:R,1))       
+      print("region to flip")
+      print(region_flip)
+      
+      g_k <- parent_child_flip(parent=genotype_matrix[parent_k,],region_coord=(reg_coord+1),region_flip = region_flip,prop_flip=args$prop_cpg_flip)
+      
+      while (sum(duplicated(rbind(genotype_matrix,g_k))==TRUE) != 0) { 
+        ### making sure there all genotype vectors are different from each other
+        
+        print ("Clone is already there, regenerate")
+        
+        parent_k <- sample(1:(k-1),size=1)       
+        print("parent epigenotype")
+        print(parent_k)
+        
+        region_flip <- sort(sample(1:R,1))
+        
+        print("region to flip")
+        print(region_flip)
+        
+        g_k <- parent_child_flip(parent=genotype_matrix[parent_k,],region_coord=(reg_coord+1),region_flip = region_flip,prop_flip=args$prop_cpg_flip)    
+      }
+      # here region_flip is surely accepted as unique
+      flipped_regions <- c(flipped_regions, region_flip)    
+      
+      genotype_matrix <- rbind(genotype_matrix,g_k)  
+    }  
+  }
   
-            genotype_matrix <- rbind(genotype_matrix,g_k)  
-      }  
-}
-
-print ("All the flipped regions are")
-print (flipped_regions)
-# Write the flipped regions to a file
-write (flipped_regions, file=paste0(output_dir, "/flipped_regions.tsv"))
-
-
-if (args$verbose) {  
-  print ("Final epigenotype matrix: ")
-  print (genotype_matrix)
-}
-
-# print(genotype_matrix)
-
-# NOW write the matrix with each clone genotype into a file
-# ========================================
-geno_file <- paste0(output_dir, "/true_clone_epigenotypes.tsv")
-write_data_file(genotype_matrix, geno_file)
-
+  print ("All the flipped regions are")
+  print (flipped_regions)
+  # Write the flipped regions to a file
+  write (flipped_regions, file=paste0(output_dir, "/flipped_regions.tsv"))
+  
+  
+  if (args$verbose) {  
+    print ("Final epigenotype matrix: ")
+    print (genotype_matrix)
+  }
+  
+  # print(genotype_matrix)
+  
+  # NOW write the matrix with each clone genotype into a file
+  # ========================================
+  geno_file <- paste0(output_dir, "/true_clone_epigenotypes.tsv")
+  write_data_file(genotype_matrix, geno_file)
+  
 }
 
 # Now generate the cells
@@ -507,10 +509,10 @@ num_cells <- as.double(unlist(strsplit(args$num_cells, split="_")))
 
 ### this allows the number of cells to be different between samples
 Z <- NULL
-  for(s in 1:args$num_samples){
-#print(s)
+for(s in 1:args$num_samples){
+  #print(s)
   Z <- c(Z,sample(1:K,size=num_cells[s],prob=clone_prev[((s*(K-1)+1) - (K-s)):(s*K)],replace = TRUE)) 
-  }
+}
 
 #print(Z)
 #print(length(Z))
@@ -568,91 +570,137 @@ sd_read_size = as.double(unlist(strsplit(args$read_size, split="_")))[2]
 #Rprof(tmp_prof <- tempfile(),line.profiling=TRUE)
 
 if (args$saveall) {
-    cat(sapply(c("cell_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_complete",".tsv"), sep="\t")
-    cat("\n", file=paste0(output_dir, "/data_complete",".tsv"), append=TRUE)
+  cat(sapply(c("cell_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_complete",".tsv"), sep="\t")
+  cat("\n", file=paste0(output_dir, "/data_complete",".tsv"), append=TRUE)
 }
 
 cat(sapply(c("cell_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_incomplete",".tsv"), sep="\t")
 cat("\n", file=paste0(output_dir, "/data_incomplete",".tsv"), append=TRUE)
 
-  for (n in 1:length(cell_id_sample_id)){
+########################################
+### adding cell to cell variability  ###
+########################################
+
+prop_add_var <- as.double(unlist(strsplit(args$prop_add_var, split="_")))
+
+print(prop_add_var)
+
+print(prop_add_var[1])
+
+if( prop_add_var[1] != 0){
+  
+  print("adding cell to cell variability")  
+  regions_c <- 1:R
+  number_non_flipped <- length(regions_c[-flipped_regions])
+  #print(number_non_flipped)
+  number_non_flipped_var <- max(1,(prop_add_var[1]*number_non_flipped))
+  #print(number_non_flipped_var)
+  regions_non_flipped <- sort(sample(regions_c[-flipped_regions],size=number_non_flipped_var))
+  #print(regions_non_flipped)
+  
+}
+
+for (n in 1:length(cell_id_sample_id)){
+  
+  cell_n <- xobs.function(z=Z[n],epsilon=error_prob,genotype_matrix=genotype_matrix)
+  
+  ##########################
+  ## saving complete data ##
+  ##########################
+  
+  if (args$saveall) {
+    write.table(t(as.matrix(c(cell_id_sample_id[n],cell_n))), paste0(output_dir, "/data_complete",".tsv") , sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE) 
+  }
+  
+  ###########################
+  ## including missingness ##
+  ###########################
+  
+  if(grepl("_",x=args$missing_probability) == TRUE){
+    unif_range <- as.double(unlist(strsplit(args$missing_probability, split="_")))
+    miss_prob <- round(runif(1,min=unif_range[1],max=unif_range[2]),2)
+  }else{
+    miss_prob <- as.numeric(args$missing_probability)
+  }
+  
+  ideal_obs <- rbinom(1,size=length(cell_n),prob=(1-miss_prob))
+  
+  obs_indices <- sample(1:length(cell_n),size=ideal_obs,replace=F)
+  
+  vect_data_new <- rep(NA,length(cell_n))
+  
+  total_obs <- 0
+  i <- 0
+  
+  #  if (args$verbose) {
+  #    print(ideal_obs)
+  #  }    
+  
+  while ( total_obs < ideal_obs) {
     
-    cell_n <- xobs.function(z=Z[n],epsilon=error_prob,genotype_matrix=genotype_matrix)
+    read_length <- round(rnorm(1,mean=mean_read_size,sd=sd_read_size))
     
-    ##########################
-    ## saving complete data ##
-    ##########################
+    i <- i+1
     
-    if (args$saveall) {
-        write.table(t(as.matrix(c(cell_id_sample_id[n],cell_n))), paste0(output_dir, "/data_complete",".tsv") , sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE) 
+    if( (ideal_obs - total_obs) > read_length){
+      
+      mid <- round(read_length/2)
+      
+      if((obs_indices[i] - mid) >= 1){
+        vect_data_new[(obs_indices[i] - mid):(obs_indices[i]+((read_length-mid)-1))] <- cell_n[(obs_indices[i] - mid):(obs_indices[i]+((read_length-mid)-1))]
+      }else{
+        vect_data_new[((obs_indices[i] - mid)-(obs_indices[i] - mid)+1):((obs_indices[i])+((read_length-mid)-1))] <- cell_n[((obs_indices[i] - mid)-(obs_indices[i] - mid)+1):((obs_indices[i])+((read_length-mid)-1))]
+      } 
+      
+      vect_data_new <- vect_data_new[1:length(cell_n)]
+      
+    }else{
+      vect_data_new[(obs_indices[i]:(obs_indices[i]+ ((ideal_obs - total_obs)-1) ))] <- cell_n[(obs_indices[i]:(obs_indices[i]+  ((ideal_obs - total_obs)-1) ))]
+      vect_data_new <- vect_data_new[1:length(cell_n)]
     }
     
-    ###########################
-    ## including missingness ##
-    ###########################
-    
-    if(grepl("_",x=args$missing_probability) == TRUE){
-      unif_range <- as.double(unlist(strsplit(args$missing_probability, split="_")))
-      miss_prob <- round(runif(1,min=unif_range[1],max=unif_range[2]),2)
-      }else{
-      miss_prob <- as.numeric(args$missing_probability)
-      }
-    
-    ideal_obs <- rbinom(1,size=length(cell_n),prob=(1-miss_prob))
-    
-    obs_indices <- sample(1:length(cell_n),size=ideal_obs,replace=F)
-    
-    vect_data_new <- rep(NA,length(cell_n))
-    
-    total_obs <- 0
-    i <- 0
-    
-    #  if (args$verbose) {
-    #    print(ideal_obs)
-    #  }    
-    
-    while ( total_obs < ideal_obs) {
-      
-      read_length <- round(rnorm(1,mean=mean_read_size,sd=sd_read_size))
-      
-      i <- i+1
-      
-      if( (ideal_obs - total_obs) > read_length){
-        
-        mid <- round(read_length/2)
-        
-        if((obs_indices[i] - mid) >= 1){
-          vect_data_new[(obs_indices[i] - mid):(obs_indices[i]+((read_length-mid)-1))] <- cell_n[(obs_indices[i] - mid):(obs_indices[i]+((read_length-mid)-1))]
-        }else{
-          vect_data_new[((obs_indices[i] - mid)-(obs_indices[i] - mid)+1):((obs_indices[i])+((read_length-mid)-1))] <- cell_n[((obs_indices[i] - mid)-(obs_indices[i] - mid)+1):((obs_indices[i])+((read_length-mid)-1))]
-        } 
-        
-        vect_data_new <- vect_data_new[1:length(cell_n)]
-        
-      }else{
-        vect_data_new[(obs_indices[i]:(obs_indices[i]+ ((ideal_obs - total_obs)-1) ))] <- cell_n[(obs_indices[i]:(obs_indices[i]+  ((ideal_obs - total_obs)-1) ))]
-        vect_data_new <- vect_data_new[1:length(cell_n)]
-      }
-      
-      total_obs <- sum(!is.na(vect_data_new))
-      
-    }
-    
-    # if (args$verbose) {
-    #  print(sum(!is.na(vect_data_new)))
-    #  print(sum(!is.na(vect_data_new)) == ideal_obs )  
-    #  }
-    
-    vect_data_new[is.na(vect_data_new)] <- ""
-    
-    write.table(t(as.matrix(c(cell_id_sample_id[n],vect_data_new))), paste0(output_dir, "/data_incomplete",".tsv") , sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE) 
+    total_obs <- sum(!is.na(vect_data_new))
     
   }
+  
+  
+  if( prop_add_var[1] != 0){
+    
+    for(c in regions_non_flipped){
+      
+      change <- rbinom(1,1,prob=prop_add_var[2])
+      
+      if( change == 1 ){
+        
+        coord_tmp <- reg_coord[c,] + 1
+        
+        vect_tmp <- vect_data_new[coord_tmp[1]:coord_tmp[2]]
+        
+        vect_tmp[!is.na(vect_tmp)] <- 0
+        
+        vect_tmp[vect_data_new[coord_tmp[1]:coord_tmp[2]] == 0] <- 1
+        
+        vect_data_new[coord_tmp[1]:coord_tmp[2]] <- vect_tmp
+        
+        rm(vect_tmp)        
+      }
+      
+    }
+    
+  }
+  
+  
+  vect_data_new[is.na(vect_data_new)] <- ""
+  
+  
+  write.table(t(as.matrix(c(cell_id_sample_id[n],vect_data_new))), paste0(output_dir, "/data_incomplete",".tsv") , sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE) 
+  
+}
 
 if (args$saveall) {
-    system(paste0("gzip --force ", paste0(output_dir, "/data_complete",".tsv")))
+  system(paste0("gzip --force ", paste0(output_dir, "/data_complete",".tsv")))
 }    
-    
+
 system(paste0("gzip --force ", paste0(output_dir, "/data_incomplete",".tsv") ))
 
 #print("SUMMARY Rprof for generating cells")
@@ -675,9 +723,9 @@ if( args$bulk_depth != 0 ){
   for(s in 1:args$num_samples){
     
     Z <- sample(1:K,size=args$bulk_depth,prob=clone_prev[((s*(K-1)+1) - (K-s)):(s*K)],replace = TRUE) 
- 
-      for(n in 1:length(Z)){
-   
+    
+    for(n in 1:length(Z)){
+      
       cell_n <- xobs.function(z=Z[n],epsilon=error_prob,genotype_matrix=genotype_matrix)
       
       bulk_data[,3] <- bulk_data[,3] + cell_n
@@ -686,10 +734,10 @@ if( args$bulk_depth != 0 ){
       ## saving complete data per sample ###
       ######################################
       #write.table(t(as.matrix(cell_n)), paste0(output_dir, "/bulk_cell_data_complete","_sample_",s,".tsv"),sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE) 
-   
+      
       rm(cell_n)
-   
-      }
+      
+    }
     
     bulk_data[,2] <- args$bulk_depth - bulk_data[,3]
     
@@ -698,19 +746,19 @@ if( args$bulk_depth != 0 ){
     #print(mu_array)
     
     if (args$verbose){ 
-    print(head(bulk_data))
+      print(head(bulk_data))
     }
     
     write.table(bulk_data, paste0(output_dir, "/bulk_data","_sample_",s,".tsv"),sep="\t",row.names=FALSE, col.names=TRUE, quote=FALSE, append=FALSE)
-  
-  rm(Z)
-  
-  #system(paste0("gzip --force ", paste0(output_dir, "/bulk_cell_data_complete","_sample_",s,".tsv")))
-  
-  system(paste0("gzip --force ", paste0(output_dir, "/bulk_data","_sample_",s,".tsv")))
-
+    
+    rm(Z)
+    
+    #system(paste0("gzip --force ", paste0(output_dir, "/bulk_cell_data_complete","_sample_",s,".tsv")))
+    
+    system(paste0("gzip --force ", paste0(output_dir, "/bulk_data","_sample_",s,".tsv")))
+    
   }
-
+  
   
   
   ## print("SUMMARY Rprof for bulk")
@@ -720,21 +768,22 @@ if( args$bulk_depth != 0 ){
 
 
 if (args$plot_data == 1) {
-
+  
   print("PLOTTING GENERATED DATA")
-
-    meth_file =  paste0(output_dir, "/data_incomplete",".tsv")
-    visline <- paste0("--out_directory=", output_dir, 
+  
+  meth_file =  paste0(output_dir, "/data_incomplete",".tsv")
+  visline <- paste0("--out_directory=", output_dir, 
                     " --methylation_file=", paste0(meth_file,".gz"), 
                     " --regions_file=", paste0(reg_file,".gz"), 
                     " --name=data",
                     " --true_clusters_file=", paste0(clone_file,".gz"),
                     " --regions_to_plot=", paste0(output_dir, "/flipped_regions.tsv"))
-    # TO DO: allow inferred_clusters_file to be NULL. For now just using true.       
-        
-    command <- paste0 ("Rscript ", args$visualization_software, " ", visline)
-    print(command)
-    system(command)
-   
-  }
-        
+  # TO DO: allow inferred_clusters_file to be NULL. For now just using true.       
+  
+  #command <- paste0 ("/gsc/software/linux-x86_64-centos5/R-3.3.0/bin/Rscript ", args$visualization_software, " ", visline)
+  command <- paste0 ("Rscript ", args$visualization_software, " ", visline)
+  print(command)
+  system(command)
+  
+}
+
