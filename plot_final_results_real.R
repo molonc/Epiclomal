@@ -91,14 +91,18 @@ collect_data <- function(model, label, criterion, measure_name){
   # variable is the value of the changed variable, for example if we are varying misspb, variable is 0.5, 0.6, 0.7, 0.8, 0.9, 0.95
   
   savedfile <- paste0(outdir,"/data_",measure_name,"_",criterion,".Rda")
-  if (file.exists(savedfile)) {
-    print("File already exists, loading it")
-    load(savedfile)
-  } else {
+  #print(savedfile)
+
+ if (file.exists(savedfile)) {
+   print("File already exists, loading it")
+   load(savedfile)
+ } else {
     print("File doesn't exist, creating it")
     method <- NULL
     VAR <- NULL
     measure <- NULL
+
+    replicate <- NULL
     
     crash <- NULL
     
@@ -106,8 +110,12 @@ collect_data <- function(model, label, criterion, measure_name){
       for(j in 1:length(variable)){
         replicate_file <- paste0("inputs/", variable[j], "_replicates.txt")
         replicates <- read.table (replicate_file, header=FALSE, sep="\t")
+        
+        #print(replicates)
+  
         number_replicates <- nrow(replicates)
         print(paste0("Model ", model[m], " data set ", variable[j], " number of replicates ", number_replicates))
+        
         for(i in 1:number_replicates){
           if (model[m] == "PBALclust" || model[m] == "densitycut" || model[m] == "Pearsonclust" || model[m] == "Hclust") {
             results_file <- paste0(simplepaths[j],replicates[i,],"_K1_epiclomal_real/outputs/simple_hclust/results_", model[m], ".txt")                        
@@ -115,6 +123,7 @@ collect_data <- function(model, label, criterion, measure_name){
             results_file <- paste0(datapaths[j],"/",replicates[i,],"_",model[m],"/",criterion,"/all_results_bestrun_",model[m],".tsv")
           }    
           print (paste0('Results file is ', results_file))
+          
           t <- try(read.table(file=results_file,sep="\t",header=TRUE))   
           if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
             print("can't find file")
@@ -122,40 +131,56 @@ collect_data <- function(model, label, criterion, measure_name){
             measure <- c(measure,NA)            
             VAR <- c(VAR,variable[j])
             method <- c(method,model[m]) 
+            replicate <- c(replicate,as.character(replicates[i,]))
             
+            print(method)
+            print(replicate)
+                        
           } else {
             f <- read.table(file=results_file,sep="\t",header=TRUE)
+          
             crash <- c(crash,1)            
             measure <- c(measure,f[,column])
             VAR <- c(VAR,variable[j])
             method <- c(method,model[m]) 
+            replicate <- c(replicate,as.character(replicates[i,]))
+            
+            print(method)
+            print(replicate)
+          
           }      
         }
       }
     }
     
     
-    big_df <- cbind(as.data.frame(measure),as.data.frame(crash),VAR,method)
-    colnames(big_df) <- c("Measure","crash","VAR","method")
-    str(big_df)
+    big_df <- cbind(as.data.frame(measure),as.data.frame(crash),VAR,method,replicate)
+    colnames(big_df) <- c("Measure","crash","VAR","method","replicate")
+
+    big_df$replicate <- as.character(big_df$replicate)
     
+    str(big_df)
 
-
+#     ### TO TEST
+#     print(c(0.5,1,"InHouse","region","0_1_0"))
+#     big_df <- rbind(big_df,c(0.5,1,"InHouse","region","0_1_0"))
+#     big_df$Measure <- as.numeric(big_df$Measure)
+#     big_df$crash <- as.numeric(big_df$crash)
+#     ### end of TEST  
     
     big_df$VAR <- factor(big_df$VAR,levels=variable)
     
     print("Big DF")
     
     print(big_df)
-    
     print(str(big_df))
-    
-    
+       
     # Now saving the data frame
     save(big_df, crash, file=savedfile)
   }  # end make the data files  
   return (list("big_df"=big_df, "crash"=crash))
 }  
+
 
 ##################
 ### plots clone_prev_MAE ####
