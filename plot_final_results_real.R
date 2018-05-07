@@ -66,10 +66,9 @@ dir.create(paste0(outdir,"/",criterion), showWarnings = FALSE)
 outdir <- paste0(outdir,"/",criterion)
 
 
-##################
+#################################
 ### box plots and line plots ####
-##################
-
+#################################
 
 
 collect_data <- function(model, label, criterion, measure_name){
@@ -93,10 +92,10 @@ collect_data <- function(model, label, criterion, measure_name){
   savedfile <- paste0(outdir,"/data_",measure_name,"_",criterion,".Rda")
   #print(savedfile)
 
- if (file.exists(savedfile)) {
-   print("File already exists, loading it")
-   load(savedfile)
- } else {
+# if (file.exists(savedfile)) {
+#   print("File already exists, loading it")
+#   load(savedfile)
+# } else {
     print("File doesn't exist, creating it")
     method <- NULL
     VAR <- NULL
@@ -160,13 +159,6 @@ collect_data <- function(model, label, criterion, measure_name){
     big_df$replicate <- as.character(big_df$replicate)
     
     str(big_df)
-
-#     ### TO TEST
-#     print(c(0.5,1,"InHouse","region","0_1_0"))
-#     big_df <- rbind(big_df,c(0.5,1,"InHouse","region","0_1_0"))
-#     big_df$Measure <- as.numeric(big_df$Measure)
-#     big_df$crash <- as.numeric(big_df$crash)
-#     ### end of TEST  
     
     big_df$VAR <- factor(big_df$VAR,levels=variable)
     
@@ -177,14 +169,15 @@ collect_data <- function(model, label, criterion, measure_name){
        
     # Now saving the data frame
     save(big_df, crash, file=savedfile)
-  }  # end make the data files  
+#  }  # end make the data files  
   return (list("big_df"=big_df, "crash"=crash))
 }  
 
 
-##################
+
+#############################
 ### plots clone_prev_MAE ####
-##################
+#############################
 print ("Plots for clone_prev_MAE")
 model <- c("region", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
 mylist <- collect_data(model, label, criterion, "clone_prev_MAE")
