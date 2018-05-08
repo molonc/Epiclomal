@@ -21,6 +21,8 @@ getScriptPath <- function(){
 }
 
 
+all_regions_criterion <- "0_1_0.01"
+
 scriptPath <- getScriptPath()
 source(paste0(scriptPath, "/plot_functions.R"))
 #library(ggpubr)
@@ -117,7 +119,12 @@ collect_data <- function(model, label, criterion, measure_name){
         for(i in 1:number_replicates){
         if (model[m] == "HammingClust" || model[m] == "DensityCut" || model[m] == "PearsonClust" || model[m] == "EuclideanClust") {
           #if (model[m] == "PBALclust" || model[m] == "densitycut" || model[m] == "Pearsonclust" || model[m] == "Hclust") {
-            results_file <- paste0(simplepaths[j],replicates[i,],"_K10_epiclomal_real/outputs/simple_hclust/results_", model[m], ".txt")                        
+            if (replicates[i,] == all_regions_criterion) {
+                results_file <- paste0(simplepaths[j],replicates[i,],"_K10_epiclomal_real_task1/outputs/simple_hclust/results_", model[m], ".txt")
+            }                
+            else {
+                results_file <- paste0(simplepaths[j],replicates[i,],"_K10_epiclomal_real/outputs/simple_hclust/results_", model[m], ".txt")
+            }                
           } else {     
             results_file <- paste0(datapaths[j],"/",replicates[i,],"_",model[m],"/",criterion,"/all_results_bestrun_",model[m],".tsv")
           }    
