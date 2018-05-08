@@ -3,9 +3,12 @@ library(ggplot2)
 library(gridExtra)
 library(plyr)
 
+
+all_regions_criterion <- "0_1_0.01"
+
+
 # plotting functions for the plot_final_results*.R files
 ##########################################
-
 summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
                       conf.interval=.95, .drop=TRUE) {
   
@@ -83,52 +86,107 @@ summarySE_new <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
 
 # I tryed to write this function for the case when we have 10.00 clusters, but it doesn't work
 reformat <- function(x) {
-    rx <- 0
-    if(max(x, na.rm=T)>=10) {
-        rx <- format(round(x,1),nsmall=1)
-    } else {
-        rx <- format(round(x,2),nsmall=2)
-    }
-    return (rx)
+  rx <- 0
+  if(max(x, na.rm=T)>=10) {
+    rx <- format(round(x,1),nsmall=1)
+  } else {
+    rx <- format(round(x,2),nsmall=2)
+  }
+  return (rx)
 }
 
 ##########################################
 
 set_colors_and_labels <- function(model) {
-    ourcolors <- vector(mode = "character", length = length(model))
-    label <- vector(mode = "character", length = length(model))
-    for (m in 1:length(model)) {
-        if (model[m] == "region") {
-            ourcolors[m] <- "red"
-            label[m] <- "EpiclomalRegion"
-        } else if (model[m] == "region_bulk") {
-            ourcolors[m] <- "orange"
-            label[m] <- "EpiclomalBulk"            
-        } else if (model[m] == "basic") {
-            ourcolors[m] <- "yellow"
-            label[m] <- "EpiclomalBasic"            
-        } else if (model[m] == "EuclideanClust" || model[m] == "Hclust") {
-            ourcolors[m] <- "green"
-            label[m] <- "EuclideanClust"            
-        } else if (model[m] == "DensityCut" || model[m] == "densitycut") {
-            ourcolors[m] <- "skyblue"
-            label[m] <- "DensityCut"               
-        } else if (model[m] == "HammingClust" || model[m] == "PBALclust") {
-            ourcolors[m] <- "royalblue3"
-            label[m] <- "HammingClust"               
-        } else if (model[m] == "PearsonClust" || model[m] == "Pearsonclust") {
-            ourcolors[m] <- "purple"
-            label[m] <- "PearsonClust"               
-        }        
-    }
-    print(model)
-    print(ourcolors)
-    print(label)
-    return(list("colors"=ourcolors,"labels"=label))
+  ourcolors <- vector(mode = "character", length = length(model))
+  label <- vector(mode = "character", length = length(model))
+  for (m in 1:length(model)) {
+    if (model[m] == "region") {
+      ourcolors[m] <- "red"
+      label[m] <- "EpiclomalRegion"
+    } else if (model[m] == "region_bulk") {
+      ourcolors[m] <- "orange"
+      label[m] <- "EpiclomalBulk"            
+    } else if (model[m] == "basic") {
+      ourcolors[m] <- "yellow"
+      label[m] <- "EpiclomalBasic"            
+    } else if (model[m] == "EuclideanClust" || model[m] == "Hclust") {
+      ourcolors[m] <- "green"
+      label[m] <- "EuclideanClust"            
+    } else if (model[m] == "DensityCut" || model[m] == "densitycut") {
+      ourcolors[m] <- "skyblue"
+      label[m] <- "DensityCut"               
+    } else if (model[m] == "HammingClust" || model[m] == "PBALclust") {
+      ourcolors[m] <- "royalblue3"
+      label[m] <- "HammingClust"               
+    } else if (model[m] == "PearsonClust" || model[m] == "Pearsonclust") {
+      ourcolors[m] <- "purple"
+      label[m] <- "PearsonClust"               
+    }        
+  }
+  print(model)
+  print(ourcolors)
+  print(label)
+  return(list("colors"=ourcolors,"labels"=label))
 }
 
 ########################################## 
+
+
+multi_match <- function(x, table){
+  # returns initial indicies of all substrings in table which match x
+  if(length(table) < length(x)){
+    return(NA)
+  }else{
+    check_mat <- matrix(nrow = length(x), ncol = length(table))
+    for(i in 1:length(x)){
+      check_mat[i,] <- table %in% x[i]
+    }
+    out <- vector(length = length(table))
+    for(i in 1:(length(table)-(length(x)-1))){
+      check <- vector(length=length(x))
+      for(j in 1:length(x)){
+        check[j] <- check_mat[j,(i+(j-1))]
+      }
+      out[i] <- all(check)
+    }
+    if(length(which(out))==0){
+      return(NA)
+    }else{
+      return(which(out))
+    }
+  }
+}
+
+
+##############################################
+
+grab_point <- function(x,big_df,criterion){
   
+  #x_tmp <- big_df[multi_match(x,big_df$Measure):(multi_match(x,big_df$Measure)+length(x)-1),]
+  
+  #if NOT including that particular criterion in the box plot do the following then:
+  
+  #print(length(x))
+  
+  x_tmp <- big_df[multi_match(x,big_df$Measure):(multi_match(x,big_df$Measure)+length(x)),]
+  
+  print("camila")
+  print(x_tmp)
+  print(dim(x_tmp))
+  
+  if(sum(x_tmp$replicate == criterion) != 0){
+    y <- x_tmp[which(x_tmp$replicate == criterion),]$Measure 
+  }else{
+    y <- NA    
+  }
+  
+  print(y)
+  return(y)  
+}
+
+################################################
+
 plot_data <- function(big_df, crash, model, measure_name) {  
   
   our <- set_colors_and_labels(model)    
@@ -137,7 +195,7 @@ plot_data <- function(big_df, crash, model, measure_name) {
   
   ## changing variable names    
   for (i in 1:length(model)){
-      big_df$method <- sub(pattern=paste0("^",model[i],"$"),x=big_df$method,replacement=label[i])
+    big_df$method <- sub(pattern=paste0("^",model[i],"$"),x=big_df$method,replacement=label[i])
   }    
   big_df$method <- factor(big_df$method,levels=label)
   #big_df$method <- factor(big_df$method,levels=method)
@@ -168,11 +226,45 @@ plot_data <- function(big_df, crash, model, measure_name) {
   
   print(sub_big_df)
   
-  # plot the box plots
-  pHD <- ggplot(big_df, aes(x=method, y=Measure, fill=method)) +
+  big_df_s <- subset(big_df, replicate != all_regions_criterion)
+  
+  sub_big_df <- ddply(big_df_s, .(VAR,method),summarise,crash_perc=(1-mean(crash)))   # big_df[['crash']])))
+  
+  print(sub_big_df)
+  
+  # print("testing")
+  # print(big_df)
+  # print(str(big_df))
+  # 
+  # sub <- subset(big_df,VAR == "InHouse" & method == "EpiclomalRegion")
+  # print(sub)
+  # 
+  # x <- sub$Measure
+  # x
+  # 
+  # print(big_df$Measure %in% x)
+  # 
+  # print(multi_match(x,big_df$Measure))
+  # 
+  # print(big_df[multi_match(x,big_df$Measure):(multi_match(x,big_df$Measure)+length(x)-1),])
+  # 
+  # x_tmp <- big_df[multi_match(x,big_df$Measure):(multi_match(x,big_df$Measure)+length(x)-1),]
+  # 
+  # criterion <-  "0_0.95_10000"
+  # 
+  # print(x_tmp[which(x_tmp$replicate == criterion),]$Measure) 
+  
+  # big_df$Measure[24] <- 0.25
+  
+  
+  
+  ### plot the box plots
+  pHD <- ggplot(big_df_s, aes(x=method, y=Measure, fill=method)) +
+    #pHD <- ggplot(big_df, aes(x=method, y=Measure, fill=method)) +
     # The next line writes the y labels in the format x.xx so it aligns well with the bar plot.
     scale_y_continuous(labels = function(x) format(round(x,2),nsmall=2)) +
     geom_boxplot() + 
+    stat_summary(fun.y=grab_point,fun.args=list(big_df,criterion=all_regions_criterion), geom = "point",position=position_dodge(width=0.75),size=4,colour="blue",shape=18) +
     #geom_boxplot(show.legend=F) + 
     facet_grid(~VAR) +
     #ggtitle(xlabel) +
@@ -211,7 +303,7 @@ plot_data <- function(big_df, crash, model, measure_name) {
                      legend.position="top",
                      legend.text=element_text(size=16),
                      strip.text.x = element_text(size =20) )
-                     
+  
   bHD <- bHD +  scale_fill_manual(values=ourcolors)                   
   
   pdf(file=paste0(outdir,"/boxplot_",measure_name,".pdf"),onefile=TRUE,width=13.1,height=10.6)

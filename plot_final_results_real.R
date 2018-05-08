@@ -21,7 +21,6 @@ getScriptPath <- function(){
 }
 
 
-
 scriptPath <- getScriptPath()
 source(paste0(scriptPath, "/plot_functions.R"))
 #library(ggpubr)
@@ -92,10 +91,10 @@ collect_data <- function(model, label, criterion, measure_name){
   savedfile <- paste0(outdir,"/data_",measure_name,"_",criterion,".Rda")
   #print(savedfile)
 
-# if (file.exists(savedfile)) {
-#   print("File already exists, loading it")
-#   load(savedfile)
-# } else {
+ if (file.exists(savedfile)) {
+   print("File already exists, loading it")
+   load(savedfile)
+ } else {
     print("File doesn't exist, creating it")
     method <- NULL
     VAR <- NULL
@@ -169,7 +168,7 @@ collect_data <- function(model, label, criterion, measure_name){
        
     # Now saving the data frame
     save(big_df, crash, file=savedfile)
-#  }  # end make the data files  
+  }  # end make the data files  
   return (list("big_df"=big_df, "crash"=crash))
 }  
 
