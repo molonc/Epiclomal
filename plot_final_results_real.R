@@ -44,12 +44,12 @@ datapaths <- c("../EPI-112_inhouse_data/FINAL_RESULTS",
                "../EPI-70_Smallwood2014/FINAL_RESULTS",
                "../EPI-105_scTrio/FINAL_RESULTS",
                "../EPI-106_Luo2017/FINAL_RESULTS",
-               "../EPI-89_Farlik2016_all_union_IQR/FINAL_RESULTS")
+               "../EPI-89_Farlik2016/FINAL_RESULTS")
 simplepaths <- c("../EPI-112_inhouse_data/OUTPUT_epiclomal_INHOUSE/RUN/epiclomal_INHOUSE_",
                  "../EPI-70_Smallwood2014/OUTPUT_epiclomal_Smallwood2014/RUN/epiclomal_Smallwood2014_",
                  "../EPI-105_scTrio/OUTPUT_epiclomal_scTrio/RUN/epiclomal_scTrio_",
-                 "../EPI-106_Luo2017/OUTPUT_epiclomal_Luo2017_genebodies_500_clean_random_cells/RUN/epiclomal_Luo2017_genebodies_500_clean_random_cells_",
-                 "../EPI-89_Farlik2016_all_union_IQR/OUTPUT_epiclomal_Farlik2016_all_union/RUN/epiclomal_Farlik2016_all_union_")
+                 "../EPI-106_Luo2017/OUTPUT_epiclomal_Luo2017_genebodies_all_clean_cells/RUN/epiclomal_Luo2017_genebodies_all_clean_cells_",
+                 "../EPI-89_Farlik2016/OUTPUT_epiclomal_Farlik2016/RUN/epiclomal_Farlik2016_")
 
 # each replicate file should be in inputs, for example inputs/Smallwood2014_replicates.txt
 
@@ -115,8 +115,9 @@ collect_data <- function(model, label, criterion, measure_name){
         print(paste0("Model ", model[m], " data set ", variable[j], " number of replicates ", number_replicates))
         
         for(i in 1:number_replicates){
-          if (model[m] == "PBALclust" || model[m] == "densitycut" || model[m] == "Pearsonclust" || model[m] == "Hclust") {
-            results_file <- paste0(simplepaths[j],replicates[i,],"_K1_epiclomal_real/outputs/simple_hclust/results_", model[m], ".txt")                        
+        if (model[m] == "HammingClust" || model[m] == "DensityCut" || model[m] == "PearsonClust" || model[m] == "EuclideanClust") {
+          #if (model[m] == "PBALclust" || model[m] == "densitycut" || model[m] == "Pearsonclust" || model[m] == "Hclust") {
+            results_file <- paste0(simplepaths[j],replicates[i,],"_K10_epiclomal_real/outputs/simple_hclust/results_", model[m], ".txt")                        
           } else {     
             results_file <- paste0(datapaths[j],"/",replicates[i,],"_",model[m],"/",criterion,"/all_results_bestrun_",model[m],".tsv")
           }    
@@ -178,7 +179,8 @@ collect_data <- function(model, label, criterion, measure_name){
 ### plots clone_prev_MAE ####
 #############################
 print ("Plots for clone_prev_MAE")
-model <- c("region", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
+#model <- c("region", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
+model <- c("region", "EuclideanClust", "DensityCut", "HammingClust", "PearsonClust")
 mylist <- collect_data(model, label, criterion, "clone_prev_MAE")
 plot_data(mylist$big_df, mylist$crash, model, "clone_prev_MAE")
 
@@ -187,7 +189,8 @@ plot_data(mylist$big_df, mylist$crash, model, "clone_prev_MAE")
 ##################
 ### V-measure
 print ("Plots for V-measure")
-model <- c("region", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
+#model <- c("region", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
+model <- c("region", "EuclideanClust", "DensityCut", "HammingClust", "PearsonClust")
 mylist <- collect_data (model, label, criterion, "Vmeasure")
 plot_data(mylist$big_df, mylist$crash, model, "Vmeasure")
 
@@ -195,7 +198,8 @@ plot_data(mylist$big_df, mylist$crash, model, "Vmeasure")
 ### plots nclusters ####
 ##################
 print ("Plots for nclusters")
-model <- c("region", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
+#model <- c("region", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
+model <- c("region", "EuclideanClust", "DensityCut", "HammingClust", "PearsonClust")
 # ourcolors <- c("red", "blue", "green", "purple", "cyan")
 # label <- c("Epiclomal","EuclideanClust","DensityCut","HammingClust","PearsonClust")
 mylist <- collect_data (model, label, criterion, "nclusters")

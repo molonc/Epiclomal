@@ -383,7 +383,8 @@ plot_data <- function(big_df, crash, model, measure_name) {
       #   labs(x=xlabel, y = paste0(agg, " ", measure_title))       
       
       pHD <- ggplot(agg_df, aes(x=VAR, y=median, group=method,colour=method)) +
-        geom_errorbar(aes(ymin=Measure-se, ymax=Measure+se), width=.1,position=pd) +
+        #geom_errorbar(aes(ymin=Measure-se, ymax=Measure+se), width=.1,position=pd) +
+        geom_errorbar(aes(ymin=(median-(median-first_quartile)), ymax=(median+(third_quartile-median))), width=.1,position=pd) +        
         geom_line(aes(color=method), size=3,position=pd) + 
         geom_point(position=pd,size=4) +
         labs(x=xlabel, y = paste0(measure_title, " (", agg, ")")) 
