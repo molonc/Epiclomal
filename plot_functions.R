@@ -6,6 +6,9 @@ library(plyr)
 
 all_regions_criterion <- "0_1_0.01"
 
+### STILL HAVE TO INCLUDE EXTRA POINT FOR 0_1_0.01 ON THE LINE PLOTS
+### NOT SURE IF IT WILL WORK FOR NCLUSTERS 
+
 
 # plotting functions for the plot_final_results*.R files
 ##########################################
@@ -171,9 +174,9 @@ grab_point <- function(x,big_df,criterion){
   
   x_tmp <- big_df[multi_match(x,big_df$Measure):(multi_match(x,big_df$Measure)+length(x)),]
   
-  print("camila")
-  print(x_tmp)
-  print(dim(x_tmp))
+  #print("camila")
+  #print(x_tmp)
+  #print(dim(x_tmp))
   
   if(sum(x_tmp$replicate == criterion) != 0){
     y <- x_tmp[which(x_tmp$replicate == criterion),]$Measure 
