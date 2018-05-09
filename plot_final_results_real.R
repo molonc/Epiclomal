@@ -63,6 +63,7 @@ criterion <- args$criterion
 dir.create(paste0(outdir,"/",criterion), showWarnings = FALSE)
 outdir <- paste0(outdir,"/",criterion)
 
+all_regions_criterion <- "0_1_0.01"
 
 #################################
 ### box plots and line plots ####
@@ -189,7 +190,6 @@ model <- c("region", "EuclideanClust", "DensityCut", "HammingClust", "PearsonClu
 mylist <- collect_data(model, label, criterion, "clone_prev_MAE")
 plot_data(mylist$big_df, mylist$crash, model, "clone_prev_MAE",add_points=TRUE)
 
-
 ########################
 ### plots V-measure ####
 ########################
@@ -210,4 +210,4 @@ model <- c("region", "EuclideanClust", "DensityCut", "HammingClust", "PearsonClu
 # label <- c("Epiclomal","EuclideanClust","DensityCut","HammingClust","PearsonClust")
 mylist <- collect_data (model, label, criterion, "nclusters")
 #print(mylist$big_df)
-plot_data(mylist$big_df, mylist$crash, model, "nclusters",add_points=FALSE)
+plot_data(mylist$big_df, mylist$crash, model, "nclusters",add_points=TRUE)

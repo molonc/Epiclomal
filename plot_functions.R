@@ -3,8 +3,6 @@ library(ggplot2)
 library(gridExtra)
 library(plyr)
 
-all_regions_criterion <- "0_1_0.01"
-
 # plotting functions for the plot_final_results*.R files
 ##########################################
 summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
@@ -130,8 +128,55 @@ set_colors_and_labels <- function(model) {
 
 ########################################## 
 
+multi_match <- function(x, table){
+  # returns initial indicies of all substrings in table which match x
+  if(length(table) < length(x)){
+    return(NA)
+  }else{
+    check_mat <- matrix(nrow = length(x), ncol = length(table))
+    for(i in 1:length(x)){
+      check_mat[i,] <- table %in% x[i]
+    }
+    out <- vector(length = length(table))
+    for(i in 1:(length(table)-(length(x)-1))){
+      check <- vector(length=length(x))
+      for(j in 1:length(x)){
+        check[j] <- check_mat[j,(i+(j-1))]
+      }
+      out[i] <- all(check)
+    }
+    if(length(which(out))==0){
+      return(NA)
+    }else{
+      return(which(out))
+    }
+  }
+}
 
+########################################## 
 
+grab_point <- function(x){
+  
+  df_tmp <- big_df[!is.na(big_df$Measure),]
+  
+  if(!is.na(multi_match(x,df_tmp$Measure)[1])){
+    print("match found")
+    
+    x_tmp <- df_tmp[multi_match(x,df_tmp$Measure)[1]:(multi_match(x,df_tmp$Measure)[1]+length(x)-1),]
+    #print(x_tmp)
+    #print(as.character(x_tmp$VAR[1]))
+    #print(as.character(x_tmp$method[1]))
+    #print(big_df[which((big_df$VAR == as.character(x_tmp$VAR[1])) & (big_df$method == as.character(x_tmp$method[1]))),])
+    #print(big_df[which((big_df$VAR == as.character(x_tmp$VAR[1])) & (big_df$method == as.character(x_tmp$method[1]))),1][1])
+    
+    return(big_df[which((big_df$VAR == as.character(x_tmp$VAR[1])) & (big_df$method == as.character(x_tmp$method[1]))),1][1])
+    
+  }else{
+    print("no match")
+    return(NA)
+  }
+  
+}
 
 ################################################
 
@@ -177,64 +222,27 @@ plot_data <- function(big_df, crash, model, measure_name,add_points) {
   
   sub_big_df <- ddply(big_df_s, .(VAR,method),summarise,crash_perc=(1-mean(crash)))   # big_df[['crash']])))
    
-  multi_match <- function(x, table){
-    # returns initial indicies of all substrings in table which match x
-    if(length(table) < length(x)){
-      return(NA)
-    }else{
-      check_mat <- matrix(nrow = length(x), ncol = length(table))
-      for(i in 1:length(x)){
-        check_mat[i,] <- table %in% x[i]
-      }
-      out <- vector(length = length(table))
-      for(i in 1:(length(table)-(length(x)-1))){
-        check <- vector(length=length(x))
-        for(j in 1:length(x)){
-          check[j] <- check_mat[j,(i+(j-1))]
-        }
-        out[i] <- all(check)
-      }
-      if(length(which(out))==0){
-        return(NA)
-      }else{
-        return(which(out))
-      }
-    }
-  }
-  
-  grab_point <- function(x){
-    
-    df_tmp <- big_df[!is.na(big_df$Measure),]
-    
-    if(!is.na(multi_match(x,df_tmp$Measure)[1])){
-    print("match found")
-   
-    x_tmp <- df_tmp[multi_match(x,df_tmp$Measure)[1]:(multi_match(x,df_tmp$Measure)[1]+length(x)-1),]
-    #print(x_tmp)
-    #print(as.character(x_tmp$VAR[1]))
-    #print(as.character(x_tmp$method[1]))
-    #print(big_df[which((big_df$VAR == as.character(x_tmp$VAR[1])) & (big_df$method == as.character(x_tmp$method[1]))),])
-    #print(big_df[which((big_df$VAR == as.character(x_tmp$VAR[1])) & (big_df$method == as.character(x_tmp$method[1]))),1][1])
-    
-    return(big_df[which((big_df$VAR == as.character(x_tmp$VAR[1])) & (big_df$method == as.character(x_tmp$method[1]))),1][1])
-    
-    }else{
-      print("no match")
-      return(NA)
-    }
-    
-  }
-
   ### plot the box plots
   if(add_points==TRUE){
+     
+  df_point <- big_df[which(big_df$replicate == all_regions_criterion),]
+  
+  df_point <- df_point[,c(1,3,4)]
+  
+  print(df_point)
     
   pHD <- ggplot(big_df_s, aes(x=method, y=Measure, fill=method)) +
     #pHD <- ggplot(big_df, aes(x=method, y=Measure, fill=method)) +
     # The next line writes the y labels in the format x.xx so it aligns well with the bar plot.
     scale_y_continuous(labels = function(x) format(round(x,2),nsmall=2)) +
     geom_boxplot() +    
+    
+    geom_point(data = df_point, aes(group = method), position = position_dodge(width = 0.75),
+               shape=18,color="blue",size=4) +
+    
     #stat_summary(fun.y="mean", geom = "point",position=position_dodge(width=0.75),size=4,colour="blue",shape=18) +
-    stat_summary(fun.y=grab_point, geom = "point",position=position_dodge(width=0.75),size=4,colour="blue",shape=18) +
+    #stat_summary(fun.y=grab_point, geom = "point",position=position_dodge(width=0.75),size=4,colour="blue",shape=18) +
+    
     #geom_boxplot(show.legend=F) + 
     facet_grid(~VAR) +
     labs(x="", y = measure_title)
@@ -268,8 +276,6 @@ plot_data <- function(big_df, crash, model, measure_name,add_points) {
           #strip.text.x = element_text(size =16)
     )
   pHD <- pHD + scale_fill_manual(values=ourcolors)  
-  
-  
   # plot bar plots for crash
   bHD <-ggplot(sub_big_df, aes(x=method, y=crash_perc, fill=method)) +
     scale_y_continuous(breaks=seq(0,1,0.50), labels = function(x) format(round(x,2),nsmall=2)) +
