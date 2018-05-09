@@ -3,12 +3,7 @@ library(ggplot2)
 library(gridExtra)
 library(plyr)
 
-
 all_regions_criterion <- "0_1_0.01"
-
-### STILL HAVE TO INCLUDE EXTRA POINT FOR 0_1_0.01 ON THE LINE PLOTS
-### NOT SURE IF IT WILL WORK FOR NCLUSTERS 
-
 
 # plotting functions for the plot_final_results*.R files
 ##########################################
@@ -136,61 +131,11 @@ set_colors_and_labels <- function(model) {
 ########################################## 
 
 
-multi_match <- function(x, table){
-  # returns initial indicies of all substrings in table which match x
-  if(length(table) < length(x)){
-    return(NA)
-  }else{
-    check_mat <- matrix(nrow = length(x), ncol = length(table))
-    for(i in 1:length(x)){
-      check_mat[i,] <- table %in% x[i]
-    }
-    out <- vector(length = length(table))
-    for(i in 1:(length(table)-(length(x)-1))){
-      check <- vector(length=length(x))
-      for(j in 1:length(x)){
-        check[j] <- check_mat[j,(i+(j-1))]
-      }
-      out[i] <- all(check)
-    }
-    if(length(which(out))==0){
-      return(NA)
-    }else{
-      return(which(out))
-    }
-  }
-}
 
-
-##############################################
-
-grab_point <- function(x,big_df,criterion){
-  
-  #x_tmp <- big_df[multi_match(x,big_df$Measure):(multi_match(x,big_df$Measure)+length(x)-1),]
-  
-  #if NOT including that particular criterion in the box plot do the following then:
-  
-  #print(length(x))
-  
-  x_tmp <- big_df[multi_match(x,big_df$Measure):(multi_match(x,big_df$Measure)+length(x)),]
-  
-  #print("camila")
-  #print(x_tmp)
-  #print(dim(x_tmp))
-  
-  if(sum(x_tmp$replicate == criterion) != 0){
-    y <- x_tmp[which(x_tmp$replicate == criterion),]$Measure 
-  }else{
-    y <- NA    
-  }
-  
-  print(y)
-  return(y)  
-}
 
 ################################################
 
-plot_data <- function(big_df, crash, model, measure_name) {  
+plot_data <- function(big_df, crash, model, measure_name,add_points) {  
   
   our <- set_colors_and_labels(model)    
   ourcolors <- our$colors
@@ -224,55 +169,90 @@ plot_data <- function(big_df, crash, model, measure_name) {
   }      
   
   xlabel = "Data set"  
-  # sub_big_df <- ddply(big_df, .(VAR,method),summarise,crash_perc=100*(1-mean(crash)))
-  sub_big_df <- ddply(big_df, .(VAR,method),summarise,crash_perc=(1-mean(crash)))   # big_df[['crash']])))
-  
-  print(sub_big_df)
+
+  #sub_big_df <- ddply(big_df, .(VAR,method),summarise,crash_perc=(1-mean(crash)))   # big_df[['crash']])))
+  #print(sub_big_df)
   
   big_df_s <- subset(big_df, replicate != all_regions_criterion)
   
   sub_big_df <- ddply(big_df_s, .(VAR,method),summarise,crash_perc=(1-mean(crash)))   # big_df[['crash']])))
+   
+  multi_match <- function(x, table){
+    # returns initial indicies of all substrings in table which match x
+    if(length(table) < length(x)){
+      return(NA)
+    }else{
+      check_mat <- matrix(nrow = length(x), ncol = length(table))
+      for(i in 1:length(x)){
+        check_mat[i,] <- table %in% x[i]
+      }
+      out <- vector(length = length(table))
+      for(i in 1:(length(table)-(length(x)-1))){
+        check <- vector(length=length(x))
+        for(j in 1:length(x)){
+          check[j] <- check_mat[j,(i+(j-1))]
+        }
+        out[i] <- all(check)
+      }
+      if(length(which(out))==0){
+        return(NA)
+      }else{
+        return(which(out))
+      }
+    }
+  }
   
-  print(sub_big_df)
-  
-  # print("testing")
-  # print(big_df)
-  # print(str(big_df))
-  # 
-  # sub <- subset(big_df,VAR == "InHouse" & method == "EpiclomalRegion")
-  # print(sub)
-  # 
-  # x <- sub$Measure
-  # x
-  # 
-  # print(big_df$Measure %in% x)
-  # 
-  # print(multi_match(x,big_df$Measure))
-  # 
-  # print(big_df[multi_match(x,big_df$Measure):(multi_match(x,big_df$Measure)+length(x)-1),])
-  # 
-  # x_tmp <- big_df[multi_match(x,big_df$Measure):(multi_match(x,big_df$Measure)+length(x)-1),]
-  # 
-  # criterion <-  "0_0.95_10000"
-  # 
-  # print(x_tmp[which(x_tmp$replicate == criterion),]$Measure) 
-  
-  # big_df$Measure[24] <- 0.25
-  
-  
-  
+  grab_point <- function(x){
+    
+    df_tmp <- big_df[!is.na(big_df$Measure),]
+    
+    if(!is.na(multi_match(x,df_tmp$Measure)[1])){
+    print("match found")
+   
+    x_tmp <- df_tmp[multi_match(x,df_tmp$Measure)[1]:(multi_match(x,df_tmp$Measure)[1]+length(x)-1),]
+    #print(x_tmp)
+    #print(as.character(x_tmp$VAR[1]))
+    #print(as.character(x_tmp$method[1]))
+    #print(big_df[which((big_df$VAR == as.character(x_tmp$VAR[1])) & (big_df$method == as.character(x_tmp$method[1]))),])
+    #print(big_df[which((big_df$VAR == as.character(x_tmp$VAR[1])) & (big_df$method == as.character(x_tmp$method[1]))),1][1])
+    
+    return(big_df[which((big_df$VAR == as.character(x_tmp$VAR[1])) & (big_df$method == as.character(x_tmp$method[1]))),1][1])
+    
+    }else{
+      print("no match")
+      return(NA)
+    }
+    
+  }
+
   ### plot the box plots
+  if(add_points==TRUE){
+    
   pHD <- ggplot(big_df_s, aes(x=method, y=Measure, fill=method)) +
     #pHD <- ggplot(big_df, aes(x=method, y=Measure, fill=method)) +
     # The next line writes the y labels in the format x.xx so it aligns well with the bar plot.
     scale_y_continuous(labels = function(x) format(round(x,2),nsmall=2)) +
-    geom_boxplot() + 
-    stat_summary(fun.y=grab_point,fun.args=list(big_df,criterion=all_regions_criterion), geom = "point",position=position_dodge(width=0.75),size=4,colour="blue",shape=18) +
+    geom_boxplot() +    
+    #stat_summary(fun.y="mean", geom = "point",position=position_dodge(width=0.75),size=4,colour="blue",shape=18) +
+    stat_summary(fun.y=grab_point, geom = "point",position=position_dodge(width=0.75),size=4,colour="blue",shape=18) +
     #geom_boxplot(show.legend=F) + 
     facet_grid(~VAR) +
-    #ggtitle(xlabel) +
-    labs(x="", y = measure_title) 
-  pHD <- pHD + 
+    labs(x="", y = measure_title)
+  }
+  
+    if(add_points == FALSE){
+      
+      pHD <- ggplot(big_df_s, aes(x=method, y=Measure, fill=method)) +
+        #pHD <- ggplot(big_df, aes(x=method, y=Measure, fill=method)) +
+        # The next line writes the y labels in the format x.xx so it aligns well with the bar plot.
+        scale_y_continuous(labels = function(x) format(round(x,2),nsmall=2)) +
+        geom_boxplot() +    
+        facet_grid(~VAR) +
+        labs(x="", y = measure_title)
+     
+    }  
+  
+    pHD <- pHD + 
     #guides(fill=FALSE) +
     theme(plot.title = element_text(size=20), 
           axis.text.x  = element_text(angle=90, vjust=0.5, size=20, colour= "black"), 

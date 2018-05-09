@@ -20,9 +20,6 @@ getScriptPath <- function(){
     return(script.dir)
 }
 
-
-all_regions_criterion <- "0_1_0.01"
-
 scriptPath <- getScriptPath()
 source(paste0(scriptPath, "/plot_functions.R"))
 #library(ggpubr)
@@ -185,21 +182,23 @@ collect_data <- function(model, label, criterion, measure_name){
 #############################
 ### plots clone_prev_MAE ####
 #############################
+
 print ("Plots for clone_prev_MAE")
 #model <- c("region", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
 model <- c("region", "EuclideanClust", "DensityCut", "HammingClust", "PearsonClust")
 mylist <- collect_data(model, label, criterion, "clone_prev_MAE")
-plot_data(mylist$big_df, mylist$crash, model, "clone_prev_MAE")
+plot_data(mylist$big_df, mylist$crash, model, "clone_prev_MAE",add_points=TRUE)
 
-##################
+
+########################
 ### plots V-measure ####
-##################
-### V-measure
+########################
+
 print ("Plots for V-measure")
 #model <- c("region", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
 model <- c("region", "EuclideanClust", "DensityCut", "HammingClust", "PearsonClust")
 mylist <- collect_data (model, label, criterion, "Vmeasure")
-plot_data(mylist$big_df, mylist$crash, model, "Vmeasure")
+plot_data(mylist$big_df, mylist$crash, model, "Vmeasure",add_points=TRUE)
 
 ##################
 ### plots nclusters ####
@@ -210,4 +209,5 @@ model <- c("region", "EuclideanClust", "DensityCut", "HammingClust", "PearsonClu
 # ourcolors <- c("red", "blue", "green", "purple", "cyan")
 # label <- c("Epiclomal","EuclideanClust","DensityCut","HammingClust","PearsonClust")
 mylist <- collect_data (model, label, criterion, "nclusters")
-plot_data(mylist$big_df, mylist$crash, model, "nclusters")
+#print(mylist$big_df)
+plot_data(mylist$big_df, mylist$crash, model, "nclusters",add_points=FALSE)
