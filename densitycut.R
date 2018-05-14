@@ -3,7 +3,7 @@
 # libraries
 #======================
 
-### for testing I used this paths for the libraries and R in /gsc/software/linux-x86_64-centos6/R-3.3.2/bin/R
+### for testing I used tehse paths for the libraries and R in /gsc/software/linux-x86_64-centos6/R-3.3.2/bin/R
 # library(pcaMethods,lib.loc="/home/mandronescu/R/x86_64-pc-linux-gnu-library/3.2")
 # library(densitycut,lib.loc = "/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos6/3.3/" )
 
@@ -41,8 +41,8 @@ input_regions_file <- args$regions_file
 # true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
 # # outdir <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data"
 # 
-#  input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform_seed_2/data/data_incomplete.tsv"
-#  input_regions_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform_seed_2/data/regions_file.tsv"
+  input_CpG_data_file <- "/genesis/shahlab/csouza/BS-seq/whole_genome_single_cell/synthetic_data_tests/data_old_way/data/data_incomplete.tsv.gz"
+  input_regions_file <- "/genesis/shahlab/csouza/BS-seq/whole_genome_single_cell/synthetic_data_tests/data_old_way/data/regions_file.tsv.gz"
 #  inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform_seed_2/data/true_clone_membership.tsv"
 #  true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform_seed_2/data/true_clone_membership.tsv"
 
@@ -229,9 +229,30 @@ if (R > 1){
   possible_clusters <- cbind(rownames(input_CpG_data),cluster.out$cluster)
   colnames(possible_clusters) <- c("cell_id","DensityCut")
   
+  ### Plotting DensityCut clusters
+  inf_clusters_order <- order(cluster.out$cluster)
+    
+  annotation_row <- as.data.frame(cluster.out$cluster)       
+  colnames(annotation_row) <- "inferred clusters"
+  annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
+  
+     pheatmap(mean_meth_matrix[inf_clusters_order,],cluster_rows = FALSE,cluster_cols=FALSE, 
+              cellwidth = 8,
+              annotation_row = annotation_row,
+              cellheight = 8,fontsize = 8, 
+              #clustering_distance_rows = "euclidean",
+              #clustering_method = "ward.D2",
+              main = paste0("DensityCut"),
+              show_colnames=FALSE,
+              annotation_names_row = FALSE,
+              filename = paste0(outdir,"/DensityCut_PLOT.pdf"))
+  
+  ### end of plotting
+  
   ofile <- paste0(outdir,"/DensityCut_clusters_Region_based_maxPC_",max_comp,".tsv") 
   write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
-  system(paste0("gzip --force ", ofile))   
+  system(paste0("gzip --force ", ofile))  
+  
   
   }
   
