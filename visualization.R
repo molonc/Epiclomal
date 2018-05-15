@@ -60,10 +60,10 @@ input_CN_data_file <- args$copy_number_file
 
 # MAke sure the order_by_true makes sense
 if(!is.null(true_clusters_file) && is.null(inferred_clusters_file)) {
-    args$order_by_true = 1
+  args$order_by_true = 1
 }
 if(is.null(true_clusters_file) && !is.null(inferred_clusters_file)) {
-    args$order_by_true = 0
+  args$order_by_true = 0
 }
 
 # input_CN_data_file <- "/Users/cdesouza/Documents/EPI-91/CN_data_most_variable_CGIs_xeno7_Epiclomal.tsv"
@@ -86,7 +86,7 @@ if(is.null(true_clusters_file) && !is.null(inferred_clusters_file)) {
 #input_regions_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci500_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs1_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
 #inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci500_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs1_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
 #true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci500_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs1_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
- 
+
 #input_CpG_data_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci5000_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs100_rsize-equal_rnonequal-uniform/data/data_incomplete.tsv"
 #input_regions_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci5000_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs100_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
 #inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci5000_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs100_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
@@ -115,11 +115,11 @@ rm(tmp)
 
 # Copy number data
 if (!is.null(input_CN_data_file)) {
-    tmp <- read.csv(input_CN_data_file,sep="\t",header=TRUE,check.names=FALSE)
-    input_CN_data <- as.matrix(tmp[,-1])
-    rownames(input_CN_data) <- tmp$cell_id
-    colnames(input_CN_data) <- sapply(strsplit(colnames(input_CN_data),":"),function(x){return(x[1])}) 
-    rm(tmp)
+  tmp <- read.csv(input_CN_data_file,sep="\t",header=TRUE,check.names=FALSE)
+  input_CN_data <- as.matrix(tmp[,-1])
+  rownames(input_CN_data) <- tmp$cell_id
+  colnames(input_CN_data) <- sapply(strsplit(colnames(input_CN_data),":"),function(x){return(x[1])}) 
+  rm(tmp)
 }
 
 # Region coordinates
@@ -131,20 +131,20 @@ rm(tmp)
 
 # inferred clusters from Epiclomal, if available
 if ( !is.null(inferred_clusters_file)) {
-    tmp <- read.csv(inferred_clusters_file,sep="\t",header=TRUE,check.names=FALSE)
-    colnames(tmp) <- c("cell_id","inferred_clusters") 
-    inferred_cell_clusters <- as.matrix(tmp[,2])
-    rownames(inferred_cell_clusters) <- tmp$cell_id
-    # MA: reordering inferred_cell_clusters so it matches the order of input_CpG_data
-    inferred_cell_clusters <- inferred_cell_clusters[rownames(input_CpG_data),,drop=FALSE]
-    inferred_cell_clusters <- as.data.frame(inferred_cell_clusters)
-    colnames(inferred_cell_clusters) <- "inferred_clusters"
-    #tmp[47:49,] <- tmp[c(48,49,47),]
-
-    if(sum(rownames(input_CpG_data) != rownames(inferred_cell_clusters)) > 0){
-        stop("order of cell IDs 1 doesn't match")
-    }
-    rm(tmp)
+  tmp <- read.csv(inferred_clusters_file,sep="\t",header=TRUE,check.names=FALSE)
+  colnames(tmp) <- c("cell_id","inferred_clusters") 
+  inferred_cell_clusters <- as.matrix(tmp[,2])
+  rownames(inferred_cell_clusters) <- tmp$cell_id
+  # MA: reordering inferred_cell_clusters so it matches the order of input_CpG_data
+  inferred_cell_clusters <- inferred_cell_clusters[rownames(input_CpG_data),,drop=FALSE]
+  inferred_cell_clusters <- as.data.frame(inferred_cell_clusters)
+  colnames(inferred_cell_clusters) <- "inferred_clusters"
+  #tmp[47:49,] <- tmp[c(48,49,47),]
+  
+  if(sum(rownames(input_CpG_data) != rownames(inferred_cell_clusters)) > 0){
+    stop("order of cell IDs 1 doesn't match")
+  }
+  rm(tmp)
 }    
 
 # # cell posterior probabilities
@@ -160,19 +160,19 @@ if ( !is.null(inferred_clusters_file)) {
 # rm(tmp)
 
 if ( !is.null(true_clusters_file)) {
-    tmp <- read.csv(true_clusters_file,sep="\t",header=TRUE,check.names=FALSE)
-    colnames(tmp) <- c("cell_id","true_clusters") 
-    true_cell_clusters <- as.matrix(tmp[,2])
-    rownames(true_cell_clusters) <- tmp$cell_id
-    # MA: reordering inferred_cell_clusters so it matches the order of input_CpG_data
-    true_cell_clusters <- true_cell_clusters[rownames(input_CpG_data),,drop=FALSE]    
-    true_cell_clusters <- as.data.frame(true_cell_clusters)
-    colnames(true_cell_clusters) <- "true_clusters"
-    #tmp[47:49,] <- tmp[c(48,49,47),]
-    if(sum(rownames(input_CpG_data) != rownames(true_cell_clusters)) > 0){
-        stop("order of cell IDs 2 doesn't match")
-    }
-    rm(tmp)
+  tmp <- read.csv(true_clusters_file,sep="\t",header=TRUE,check.names=FALSE)
+  colnames(tmp) <- c("cell_id","true_clusters") 
+  true_cell_clusters <- as.matrix(tmp[,2])
+  rownames(true_cell_clusters) <- tmp$cell_id
+  # MA: reordering inferred_cell_clusters so it matches the order of input_CpG_data
+  true_cell_clusters <- true_cell_clusters[rownames(input_CpG_data),,drop=FALSE]    
+  true_cell_clusters <- as.data.frame(true_cell_clusters)
+  colnames(true_cell_clusters) <- "true_clusters"
+  #tmp[47:49,] <- tmp[c(48,49,47),]
+  if(sum(rownames(input_CpG_data) != rownames(true_cell_clusters)) > 0){
+    stop("order of cell IDs 2 doesn't match")
+  }
+  rm(tmp)
 }
 
 #======================
@@ -190,69 +190,94 @@ mean_meth_matrix <- t(apply(input_CpG_data,1,extract_mean_meth_per_cell,region_c
 #======================
 
 if (!is.null(true_clusters_file)) {
-    if (args$order_by_true == 1 || is.null(inferred_clusters_file)) {
-        index <- 1:dim(true_cell_clusters)[1]
-        index_gaps <- index[!duplicated(true_cell_clusters[order(true_cell_clusters),])] - 1 
-        index_gaps <- index_gaps[which(index_gaps != 0)]  
-    }        
+  if (args$order_by_true == 1 || is.null(inferred_clusters_file)) {
+    index <- 1:dim(true_cell_clusters)[1]
+    index_gaps <- index[!duplicated(true_cell_clusters[order(true_cell_clusters),])] - 1 
+    index_gaps <- index_gaps[which(index_gaps != 0)]  
+  }        
 }
 if (!is.null(inferred_clusters_file)) {
-    if (args$order_by_true == 0 || is.null(true_clusters_file)) {
-        index <- 1:dim(inferred_cell_clusters)[1]
-        index_gaps <- index[!duplicated(inferred_cell_clusters[order(inferred_cell_clusters),])] - 1 
-        index_gaps <- index_gaps[which(index_gaps != 0)]
-    }
+  if (args$order_by_true == 0 || is.null(true_clusters_file)) {
+    index <- 1:dim(inferred_cell_clusters)[1]
+    index_gaps <- index[!duplicated(inferred_cell_clusters[order(inferred_cell_clusters),])] - 1 
+    index_gaps <- index_gaps[which(index_gaps != 0)]
+  }
 }
 
 ## annotating the rows by clusters
 
 # MA: we want to add the true clusters annotation no matter whether we order by true or predicted
 if(!is.null(true_clusters_file)){
-    if (!is.null(args$inferred_clusters_file)) {
-        annotation_row <- cbind(inferred_cell_clusters,true_cell_clusters$true_clusters)          
-        colnames(annotation_row) <- c("inferred clusters", "true clusters")  
-        annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
-        annotation_row$`true clusters` <- as.factor(annotation_row$`true clusters`)
-    } else {
-        annotation_row <- true_cell_clusters          
-        colnames(annotation_row) <- "true clusters"
-        annotation_row$`true clusters` <- as.factor(annotation_row$`true clusters`)    
-    }        
-} else {        # we do not have the true
-    annotation_row <- inferred_cell_clusters
-    
-    colnames(annotation_row) <-"inferred clusters"
+  if (!is.null(args$inferred_clusters_file)) {
+    annotation_row <- cbind(inferred_cell_clusters,true_cell_clusters$true_clusters)          
+    colnames(annotation_row) <- c("inferred clusters", "true clusters")  
     annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
+    annotation_row$`true clusters` <- as.factor(annotation_row$`true clusters`)
+  } else {
+    annotation_row <- true_cell_clusters          
+    colnames(annotation_row) <- "true clusters"
+    annotation_row$`true clusters` <- as.factor(annotation_row$`true clusters`)    
+  }        
+} else {        # we do not have the true
+  annotation_row <- inferred_cell_clusters
   
-
+  colnames(annotation_row) <-"inferred clusters"
+  annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
   
-    # ### adding posterior probabilities
-    # annotation_row <- cbind(inferred_cell_clusters,cell_posterior_probabilities$cell_posteriors)
-    # colnames(annotation_row) <- c("inferred clusters", "posterior")  
-    # annotation_row$posterior <- as.factor(round(annotation_row$posterior,2))
-    # annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
+  
+  
+  # ### adding posterior probabilities
+  # annotation_row <- cbind(inferred_cell_clusters,cell_posterior_probabilities$cell_posteriors)
+  # colnames(annotation_row) <- c("inferred clusters", "posterior")  
+  # annotation_row$posterior <- as.factor(round(annotation_row$posterior,2))
+  # annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
 }
 
 R <- dim(input_regions)[1] ## number of regions
 M <- dim(input_CpG_data)[2] ## number of loci
 
+print(annotation_row)
+
+print(R)
+print(M)
+
 #======================
 # Plotting methylation data
 #======================
 
-## annotating the columns by region
-#print('Start annotating the columns by region')
+## annotating the columns by regions for CpG based plots
 reg_id <- unlist(sapply(1:R,function(x){rep(x,(input_regions[x,2]-input_regions[x,1])+1)}))
-#print(reg_id)
+#print(head(reg_id,100))
+
 annotation_col <- as.matrix(reg_id,nrow=length(colnames(input_CpG_data)))
 #print('colnames')
 #print(colnames(input_CpG_data))
+
 rownames(annotation_col) <- colnames(input_CpG_data)
 annotation_col <- as.data.frame(annotation_col)
 colnames(annotation_col) <- "regions"
 annotation_col$regions <- as.factor(annotation_col$regions)
-#print ('DONE')
 
+
+#print(head(annotation_col))
+#print(dim(annotation_col))
+#print(str(annotation_col))
+
+### adding chromosome labels to the columns
+
+if(grepl(colnames(input_CpG_data)[1],pattern=":")){
+  
+  show_col_chr_labels <- TRUE
+  labels_tmp <- as.vector(sapply(rownames(annotation_col),function(x){unlist(strsplit(x,":"))[1]}))
+  labels_col <- rep(NA,length(labels_tmp))
+  labels_col[!duplicated(labels_tmp)] <- labels_tmp[!duplicated(labels_tmp)]
+  labels_col[is.na(labels_col)] <- ""
+  #print(labels_col)
+  
+}else{
+  show_col_chr_labels <- FALSE
+  labels_col <- NULL
+}
 
 #if(args$true_clusters == 1 && args$order_by_true == 1){
 #  tmp <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
@@ -261,15 +286,15 @@ annotation_col$regions <- as.factor(annotation_col$regions)
 #}
 
 if (M <= 250) {
-    print("plotting CpG based data")    
+  print("plotting CpG based data")    
   
-    if (args$order_by_true == 1) {
-        data <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
-    } else {
-        data <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
-    }
-           
-    pheatmap(data,cluster_rows = FALSE,cluster_cols=FALSE, annotation_row =annotation_row, cellwidth = 5,
+  if (args$order_by_true == 1) {
+    data <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
+  } else {
+    data <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
+  }
+  
+  pheatmap(data,cluster_rows = FALSE,cluster_cols=FALSE, annotation_row =annotation_row, cellwidth = 5,
            cellheight = 5,fontsize = 8, 
            main = paste0("CpG-based methylation data for ", args$name),
            gaps_row = index_gaps,fontsize_row=6,fontsize_col=4, 
@@ -278,7 +303,7 @@ if (M <= 250) {
            show_colnames=FALSE,
            annotation_col=annotation_col,
            filename = paste0(out_dir,"/",args$name,"_CpG_based_PLOT.pdf"))           
-    rm(data)
+  rm(data)
   
   # ### attempt to plot hclust together
   # pheatmap(data,cluster_cols=FALSE, annotation_row = annotation_row,
@@ -297,22 +322,24 @@ if (M > 250) {
     print("plotting CpG based methylation data for R=1")
     
     if (args$order_by_true == 1) {
-        data <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
+      data <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
     } else {
-        data <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
+      data <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
     }
-             
+    
     pheatmap(data,cluster_cols=FALSE, annotation_row = annotation_row,
              cluster_rows = FALSE,
              #cellwidth = 5, cellheight = 5,
              fontsize = 8, main = paste0("CpG based methylation data for ", args$name),
              gaps_row = index_gaps,fontsize_row=8,fontsize_col=4, 
-             annotation_names_row = TRUE,annotation_names_col= FALSE,
+             annotation_names_row = TRUE,
+             #annotation_names_col= FALSE,
              #gaps_col=(input_regions[,2][1:(R-1)] + 1),
-             show_colnames=FALSE,
-             annotation_col=annotation_col,
+             show_colnames=show_col_chr_labels,
+             labels_col=labels_col,
+             #annotation_col=annotation_col,
              filename = paste0(out_dir,"/",args$name,"_CpG_based_PLOT.pdf"))             
-             
+    
     rm(data)
     
   }
@@ -320,69 +347,101 @@ if (M > 250) {
   if (R > 1){
     
     if (M < 8000) {
-        print("plotting CpG based methylation data for R > 1")
-        
-        if (args$order_by_true == 1) {
-            data <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
-        } else {
-            data <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
-        }        
-        
-        ## in case we want to force some colors to be the same
-        #colnames(annotation_row) <- "inferred_clusters"
-        #annotation_row$inferred_clusters <- paste0("cl", annotation_row$inferred_clusters)
-        #ann_colors = list(
-        #inferred_clusters = c(cl0="blue", cl3="green",cl4="pink"))
-        
-        ## including the cell posterior probabilities in shades of grey
-        #colnames(annotation_row) <- "inferred_clusters"
-        #annotation_row$posterior <- paste0("post_", annotation_row$posterior) ### still need to make this more general
-        #ann_colors = list(posterior = c(post_100="#111111", post_95="#333333",post_70="#666666", post_50="#777777", post_33="#888888", post_25="#999999" ))       
-    
-        pheatmap(data,cluster_cols=FALSE, annotation_row = annotation_row,
-                 cluster_rows = FALSE,
-                 #cellwidth = 5, cellheight = 5,
-                 fontsize = 8, main = paste0("CpG based methylation data for ", args$name),
-                 gaps_row = index_gaps,fontsize_row=8,fontsize_col=4,
-                 annotation_names_row = FALSE,
-                 #annotation_colors = ann_colors,
-                 #annotation_names_col= TRUE,
-                 show_colnames=FALSE,
-                 #annotation_col=annotation_col,
-                 annotation_legend = TRUE,
-                 #legend_breaks = c(0,1),legend_labels = c("unmeth","meth"),
-                 filename = paste0(out_dir,"/",args$name,"_CpG_based_PLOT.pdf"))          
-                 
-        rm(data)
+      print("plotting CpG based methylation data for R > 1")
+      
+      if (args$order_by_true == 1) {
+        data <- input_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
+      } else {
+        data <- input_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
+      }        
+      
+      ## in case we want to force some colors to be the same
+      #colnames(annotation_row) <- "inferred_clusters"
+      #annotation_row$inferred_clusters <- paste0("cl", annotation_row$inferred_clusters)
+      #ann_colors = list(
+      #inferred_clusters = c(cl0="blue", cl3="green",cl4="pink"))
+      
+      ## including the cell posterior probabilities in shades of grey
+      #colnames(annotation_row) <- "inferred_clusters"
+      #annotation_row$posterior <- paste0("post_", annotation_row$posterior) ### still need to make this more general
+      #ann_colors = list(posterior = c(post_100="#111111", post_95="#333333",post_70="#666666", post_50="#777777", post_33="#888888", post_25="#999999" ))       
+      
+      pheatmap(data,cluster_cols=FALSE, annotation_row = annotation_row,
+               cluster_rows = FALSE,
+               #cellwidth = 5, cellheight = 5,
+               fontsize = 8, main = paste0("CpG based methylation data for ", args$name),
+               gaps_row = index_gaps,fontsize_row=8,fontsize_col=6,
+               annotation_names_row = FALSE,
+               #annotation_colors = ann_colors,
+               #annotation_names_col= TRUE,
+               show_colnames=show_col_chr_labels,
+               labels_col=labels_col,
+               #annotation_col=annotation_col,
+               annotation_legend = TRUE,
+               #legend_breaks = c(0,1),legend_labels = c("unmeth","meth"),
+               filename = paste0(out_dir,"/",args$name,"_CpG_based_PLOT.pdf"))          
+      
+      rm(data)
     }         
     
     print("plotting region based mean methylation data")
     
     if (args$order_by_true == 1) {
-        data <- mean_meth_matrix[order(as.integer(true_cell_clusters$true_clusters)),]
+      data <- mean_meth_matrix[order(as.integer(true_cell_clusters$true_clusters)),]
     } else {
-        data <- mean_meth_matrix[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
+      data <- mean_meth_matrix[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
     }    
     
     if (nrow(data) < 100) {
-        fontrow = 8
+      fontrow = 8
     } else if (nrow(data) < 200) {
-        fontrow = 4
+      fontrow = 4
     }  else {
-        fontrow = 1
+      fontrow = 1
     } 
     
+    ### If we decide to annotate by columns we need to create the object annotation_col for the region based case
+    
+    if(grepl(colnames(input_CpG_data)[1],pattern=":")){
+      
+      show_col_chr_labels_reg <- TRUE
+      
+      ## adding labels to the columns for region mean methylation based plots
+      reg_id <- unlist(sapply(1:R,function(x){rep(x,(input_regions[x,2]-input_regions[x,1])+1)}))
+      CpG_names <- colnames(input_CpG_data)
+      
+      labels_tmp <- as.vector(sapply(CpG_names,function(x){unlist(strsplit(x,":"))[1]}))
+      #print(head(labels_tmp))
+      #print(reg_id[!duplicated(reg_id)])
+      
+      regions_tmp <- labels_tmp[!duplicated(reg_id)]
+      
+      labels_col_reg <- rep(NA,length(regions_tmp))
+      labels_col_reg[!duplicated(regions_tmp)] <- regions_tmp[!duplicated(regions_tmp)]
+      
+      #print(labels_col_reg)
+      #print(regions_tmp)
+      labels_col_reg[is.na(labels_col_reg)] <- ""
+      
+      
+    }else{
+      show_col_chr_labels_reg <- FALSE
+      labels_col_reg <- NULL
+    }
+    
     pheatmap(data,cluster_cols=FALSE,
-           cluster_rows=FALSE,
-           annotation_row = annotation_row,
-           #cellwidth = 5,cellheight = 5,
-           fontsize = 8, main = paste0("Region-based mean methylation fraction data for ", args$name),
-           gaps_row = index_gaps,fontsize_row=fontrow,fontsize_col=6,
-           annotation_names_row = FALSE,
-           #annotation_colors = ann_colors,
-           border_color=NA,show_colnames=FALSE,
-           filename = paste0(out_dir,"/",args$name,"_region_based_PLOT.pdf"))             
-             
+             cluster_rows=FALSE,
+             annotation_row = annotation_row,
+             #cellwidth = 5,cellheight = 5,
+             fontsize = 8, main = paste0("Region-based mean methylation fraction data for ", args$name),
+             gaps_row = index_gaps,fontsize_row=fontrow,fontsize_col=6,
+             annotation_names_row = FALSE,
+             #annotation_colors = ann_colors,
+             border_color=NA,
+             show_colnames=show_col_chr_labels_reg,
+             labels_col = labels_col_reg,
+             filename = paste0(out_dir,"/",args$name,"_region_based_PLOT.pdf"))             
+    
     #filename = paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_region_based_PLOT.pdf"))
     rm(data)
     
@@ -398,33 +457,33 @@ if (M > 250) {
     
     if(!is.null(args$regions_to_plot))  {
       
-        regions_for_plot <- scan (file=args$regions_to_plot,what=integer())
-        print ("Plotting CpGs for regions")
-        print (regions_for_plot)
-        input_regions <- input_regions[sort(regions_for_plot),] 
-        print (input_regions)
-        R <- length(regions_for_plot) ## number of regions
-        diff_CpG_data <- NULL
-        for (r in 1:R)  {
-            diff_CpG_data <- cbind(diff_CpG_data, input_CpG_data[,c(input_regions[r,1]:input_regions[r,2])])
-        }
-
-        M <- dim(diff_CpG_data)[2] ## number of loci
+      regions_for_plot <- scan (file=args$regions_to_plot,what=integer())
+      print ("Plotting CpGs for regions")
+      print (regions_for_plot)
+      input_regions <- input_regions[sort(regions_for_plot),] 
+      print (input_regions)
+      R <- length(regions_for_plot) ## number of regions
+      diff_CpG_data <- NULL
+      for (r in 1:R)  {
+        diff_CpG_data <- cbind(diff_CpG_data, input_CpG_data[,c(input_regions[r,1]:input_regions[r,2])])
+      }
       
-        reg_id <- unlist(sapply(1:R,function(x){rep(x,(input_regions[x,2]-input_regions[x,1])+1)}))
-        annotation_col <- as.matrix(reg_id,nrow=length(colnames(diff_CpG_data)))
-        rownames(annotation_col) <- colnames(diff_CpG_data)
-        annotation_col <- as.data.frame(annotation_col)
-        colnames(annotation_col) <- "regions"
-        annotation_col$regions <- as.factor(annotation_col$regions)
+      M <- dim(diff_CpG_data)[2] ## number of loci
       
-        if (args$order_by_true == 1) {
-            data <- diff_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
-        } else {
-            data <- diff_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
-        }              
-               
-        pheatmap(data,cluster_rows = FALSE,cluster_cols=FALSE, 
+      reg_id <- unlist(sapply(1:R,function(x){rep(x,(input_regions[x,2]-input_regions[x,1])+1)}))
+      annotation_col <- as.matrix(reg_id,nrow=length(colnames(diff_CpG_data)))
+      rownames(annotation_col) <- colnames(diff_CpG_data)
+      annotation_col <- as.data.frame(annotation_col)
+      colnames(annotation_col) <- "regions"
+      annotation_col$regions <- as.factor(annotation_col$regions)
+      
+      if (args$order_by_true == 1) {
+        data <- diff_CpG_data[order(as.integer(true_cell_clusters$true_clusters)),]
+      } else {
+        data <- diff_CpG_data[order(as.integer(inferred_cell_clusters$inferred_clusters)),]
+      }              
+      
+      pheatmap(data,cluster_rows = FALSE,cluster_cols=FALSE, 
                #annotation_row =annotation_row, 
                cellwidth = 5, cellheight = 5,
                fontsize = 8, main = paste0("CpG-based methylation data for ", args$name),
@@ -434,8 +493,8 @@ if (M > 250) {
                annotation_col=annotation_col,
                gaps_col =  (which(!duplicated(reg_id) == TRUE)[-1]-1),
                filename = paste0(out_dir,"/",args$name,"_flipped_regions_CpG_based_PLOT.pdf"))
-               #filename = paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_subset_of_regions_CpG_based_PLOT.png"))               
-        rm(data)
+      #filename = paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_subset_of_regions_CpG_based_PLOT.png"))               
+      rm(data)
       
     }
     
@@ -460,30 +519,29 @@ if (!is.null(input_CN_data_file)) {
   
   if (dim(input_CN_data)[2] < 250) {
     tmp <- input_CN_data[order(inferred_cell_clusters),]
-             
+    
     pheatmap(tmp,cluster_rows = FALSE,cluster_cols=FALSE, annotation_row = annotation_row, 
-           #annotation_col = annotation_col_chr,
-           cellwidth = 6,cellheight = 6,
-           fontsize = 8, main = paste0("Copy number data for ", args$name),
-           gaps_row = index_gaps,fontsize_row=6,fontsize_col=6, annotation_names_row = FALSE,
-           filename = paste0(out_dir,"/",args$name,"_CN_PLOT.pdf"))             
+             #annotation_col = annotation_col_chr,
+             cellwidth = 6,cellheight = 6,
+             fontsize = 8, main = paste0("Copy number data for ", args$name),
+             gaps_row = index_gaps,fontsize_row=6,fontsize_col=6, annotation_names_row = FALSE,
+             filename = paste0(out_dir,"/",args$name,"_CN_PLOT.pdf"))             
     rm(tmp)
   }
   
   
   tmp <- input_CN_data[order(inferred_cell_clusters),]
-           
+  
   pheatmap(tmp,cluster_rows = FALSE,cluster_cols=FALSE, annotation_row = annotation_row,
-             fontsize = 8, main = paste0("Copy number data for ", args$name),
-             gaps_row = index_gaps,fontsize_row=6,fontsize_col=4,
-             border_color=NA, annotation_names_row = FALSE,show_colnames=FALSE,
-             annotation_col=annotation_col_chr,
-             #annotation_colors = ann_colors,
-             filename = paste0(out_dir,"/",args$name,"_noLines_CN_PLOT.pdf"))           
-           
+           fontsize = 8, main = paste0("Copy number data for ", args$name),
+           gaps_row = index_gaps,fontsize_row=6,fontsize_col=4,
+           border_color=NA, annotation_names_row = FALSE,show_colnames=FALSE,
+           annotation_col=annotation_col_chr,
+           #annotation_colors = ann_colors,
+           filename = paste0(out_dir,"/",args$name,"_noLines_CN_PLOT.pdf"))           
+  
   rm(tmp)
   
   
 }  
-
 
