@@ -10,6 +10,7 @@
 suppressMessages(library(argparse))
 suppressMessages(library(pcaMethods))
 suppressMessages(library(densitycut))
+suppressMessages(library(pheatmap))
 
 #======================
 # arguments
@@ -41,8 +42,8 @@ input_regions_file <- args$regions_file
 # true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
 # # outdir <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data"
 # 
-  input_CpG_data_file <- "/genesis/shahlab/csouza/BS-seq/whole_genome_single_cell/synthetic_data_tests/data_old_way/data/data_incomplete.tsv.gz"
-  input_regions_file <- "/genesis/shahlab/csouza/BS-seq/whole_genome_single_cell/synthetic_data_tests/data_old_way/data/regions_file.tsv.gz"
+#  input_CpG_data_file <- "/genesis/shahlab/csouza/BS-seq/whole_genome_single_cell/synthetic_data_tests/data_old_way/data/data_incomplete.tsv.gz"
+#  input_regions_file <- "/genesis/shahlab/csouza/BS-seq/whole_genome_single_cell/synthetic_data_tests/data_old_way/data/regions_file.tsv.gz"
 #  inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform_seed_2/data/true_clone_membership.tsv"
 #  true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci100_clones3_cells40_prev0.2_0.5_0.3_errpb0.01_0.01_mispb0.25_gpbrandom_dirpar1_1_nregs5_rsize-equal_rnonequal-uniform_seed_2/data/true_clone_membership.tsv"
 

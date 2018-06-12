@@ -218,38 +218,41 @@ plot_data <- function(big_df, crash, model, measure_name,add_points) {
   #sub_big_df <- ddply(big_df, .(VAR,method),summarise,crash_perc=(1-mean(crash)))   # big_df[['crash']])))
   #print(sub_big_df)
   
-  big_df_s <- subset(big_df, replicate != all_regions_criterion)
-  
-  sub_big_df <- ddply(big_df_s, .(VAR,method),summarise,crash_perc=(1-mean(crash)))   # big_df[['crash']])))
    
   ### plot the box plots
   if(add_points==TRUE){
+
+      big_df_s <- subset(big_df, replicate != all_regions_criterion)
+  
+      sub_big_df <- ddply(big_df_s, .(VAR,method),summarise,crash_perc=(1-mean(crash)))   # big_df[['crash']])))
      
-  df_point <- big_df[which(big_df$replicate == all_regions_criterion),]
+      df_point <- big_df[which(big_df$replicate == all_regions_criterion),]
   
-  df_point <- df_point[,c(1,3,4)]
+      df_point <- df_point[,c(1,3,4)]
   
-  print(df_point)
+      print(df_point)
     
-  pHD <- ggplot(big_df_s, aes(x=method, y=Measure, fill=method)) +
-    #pHD <- ggplot(big_df, aes(x=method, y=Measure, fill=method)) +
-    # The next line writes the y labels in the format x.xx so it aligns well with the bar plot.
-    scale_y_continuous(labels = function(x) format(round(x,2),nsmall=2)) +
-    geom_boxplot() +    
+      pHD <- ggplot(big_df_s, aes(x=method, y=Measure, fill=method)) +
+        #pHD <- ggplot(big_df, aes(x=method, y=Measure, fill=method)) +
+        # The next line writes the y labels in the format x.xx so it aligns well with the bar plot.
+        scale_y_continuous(labels = function(x) format(round(x,2),nsmall=2)) +
+        geom_boxplot() +    
     
-    geom_point(data = df_point, aes(group = method), position = position_dodge(width = 0.75),
-               shape=18,color="blue",size=4) +
+        geom_point(data = df_point, aes(group = method), position = position_dodge(width = 0.75),
+                   shape=18,color="blue",size=4) +
     
-    #stat_summary(fun.y="mean", geom = "point",position=position_dodge(width=0.75),size=4,colour="blue",shape=18) +
-    #stat_summary(fun.y=grab_point, geom = "point",position=position_dodge(width=0.75),size=4,colour="blue",shape=18) +
+        #stat_summary(fun.y="mean", geom = "point",position=position_dodge(width=0.75),size=4,colour="blue",shape=18) +
+        #stat_summary(fun.y=grab_point, geom = "point",position=position_dodge(width=0.75),size=4,colour="blue",shape=18) +
     
-    #geom_boxplot(show.legend=F) + 
-    facet_grid(~VAR) +
-    labs(x="", y = measure_title)
-  }
+        #geom_boxplot(show.legend=F) + 
+        facet_grid(~VAR) +
+        labs(x="", y = measure_title)
+    }
   
     if(add_points == FALSE){
       
+      big_df_s <- big_df
+      sub_big_df <- ddply(big_df_s, .(VAR,method),summarise,crash_perc=(1-mean(crash)))   # big_df[['crash']])))      
       pHD <- ggplot(big_df_s, aes(x=method, y=Measure, fill=method)) +
         #pHD <- ggplot(big_df, aes(x=method, y=Measure, fill=method)) +
         # The next line writes the y labels in the format x.xx so it aligns well with the bar plot.

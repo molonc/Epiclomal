@@ -202,6 +202,8 @@ initial_path_to_each_RUN <- paste0(unlist(strsplit(summary_table_file, "/FINAL")
 print (initial_path_to_each_RUN)
 
 
+all_regions_criterion <- "0_1_0.01"
+
 ##################
 ### plots clone_prev_MAE ####
 ##################
@@ -210,7 +212,7 @@ model <- c("region","region_bulk", "basic","EuclideanClust","DensityCut","Hammin
 # To add custom labels
 # label <- c("EpiclomalRegion","EpiclomalBulk","EpiclomalBasic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
 mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "clone_prev_MAE")
-plot_data(mylist$big_df, mylist$crash, model, "clone_prev_MAE")
+plot_data(mylist$big_df, mylist$crash, model, "clone_prev_MAE", add_points=FALSE)
 
 
 ##################
@@ -219,7 +221,7 @@ plot_data(mylist$big_df, mylist$crash, model, "clone_prev_MAE")
 print ("Plots for hamming distance")
 model <- c("region", "basic")
 mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "HD")
-plot_data(mylist$big_df, mylist$crash, model, "HD")
+plot_data(mylist$big_df, mylist$crash, model, "HD", add_points=FALSE)
 
 ##################
 ### plots V-measure ####
@@ -228,7 +230,7 @@ plot_data(mylist$big_df, mylist$crash, model, "HD")
 print ("Plots for V-measure")
 model <- c("region","region_bulk", "basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
 mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "Vmeasure")
-plot_data(mylist$big_df, mylist$crash, model, "Vmeasure")
+plot_data(mylist$big_df, mylist$crash, model, "Vmeasure", add_points=FALSE)
 
 ##################
 ### plots nclusters ####
@@ -236,7 +238,7 @@ plot_data(mylist$big_df, mylist$crash, model, "Vmeasure")
 print ("Plots for nclusters")
 model <- c("region","basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
 mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "nclusters")
-plot_data(mylist$big_df, mylist$crash, model, "nclusters")
+plot_data(mylist$big_df, mylist$crash, model, "nclusters", add_points=FALSE)
 
 ##################
 ### plots uncertainty ####
@@ -245,5 +247,5 @@ plot_data(mylist$big_df, mylist$crash, model, "nclusters")
 print ("Plots for uncertainty")
 model <- c("region")
 mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "uncertainty")
-plot_data(mylist$big_df, mylist$crash, model, "uncertainty")
+plot_data(mylist$big_df, mylist$crash, model, "uncertainty", add_points=FALSE)
 

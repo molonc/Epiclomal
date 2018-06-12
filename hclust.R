@@ -185,6 +185,9 @@ if (R > 1){
   
   mean_meth_matrix <- t(apply(input_CpG_data,1,extract_mean_meth_per_cell,region_coord=input_regions))
   
+  # MA 8 May 2018: saving the mean methylation matrix
+  save(mean_meth_matrix, file=paste0(outdir,"/EuclideanClust_mean_meth_matrix.Rda"))
+  
   # pairwisedist_region <- dist(mean_meth_matrix ,method="euclidean")
   
   ### Feb 27th, 2018
