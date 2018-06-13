@@ -40,7 +40,7 @@ input_regions_file <- args$regions_file
 # input_regions_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data/regions_file.tsv"
 # inferred_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
 # true_clusters_file <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data/true_clone_membership.tsv"
-# # outdir <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data"
+# #outdir <- "/Users/cdesouza/Documents/synthetic_data_old/output_loci1000_clones3_cells100_prev0.2_0.5_0.3_errpb0.001_0.001_mispb0_gpbrandom_dirpar1_1_nregs4_rsize-equal_rnonequal-uniform/data"
 # 
 #  input_CpG_data_file <- "/genesis/shahlab/csouza/BS-seq/whole_genome_single_cell/synthetic_data_tests/data_old_way/data/data_incomplete.tsv.gz"
 #  input_regions_file <- "/genesis/shahlab/csouza/BS-seq/whole_genome_single_cell/synthetic_data_tests/data_old_way/data/regions_file.tsv.gz"
@@ -93,6 +93,10 @@ rm(tmp)
 R <- dim(input_regions)[1] ## number of regions
 M <- dim(input_CpG_data)[2] ## number of loci
 
+print("number of regions:")
+print(R)
+print("number of loci:")
+print(M)
 
 # ########################################
 # ### Some tests with bivariate normal ###
@@ -117,10 +121,7 @@ M <- dim(input_CpG_data)[2] ## number of loci
 # tmp[,1]%*%data2[1,] == tmp2[1,1]
 # 
 # slplot(pc)
-
-print(R)
-print(M)
-
+ 
 #======================
 # hiearchical clustering considering Euclidean distances and complete linkage 
 #======================
@@ -188,7 +189,7 @@ if (R > 1){
   # 
   # rm(cluster.out)
   
-  print("More than one region, region based hiearchical clustering")
+  print("More than one region, region based densitycut")
   
   #======================
   # extracting the mean methylation for each region in each cell 
@@ -199,6 +200,9 @@ if (R > 1){
   
   max_comp <- min(args$max_PC,R)
   
+  print("number of PC components:")
+  print(max_comp)
+   
   t <- try(pca( mean_meth_matrix ,method="nipals",nPcs=max_comp))
   if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
     print("Stop! At least one cell has NO data across all regions, can't do PCA")
@@ -208,36 +212,54 @@ if (R > 1){
   
   pc_scores <- scores(pc)
   
-  #print(head(pc_scores))
-  
+  #print(head(pc_scores))  
   #plot(pc_scores[,1],pc_scores[,2],col=true_membership)
   
-  checking_warning <- capture.output(DensityCut(pc_scores))
+  checking_warning <- capture.output(DensityCut(pc_scores,maxit=100))
   
-  print(checking_warning)
-  if(checking_warning[1] == "WARNING! not converged "){
-    print("densitycut didn't converge, not saving results")}else{
-  
-  cluster.out <-  DensityCut(pc_scores) # DensityCut clustering analysis
-  
-  #print(cluster.out$cluster)
-  
-  #col <- AssignLabelColor(label=cluster.out$cluster, col=distinct.col) # Assign colour to clusters
-  #NeatPlot(x=pc_scores, col=col) # Scatter plots
-  
-  # possible_clusters <- cbind(as.numeric(rownames(input_CpG_data)),cluster.out$cluster)
-  # MA: removing as.numeric, otherwise it replaces the cell ids with NAs whenever the cell ids are not numeric
-  possible_clusters <- cbind(rownames(input_CpG_data),cluster.out$cluster)
-  colnames(possible_clusters) <- c("cell_id","DensityCut")
-  
-  ### Plotting DensityCut clusters
-  inf_clusters_order <- order(cluster.out$cluster)
+  #print(checking_warning)
     
-  annotation_row <- as.data.frame(cluster.out$cluster)       
-  colnames(annotation_row) <- "inferred clusters"
-  annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
+  if(checking_warning[1] == "WARNING! not converged "){
+    print("densitycut didn't converge, not saving results!")
+    }else{
   
-     pheatmap(mean_meth_matrix[inf_clusters_order,],cluster_rows = FALSE,cluster_cols=FALSE, 
+    print("densitycut converged!")
+    
+    cluster.out <- DensityCut(pc_scores,maxit=100) # DensityCut clustering analysis CS: increased max number of iterations from 50 to 100
+  
+    #print(cluster.out$cluster)
+   
+    #col <- AssignLabelColor(label=cluster.out$cluster, col=distinct.col) # Assign colour to clusters
+    #NeatPlot(x=pc_scores, col=col) # Scatter plots
+  
+    # possible_clusters <- cbind(as.numeric(rownames(input_CpG_data)),cluster.out$cluster)
+    # MA: removing as.numeric, otherwise it replaces the cell ids with NAs whenever the cell ids are not numeric
+  
+    possible_clusters <- cbind(rownames(input_CpG_data),cluster.out$cluster)
+    colnames(possible_clusters) <- c("cell_id","DensityCut")
+  
+    #print(possible_clusters)
+   
+    ### Plotting DensityCut clusters
+    print("Plotting DensityCut clusters")
+    
+    inf_clusters_order <- order(as.integer(cluster.out$cluster))
+  
+    #print(inf_clusters_order)
+    
+    annotation_row <- as.data.frame(cluster.out$cluster)       
+    colnames(annotation_row) <- "inferred clusters"
+    annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
+  
+    rownames(annotation_row) <- rownames(mean_meth_matrix) ### CS: I added this and the bug regarding --> Error in check.length("fill") :
+                                                         ### 'gpar' element 'fill' must not be length 0
+                                                         ### Calls: pheatmap ... rectGrob -> grob -> gpar -> validGP -> check.length
+                                                         ### is now fixed   
+  
+    #print(annotation_row)
+    #print(str(annotation_row))
+  
+    pheatmap(mean_meth_matrix[inf_clusters_order,],cluster_rows = FALSE,cluster_cols=FALSE, 
               cellwidth = 8,
               annotation_row = annotation_row,
               cellheight = 8,fontsize = 8, 
@@ -247,7 +269,7 @@ if (R > 1){
               show_colnames=FALSE,
               annotation_names_row = FALSE,
               filename = paste0(outdir,"/DensityCut_PLOT.pdf"))
-  
+
   ### end of plotting
   
   ofile <- paste0(outdir,"/DensityCut_clusters_Region_based_maxPC_",max_comp,".tsv") 
@@ -258,5 +280,9 @@ if (R > 1){
   }
   
 }
+
+print("DONE!")
+
+
 
 
