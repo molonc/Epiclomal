@@ -23,6 +23,7 @@ parser$add_argument("--output_directory", type="character", help="Path to the ou
 parser$add_argument("--methylation_file", type="character", help="Path to methylation data") 
 parser$add_argument("--regions_file", type="character",help="Path to region coordinates")
 parser$add_argument("--max_PC", type="integer",default=20, help="maximum number of PC components") 
+parser$add_argument("--maxit", type="integer",default=100, help="maximum number iterations") 
 
 args <- parser$parse_args() 
 
@@ -215,7 +216,7 @@ if (R > 1){
   #print(head(pc_scores))  
   #plot(pc_scores[,1],pc_scores[,2],col=true_membership)
   
-  checking_warning <- capture.output(DensityCut(pc_scores,maxit=100))
+  checking_warning <- capture.output(DensityCut(pc_scores,maxit=args$maxit))
   
   #print(checking_warning)
     
@@ -225,7 +226,7 @@ if (R > 1){
   
     print("densitycut converged!")
     
-    cluster.out <- DensityCut(pc_scores,maxit=100) # DensityCut clustering analysis CS: increased max number of iterations from 50 to 100
+    cluster.out <- DensityCut(pc_scores,maxit=args$maxit) # DensityCut clustering analysis CS: increased max number of iterations from 50 to 100
   
     #print(cluster.out$cluster)
    
