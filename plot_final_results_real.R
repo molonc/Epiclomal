@@ -21,8 +21,11 @@ getScriptPath <- function(){
 }
 
 scriptPath <- getScriptPath()
+
 source(paste0(scriptPath, "/plot_functions.R"))
 #library(ggpubr)
+
+#source("/shahlab/csouza/BS-seq/whole_genome_single_cell/synthetic_data/plot_functions.R")
 
 # create parser object
 parser <- ArgumentParser()
@@ -189,6 +192,7 @@ print ("Plots for clone_prev_MAE")
 model <- c("region", "EuclideanClust", "DensityCut", "HammingClust", "PearsonClust")
 mylist <- collect_data(model, label, criterion, "clone_prev_MAE")
 plot_data(mylist$big_df, mylist$crash, model, "clone_prev_MAE",add_points=TRUE)
+plot_data_barplots(mylist$big_df, mylist$crash, model,"clone_prev_MAE")
 
 ########################
 ### plots V-measure ####
@@ -199,10 +203,11 @@ print ("Plots for V-measure")
 model <- c("region", "EuclideanClust", "DensityCut", "HammingClust", "PearsonClust")
 mylist <- collect_data (model, label, criterion, "Vmeasure")
 plot_data(mylist$big_df, mylist$crash, model, "Vmeasure",add_points=TRUE)
+plot_data_barplots(mylist$big_df, mylist$crash, model,"Vmeasure")
 
-##################
+########################
 ### plots nclusters ####
-##################
+########################
 print ("Plots for nclusters")
 #model <- c("region", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
 model <- c("region", "EuclideanClust", "DensityCut", "HammingClust", "PearsonClust")
@@ -211,3 +216,4 @@ model <- c("region", "EuclideanClust", "DensityCut", "HammingClust", "PearsonClu
 mylist <- collect_data (model, label, criterion, "nclusters")
 #print(mylist$big_df)
 plot_data(mylist$big_df, mylist$crash, model, "nclusters",add_points=TRUE)
+plot_data_barplots(mylist$big_df, mylist$crash, model,"nclusters")
