@@ -435,12 +435,19 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
     big_df$replicate[big_df$replicate=="0_0.95_20000"] <- "filter_3" 
     big_df$replicate[big_df$replicate=="0_1_0.01"] <- "large_input" 
   
+    tmp_ind <- ((big_df$VAR == "Luo2017") & (big_df$replicate == "large_input"))
+    print(tmp_ind)
+    big_df <- big_df[!tmp_ind,]
+    
     replicate_method <- paste0(as.character(big_df$method),"_",as.character(big_df$replicate))
     big_df <- cbind(big_df,replicate_method)
   
     big_df <- subset(big_df, replicate_method != "EpiclomalRegion_large_input")
-  
     
+    print(head(big_df))
+    
+    print(big_df)
+    print(big_df$replicate_method)
     
 #   big_df$replicate_method <- factor(big_df$replicate_method,levels= c("EpiclomalRegion_0_0.95_10000", "EpiclomalRegion_0_0.95_15000",
 #                                                                         "EpiclomalRegion_0_0.95_20000" ,"EuclideanClust_0_0.95_10000" , "EuclideanClust_0_0.95_15000" ,
@@ -461,7 +468,7 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
   
    if(measure_name != "nclusters"){    
 
-    big_df$Measure[big_df$crash == 0] <- -0.25
+    big_df$Measure[big_df$crash == 0] <- -0.125
     
    # pHD <- ggplot(big_df, aes(x=replicate, y=Measure, fill=method)) +
    #    geom_bar(stat="identity",position=position_dodge()) +    
@@ -472,9 +479,9 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
     pHD <- ggplot(big_df, aes(x=replicate_method, y=Measure, fill=method)) +
       geom_bar(stat="identity",width=0.5,position=position_dodge(width=0.3)) + 
       #geom_bar(width=0.4, position = position_dodge(width=0.5))
-      facet_grid(~VAR) +
+      facet_grid(~VAR,scales="free_x", space = "free_x") +
       labs(x="", y = measure_title) +
-      scale_y_continuous(breaks=c(-0.25,0.00,0.25,0.50,0.75,1.00), labels = c("Failure",0.00,0.25,0.50,0.75,1.00)) +
+      scale_y_continuous(breaks=c(-0.125,0.00,0.25,0.50,0.75,1.00), labels = c("Failure",0.00,0.25,0.50,0.75,1.00),limits=c(-.125,1.00)) +
       theme(plot.title = element_text(size=8), 
             axis.text.x  = element_text(angle=90, vjust=0.5, size=8, colour= "black"),
             legend.position="top",
@@ -488,12 +495,12 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
   pHD <- pHD + scale_fill_manual(values=ourcolors)   
              
  
-  ggsave(pHD,file=paste0(outdir,"/barplots_",measure_name,".pdf"),width=13,height=10)   
+  ggsave(pHD,file=paste0(outdir,"/barplots_",measure_name,".pdf"),width=15,height=8)   
   
    }
 
   if(measure_name=="nclusters"){
-    big_df$Measure[big_df$crash == 0] <- -2
+    big_df$Measure[big_df$crash == 0] <- -1
     
     # pHD <- ggplot(big_df, aes(x=replicate, y=Measure, fill=method)) +
     #    geom_bar(stat="identity",position=position_dodge()) +    
@@ -504,9 +511,9 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
     pHD <- ggplot(big_df, aes(x=replicate_method, y=Measure, fill=method)) +
       geom_bar(stat="identity",width=0.5,position=position_dodge(width=0.3)) + 
       #geom_bar(width=0.4, position = position_dodge(width=0.5))
-      facet_grid(~VAR) +
+      facet_grid(~VAR,scales="free_x", space = "free_x") +
       labs(x="", y = measure_title) +
-      scale_y_continuous(breaks=c(-2,0,2,4,6,8,10,12), labels = c("Failure",0,2,4,6,8,10,12)) +
+      scale_y_continuous(breaks=c(-1,0,2,4,6,8,10,12), labels = c("Failure",0,2,4,6,8,10,12)) +
       theme(plot.title = element_text(size=8), 
             axis.text.x  = element_text(angle=90, vjust=0.5, size=8, colour= "black"),
             legend.position="top",
@@ -520,7 +527,7 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
     pHD <- pHD + scale_fill_manual(values=ourcolors)   
     
     
-    ggsave(pHD,file=paste0(outdir,"/barplots_",measure_name,".pdf"),width=13,height=10)   
+    ggsave(pHD,file=paste0(outdir,"/barplots_",measure_name,".pdf"),width=15,height=8)   
     
   }
       

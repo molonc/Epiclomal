@@ -1,7 +1,7 @@
 # plotting Vmeasure, Hamming Distance, number of clusters, cluster prevalence mean absolute error and mean squared error
 
-#.libPaths(c("/home/mandronescu/R/x86_64-pc-linux-gnu-library/3.2", 
-#            "/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos6/3.2", "/clusterapp/software/linux-x86_64-centos6/R-3.2.3/lib64/R/library","/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos6/3.3"))
+.libPaths(c("/home/mandronescu/R/x86_64-pc-linux-gnu-library/3.2", 
+            "/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos6/3.2", "/clusterapp/software/linux-x86_64-centos6/R-3.2.3/lib64/R/library","/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos6/3.3"))
 
 
 
@@ -11,21 +11,21 @@ library(stringr)
 
 
 # function to get the script path
-getScriptPath <- function(){
-    cmd.args <- commandArgs()
-    m <- regexpr("(?<=^--file=).+", cmd.args, perl=TRUE)
-    script.dir <- dirname(regmatches(cmd.args, m))
-    if(length(script.dir) == 0) stop("can't determine script dir: please call the script with Rscript")
-    if(length(script.dir) > 1) stop("can't determine script dir: more than one '--file' argument detected")
-    return(script.dir)
-}
+# getScriptPath <- function(){
+#     cmd.args <- commandArgs()
+#     m <- regexpr("(?<=^--file=).+", cmd.args, perl=TRUE)
+#     script.dir <- dirname(regmatches(cmd.args, m))
+#     if(length(script.dir) == 0) stop("can't determine script dir: please call the script with Rscript")
+#     if(length(script.dir) > 1) stop("can't determine script dir: more than one '--file' argument detected")
+#     return(script.dir)
+# }
+# 
+# scriptPath <- getScriptPath()
 
-scriptPath <- getScriptPath()
-
-source(paste0(scriptPath, "/plot_functions.R"))
+#source(paste0(scriptPath, "/plot_functions.R"))
 #library(ggpubr)
 
-#source("/shahlab/csouza/BS-seq/whole_genome_single_cell/synthetic_data/plot_functions.R")
+source("/shahlab/csouza/BS-seq/whole_genome_single_cell/synthetic_data/plot_functions.R")
 
 # create parser object
 parser <- ArgumentParser()
