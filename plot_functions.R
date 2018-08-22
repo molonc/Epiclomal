@@ -483,19 +483,20 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
       labs(x="", y = measure_title) +
       scale_y_continuous(breaks=c(-0.125,0.00,0.25,0.50,0.75,1.00), labels = c("Failure",0.00,0.25,0.50,0.75,1.00),limits=c(-.125,1.00)) +
       theme(plot.title = element_text(size=8), 
-            axis.text.x  = element_text(angle=90, vjust=0.5, size=8, colour= "black"),
+            axis.text.x  = element_text(angle=90, vjust=0.5, size=14, colour= "black"),
             legend.position="top",
-            axis.text.y  = element_text(size=16, colour= "black"),
-            axis.title.y =element_text(size=20), 
+            axis.text.y  = element_text(size=18, colour= "black"),
+            axis.title.y =element_text(size=22), 
             axis.title.x=element_text(size=20),
-            legend.text=element_text(size=12) ,
+            legend.text=element_text(size=18) ,
+            legend.title=element_text(size=18) ,
             strip.text.x = element_text(size =20)
             )
 
   pHD <- pHD + scale_fill_manual(values=ourcolors)   
              
  
-  ggsave(pHD,file=paste0(outdir,"/barplots_",measure_name,".pdf"),width=15,height=8)   
+  ggsave(pHD,file=paste0(outdir,"/barplots_",measure_name,".pdf"),width=16,height=8)   
   
    }
 
@@ -515,19 +516,20 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
       labs(x="", y = measure_title) +
       scale_y_continuous(breaks=c(-1,0,2,4,6,8,10,12), labels = c("Failure",0,2,4,6,8,10,12)) +
       theme(plot.title = element_text(size=8), 
-            axis.text.x  = element_text(angle=90, vjust=0.5, size=8, colour= "black"),
+            axis.text.x  = element_text(angle=90, vjust=0.5, size=14, colour= "black"),
             legend.position="top",
-            axis.text.y  = element_text(size=16, colour= "black"),
-            axis.title.y =element_text(size=20), 
+            axis.text.y  = element_text(size=18, colour= "black"),
+            axis.title.y =element_text(size=22), 
             axis.title.x=element_text(size=20),
-            legend.text=element_text(size=12) ,
+            legend.text=element_text(size=18) ,
+            legend.title=element_text(size=18) ,
             strip.text.x = element_text(size =20)
       )
     
     pHD <- pHD + scale_fill_manual(values=ourcolors)   
     
     
-    ggsave(pHD,file=paste0(outdir,"/barplots_",measure_name,".pdf"),width=15,height=8)   
+    ggsave(pHD,file=paste0(outdir,"/barplots_",measure_name,".pdf"),width=16,height=8)   
     
   }
       
@@ -621,5 +623,6 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
   }
   
 }
+
 
 
