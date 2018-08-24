@@ -465,6 +465,19 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
                                                                       "PearsonClust_filter_2"   , "PearsonClust_filter_3" ,  
                                                                       "PearsonClust_large_input" ))
     
+
+    print(head(big_df))
+    print(levels(big_df$VAR))
+
+    
+
+#stop()
+
+    big_df$VAR <- factor(big_df$VAR,levels=c("Smallwood2014",
+                                               "Hou2016",
+                                               "Luo2017",
+                                               "Farlik2016",
+                                                "InHouse"))
   
    if(measure_name != "nclusters"){    
 
@@ -488,9 +501,9 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
             axis.text.y  = element_text(size=18, colour= "black"),
             axis.title.y =element_text(size=22), 
             axis.title.x=element_text(size=20),
-            legend.text=element_text(size=18) ,
-            legend.title=element_text(size=18) ,
-            strip.text.x = element_text(size =20)
+            legend.text=element_text(size=22) ,
+            legend.title=element_text(size=22) ,
+            strip.text.x = element_text(size = 22)
             )
 
   pHD <- pHD + scale_fill_manual(values=ourcolors)   
@@ -521,9 +534,9 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
             axis.text.y  = element_text(size=18, colour= "black"),
             axis.title.y =element_text(size=22), 
             axis.title.x=element_text(size=20),
-            legend.text=element_text(size=18) ,
-            legend.title=element_text(size=18) ,
-            strip.text.x = element_text(size =20)
+            legend.text=element_text(size=22) ,
+            legend.title=element_text(size=22) ,
+            strip.text.x = element_text(size = 22)
       )
     
     pHD <- pHD + scale_fill_manual(values=ourcolors)   
