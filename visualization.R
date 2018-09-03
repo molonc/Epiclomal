@@ -8,6 +8,7 @@
 # libraries
 #======================
 library(pheatmap)
+library(RColorBrewer)
 
 #======================
 # arguments
@@ -429,6 +430,28 @@ if (M > 250) {
       labels_col_reg <- NULL
     }
     
+    
+#     ## in case we want to force some colors to be the same
+#     
+#     print(head(annotation_row))
+#     print(levels(annotation_row$`inferred clusters`))
+#     
+#     cols <- colorRampPalette(brewer.pal(9, "Set1"))
+#      
+#     mycolors <- cols(length(unique(annotation_row$`inferred clusters`)))
+#     names(mycolors) <- levels(annotation_row$`inferred clusters`)
+#     
+#     print(mycolors)
+#     
+#     mycolors <- list(mycolors = mycolors)
+#     
+#     print(mycolors)
+     
+    #colnames(annotation_row) <- "inferred_clusters"
+    #annotation_row$inferred_clusters <- paste0("cl", annotation_row$inferred_clusters)
+    #ann_colors = list(
+    #inferred_clusters = c(cl0="blue", cl3="green",cl4="pink"))
+    
     pheatmap(data,cluster_cols=FALSE,
              cluster_rows=FALSE,
              annotation_row = annotation_row,
@@ -436,7 +459,7 @@ if (M > 250) {
              fontsize = 8, main = paste0("Region-based mean methylation fraction data for ", args$name),
              gaps_row = index_gaps,fontsize_row=fontrow,fontsize_col=6,
              annotation_names_row = FALSE,
-             #annotation_colors = ann_colors,
+             #annotation_colors = mycolors,
              border_color=NA,
              show_colnames=show_col_chr_labels_reg,
              labels_col = labels_col_reg,
