@@ -91,8 +91,9 @@ collect_data <- function(model, number_data_sets, initial_path_to_each_RUN, summ
     if(grepl("MISSPB", args$var, fixed=TRUE))   {
         xlabel <- "Missing data proportion"
     } else if (grepl("NREGIONS", args$var, fixed=TRUE))   {
-        xlabel <- "Percentage of loci different between clusters"
-        #variable <- 100.0/variable
+        xlabel <- "Number of regions"
+        # xlabel <- "Percentage of loci different between clusters"
+        # variable <- 100.0/variable
     } else if (grepl("CLONE_PREV", args$var, fixed=TRUE))   {
         xlabel <- "Clone prevalence"    
     } else if (grepl("ERROR", args$var, fixed=TRUE))   {
@@ -105,6 +106,8 @@ collect_data <- function(model, number_data_sets, initial_path_to_each_RUN, summ
         xlabel <- "Number of loci"   
     } else if (grepl("READSIZE", args$var, fixed=TRUE))   {
         xlabel <- "Read size"     
+    } else if (grepl("CELL_CELL_VAR", args$var, fixed=TRUE))   {    
+        xlabel <- "Cell to cell variability"
     } else if (grepl("PROP_CPG_FLIP", args$var, fixed=TRUE))   {
         xlabel <- "Proportions of CpGs flipped in the different region"     
     }     
@@ -186,7 +189,7 @@ collect_data <- function(model, number_data_sets, initial_path_to_each_RUN, summ
     print("Big DF")
     print(big_df)
 
-    return(list("big_df"=big_df, "crash"=crash))
+    return(list("big_df"=big_df, "crash"=crash, "xlabel"=xlabel))
 }    
 
 
@@ -212,7 +215,7 @@ model <- c("region","region_bulk", "basic","EuclideanClust","DensityCut","Hammin
 # To add custom labels
 # label <- c("EpiclomalRegion","EpiclomalBulk","EpiclomalBasic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
 mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "clone_prev_MAE")
-plot_data(mylist$big_df, mylist$crash, model, "clone_prev_MAE", add_points=FALSE)
+plot_data(mylist$big_df, mylist$crash, mylist$xlabel, model, "clone_prev_MAE", add_points=FALSE)
 
 
 ##################
@@ -221,16 +224,17 @@ plot_data(mylist$big_df, mylist$crash, model, "clone_prev_MAE", add_points=FALSE
 print ("Plots for hamming distance")
 model <- c("region", "basic")
 mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "HD")
-plot_data(mylist$big_df, mylist$crash, model, "HD", add_points=FALSE)
+plot_data(mylist$big_df, mylist$crash, mylist$xlabel, model, "HD", add_points=FALSE)
 
 ##################
 ### plots V-measure ####
 ##################
 ### V-measure
 print ("Plots for V-measure")
-model <- c("region","region_bulk", "basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
+#model <- c("region","region_bulk", "basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
+model <- c("region","basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
 mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "Vmeasure")
-plot_data(mylist$big_df, mylist$crash, model, "Vmeasure", add_points=FALSE)
+plot_data(mylist$big_df, mylist$crash, mylist$xlabel, model, "Vmeasure", add_points=FALSE)
 
 ##################
 ### plots nclusters ####
@@ -238,7 +242,7 @@ plot_data(mylist$big_df, mylist$crash, model, "Vmeasure", add_points=FALSE)
 print ("Plots for nclusters")
 model <- c("region","basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
 mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "nclusters")
-plot_data(mylist$big_df, mylist$crash, model, "nclusters", add_points=FALSE)
+plot_data(mylist$big_df, mylist$crash, mylist$xlabel, model, "nclusters", add_points=FALSE)
 
 ##################
 ### plots uncertainty ####
@@ -247,5 +251,5 @@ plot_data(mylist$big_df, mylist$crash, model, "nclusters", add_points=FALSE)
 print ("Plots for uncertainty")
 model <- c("region")
 mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "uncertainty")
-plot_data(mylist$big_df, mylist$crash, model, "uncertainty", add_points=FALSE)
+plot_data(mylist$big_df, mylist$crash, mylist$xlabel, model, "uncertainty", add_points=FALSE)
 

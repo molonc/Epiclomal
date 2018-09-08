@@ -38,16 +38,19 @@ datasets <- c("InHouse",
               "Smallwood2014",
               "Hou2016",
               "Luo2017",
+#              "Luo2017_500cells",
               "Farlik2016")
 datapaths <- c("../EPI-112_inhouse_data/FINAL_RESULTS",
                "../EPI-70_Smallwood2014/FINAL_RESULTS",
                "../EPI-105_scTrio/FINAL_RESULTS",
                "../EPI-106_Luo2017/FINAL_RESULTS",
+#               "../EPI-106_Luo2017/FINAL_RESULTS_epiclomal_Luo2017_genebodies_500_clean_random_cells",               
                "../EPI-89_Farlik2016/FINAL_RESULTS")
 simplepaths <- c("../EPI-112_inhouse_data/OUTPUT_epiclomal_INHOUSE/RUN/epiclomal_INHOUSE_",
                  "../EPI-70_Smallwood2014/OUTPUT_epiclomal_Smallwood2014/RUN/epiclomal_Smallwood2014_",
                  "../EPI-105_scTrio/OUTPUT_epiclomal_scTrio/RUN/epiclomal_scTrio_",
                  "../EPI-106_Luo2017/OUTPUT_epiclomal_Luo2017_genebodies_all_clean_cells/RUN/epiclomal_Luo2017_genebodies_all_clean_cells_",
+#                 "../EPI-106_Luo2017/OUTPUT_epiclomal_Luo2017_genebodies_500_clean_random_cells/RUN/epiclomal_Luo2017_genebodies_500_clean_random_cells_",
                  "../EPI-89_Farlik2016/OUTPUT_epiclomal_Farlik2016/RUN/epiclomal_Farlik2016_")
 
 # each replicate file should be in inputs, for example inputs/Smallwood2014_replicates.txt
@@ -188,7 +191,7 @@ print ("Plots for clone_prev_MAE")
 #model <- c("region", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
 model <- c("region", "EuclideanClust", "DensityCut", "HammingClust", "PearsonClust")
 mylist <- collect_data(model, label, criterion, "clone_prev_MAE")
-plot_data(mylist$big_df, mylist$crash, model, "clone_prev_MAE",add_points=TRUE)
+plot_data(mylist$big_df, mylist$crash, NULL, model, "clone_prev_MAE",add_points=TRUE)
 
 ########################
 ### plots V-measure ####
@@ -198,7 +201,7 @@ print ("Plots for V-measure")
 #model <- c("region", "Hclust", "densitycut", "PBALclust", "Pearsonclust")
 model <- c("region", "EuclideanClust", "DensityCut", "HammingClust", "PearsonClust")
 mylist <- collect_data (model, label, criterion, "Vmeasure")
-plot_data(mylist$big_df, mylist$crash, model, "Vmeasure",add_points=TRUE)
+plot_data(mylist$big_df, mylist$crash, NULL, model, "Vmeasure",add_points=TRUE)
 
 ##################
 ### plots nclusters ####
@@ -210,4 +213,4 @@ model <- c("region", "EuclideanClust", "DensityCut", "HammingClust", "PearsonClu
 # label <- c("Epiclomal","EuclideanClust","DensityCut","HammingClust","PearsonClust")
 mylist <- collect_data (model, label, criterion, "nclusters")
 #print(mylist$big_df)
-plot_data(mylist$big_df, mylist$crash, model, "nclusters",add_points=TRUE)
+plot_data(mylist$big_df, mylist$crash, NULL, model, "nclusters",add_points=TRUE)

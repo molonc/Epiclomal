@@ -180,7 +180,7 @@ grab_point <- function(x){
 
 ################################################
 
-plot_data <- function(big_df, crash, model, measure_name,add_points) {  
+plot_data <- function(big_df, crash, xlabel, model, measure_name, add_points) {  
   
   our <- set_colors_and_labels(model)    
   ourcolors <- our$colors
@@ -195,7 +195,7 @@ plot_data <- function(big_df, crash, model, measure_name,add_points) {
   
   if (measure_name == "HD") {
     measure_title <- "Hamming Distance"
-    fname <- "hdist"
+    fname <- "hdist"    
   } else if (measure_name == "Vmeasure") {
     measure_title <- "V-measure"
     fname <- "results"
@@ -213,7 +213,7 @@ plot_data <- function(big_df, crash, model, measure_name,add_points) {
     fname <- "results"
   }      
   
-  xlabel = "Data set"  
+  # xlabel = "Data set"  
 
   #sub_big_df <- ddply(big_df, .(VAR,method),summarise,crash_perc=(1-mean(crash)))   # big_df[['crash']])))
   #print(sub_big_df)
@@ -247,6 +247,11 @@ plot_data <- function(big_df, crash, model, measure_name,add_points) {
         #geom_boxplot(show.legend=F) + 
         facet_grid(~VAR) +
         labs(x="", y = measure_title)
+        
+        # MA: added this on 18 Jun, not sure if it works for synthetic
+        if (measure_name == "nclusters") {            
+            pHD <- pHD + scale_y_continuous(limits = c(1, 11), breaks = 1:11, labels = function(x) format(round(x,2),nsmall=2))
+        }
     }
   
     if(add_points == FALSE){
@@ -281,10 +286,10 @@ plot_data <- function(big_df, crash, model, measure_name,add_points) {
   pHD <- pHD + scale_fill_manual(values=ourcolors)  
   # plot bar plots for crash
   bHD <-ggplot(sub_big_df, aes(x=method, y=crash_perc, fill=method)) +
-    scale_y_continuous(breaks=seq(0,1,0.50), labels = function(x) format(round(x,2),nsmall=2)) +
+    scale_y_continuous(limits=c(0,1), breaks=seq(0,1,0.50), labels = function(x) format(round(x,2),nsmall=2)) +
     geom_bar(stat="identity") + facet_grid(~VAR) +
     # ggtitle(xlabel) +
-    labs(x="", y = paste0("Unsuccess")) 
+    labs(x="", y = paste0("Failed runs")) 
   bHD <- bHD + theme(plot.title = element_text(size=20), 
                      #axis.text.x  = element_text(angle=90, vjust=0.5, size=16, colour= "black"), 
                      axis.text.x  = element_blank(),
@@ -294,7 +299,7 @@ plot_data <- function(big_df, crash, model, measure_name,add_points) {
                      axis.title.x=element_text(size=20),
                      legend.position="top",
                      legend.text=element_text(size=16),
-                     strip.text.x = element_text(size =20) )
+                     strip.text.x = element_text(size = 20) )
   
   bHD <- bHD +  scale_fill_manual(values=ourcolors)                   
   

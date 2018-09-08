@@ -429,11 +429,14 @@ if (M > 250) {
       labels_col_reg <- NULL
     }
     
+    save(data, file=paste0(out_dir,"/",args$name,"_region_based_data.Rda"))
+    
     pheatmap(data,cluster_cols=FALSE,
              cluster_rows=FALSE,
              annotation_row = annotation_row,
              #cellwidth = 5,cellheight = 5,
-             fontsize = 8, main = paste0("Region-based mean methylation fraction data for ", args$name),
+             fontsize = 8, 
+	     main = paste0("Region-based mean methylation fraction data for ", args$name),
              gaps_row = index_gaps,fontsize_row=fontrow,fontsize_col=6,
              annotation_names_row = FALSE,
              #annotation_colors = ann_colors,
