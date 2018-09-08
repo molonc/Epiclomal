@@ -12,6 +12,7 @@ from __future__ import division
 
 import numpy as np
 import pandas as pd
+import sys
 
 from lib.utils import compute_e_log_dirichlet, compute_e_log_q_dirichlet, compute_e_log_p_dirichlet, \
                       compute_e_log_q_discrete, init_log_pi_star, log_space_normalise, safe_multiply
@@ -35,6 +36,11 @@ class RegionGeMM(BasicGeMM):
         self.L = {}          
                  
         BasicGeMM.__init__(self, gamma_prior, alpha_prior, beta_prior, X, regions, initial_clusters_data, mu_has_k, Bishop_model_selection, slsbulk_data)   
+        
+        for data_type in self.data_types:
+            if self.M[data_type] > 500000:
+                print("Data set is too large for region, with ", self.M[data_type], " number of loci, EXITING")
+                sys.exit(0)
                          
     ###################### 
     

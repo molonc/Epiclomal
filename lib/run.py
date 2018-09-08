@@ -15,7 +15,6 @@ import operator
 import csv
 import os.path
 import sys
-import random
 from sklearn.metrics.cluster import v_measure_score, homogeneity_score, completeness_score
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
@@ -247,7 +246,9 @@ def run_model(mtype, args):
             true_clusters = pd.read_csv(args.true_clusters_file, compression='gzip', sep='\t')
             # Order the true clusters by the predicted ones
             true_clusters['cell_id'] = pd.Categorical(true_clusters['cell_id'],cell_ids)
-            true_clusters.sort_values(by=['cell_id'], inplace=True)
+            true_clusters.sort_values(by=['cell_id'], inplace=True)            
+            # Sometimes pred_clusters has fewer cells than true_clusters, so taking only those
+            true_clusters = true_clusters[true_clusters['cell_id'].isin(cell_ids)]            
             # checking that they are in the same order
             for i in range(len(cell_ids)):
                 if (cell_ids[i] != true_clusters.iloc[i]['cell_id']):
@@ -325,7 +326,7 @@ def run_model(mtype, args):
                 # Second find the cells that have completely missing data in the different regions
                 candidate_cells = model._compute_candidate_cells(labels_pred, epigenotype, different_regions)
                 # This is dictionary where the keys are the candidate cells and the values are the possible clusters for each candidate cell
-                # print('Candidate cells and clusters are ', *candidate_cells)
+                print('Candidate cells and clusters are ', *candidate_cells)
                 new_pred = model._slsbulk(candidate_cells, labels_pred, epigenotype, different_regions, labels_true)
                 print ("True labels:")
                 print (*labels_true)        
@@ -364,9 +365,13 @@ def run_model(mtype, args):
                     expected_prob = 1./len(candidate_cells[key])
                     if (labels_prob[key] >= expected_prob - 0.2 and labels_prob[key] <= expected_prob + 0.2):
                         true_positive_rate += 1
-                true_positive_rate /= len(candidate_cells)
-                print("Uncertainty true positive rate: ", true_positive_rate)
-            model.uncertainty_tpr = true_positive_rate
+                if len(candidate_cells) > 0:        
+                    true_positive_rate /= len(candidate_cells)
+                    model.uncertainty_tpr = true_positive_rate                    
+                    print("Uncertainty true positive rate: ", true_positive_rate)
+                else:
+                    print("Uncertainty tpr is None")    
+                    
         write_params(model, args.out_dir, event_ids, time.clock() - t0, vmeasure, maxmem)
         
 ##############################        
@@ -403,7 +408,7 @@ def load_data(args, include_regions=False):
     # 12 Apr 2018: If it's a random initialization, also make num_clusters be random from 1 to K
     if (initial_clusters_data is None):
         print ('Selecting a random number of clusters from 1 to ', num_clusters)    
-        num_clusters = random.randint(1,num_clusters)
+        num_clusters = np.random.randint(low=1, high=num_clusters)
     print ('Num clusters: ', num_clusters)
 
     # print initial_clusters_data

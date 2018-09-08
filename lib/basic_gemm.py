@@ -1212,7 +1212,7 @@ class BasicGeMM(object):
                             similarity[s]/=rlen
                             if similarity[s] >= 0.8:
                                similar_clusters.append(s)
-                        # print ("Cell ", cell, " region ", r, " similarity score ", similarity, " similar clusters ", *similar_clusters, " len ", len(similar_clusters))
+                        print ("Cell ", cell, " region ", r, " similarity score ", similarity, " similar clusters ", *similar_clusters, " len ", len(similar_clusters))
                         if (len(similar_clusters) == 0):     # unique for this region
                             # print ("Removing cell ", cell)
                             candidate_cells.remove(cell)  
@@ -1228,8 +1228,8 @@ class BasicGeMM(object):
                             candidate_clusters[cell].append(l)
                     
                             
-        #for key in candidate_clusters:
-        #    print ("Cell ", key, " with candidate clusters ", candidate_clusters[key])
+        for key in candidate_clusters:
+            print ("Cell ", key, " with candidate clusters ", candidate_clusters[key])
         return candidate_clusters
             
     ###############      
@@ -1262,10 +1262,10 @@ class BasicGeMM(object):
                     # look through all the cells
                     num_meth = 0
                     for cell in range(self.N):
-                        #print ("EPigenotype for  cell ", cell)
-                        #print (" with label ", labels_pred[cell])
-                        #print (" cpg ", cpg)
-                        #print (" is ", epigenotype[labels_pred[cell],cpg])
+                        # print ("EPigenotype for  cell ", cell)
+                        # print (" with label ", labels_pred[cell])
+                        # print (" cpg ", cpg)
+                        # print (" is ", epigenotype[labels_pred[cell],cpg])
                         num_meth = num_meth + epigenotype[labels_pred[cell],cpg]        # this is 0 for unmethylated and 1 for methylated
 
                     meth_percentages.append(num_meth/self.N)
@@ -1284,11 +1284,11 @@ class BasicGeMM(object):
     def _slsbulk(self, candidate_clusters, labels_pred, epigenotype, different_regions, labels_true):
         # NOTE: Here I am using the true bulk values from labels_true -- BUT this is not correct because it is using the predicted epigenotype
         # Converting labels_true so I can  compare
-        for i in range(len(labels_true)):
-            if labels_true[i] == 2:
-                labels_true[i] = 0
-            if labels_true[i] == 3:
-                labels_true[i] = 2
+        # for i in range(len(labels_true)):
+        #     if labels_true[i] == 2:
+        #         labels_true[i] = 0
+        #     if labels_true[i] == 3:
+        #         labels_true[i] = 2
         # print("Labels true after conversion")
         # print(*labels_true)            
         # bulk_percentages = self._get_predicted_percentages (labels_true, epigenotype, different_regions)
@@ -1297,8 +1297,9 @@ class BasicGeMM(object):
         # print (*bulk_percentages)        
         best_bulk_score = self._get_bulk_score (labels_pred, epigenotype, different_regions, bulk_percentages)
         print("Bulk score at first ", best_bulk_score)
-        true_bulk_score = self._get_bulk_score (labels_true, epigenotype, different_regions, bulk_percentages)
-        print("Bulk score of the true ", true_bulk_score)
+        # MA: I am not print the bulk score of the true any more because sometimes there are more true clusters than K
+        # true_bulk_score = self._get_bulk_score (labels_true, epigenotype, different_regions, bulk_percentages)
+        # print("Bulk score of the true ", true_bulk_score)
         best_pred = np.copy(labels_pred)
         current_pred = np.copy(labels_pred)
         
@@ -1311,7 +1312,7 @@ class BasicGeMM(object):
 
             for key in candidate_keys:
                 # print ("Current prediction ", *current_pred)
-                # print ("    Cell ", key, " with candidate clusters ", candidate_clusters[key])
+                print ("    Cell ", key, " with candidate clusters ", candidate_clusters[key])
                 for cc in candidate_clusters[key]:
                     if (cc == current_pred[key]):
                         continue

@@ -54,6 +54,9 @@ print (*labels_pred)
 # now read the true clusters file
 true_clusters = pd.read_csv(args.true_clusters_file, compression='gzip', sep='\t')
 true_clusters.sort_values(by=['cell_id'], inplace=True)
+
+# Sometimes pred_clusters has fewer cells than true_clusters, so taking only those
+true_clusters = true_clusters[true_clusters['cell_id'].isin(pred_clusters['cell_id'])]
 #print(true_clusters)
 labels_true = np.array(true_clusters['epigenotype_id'])
 # print (labels_true.shape)
