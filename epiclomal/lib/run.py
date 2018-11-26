@@ -22,9 +22,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 from memory_profiler import memory_usage
 
 from lib.basic_gemm import BasicGeMM
-from lib.basic_miss_gemm import BasicMissGeMM
 from lib.region_gemm import RegionGeMM
-from lib.region_miss_gemm import RegionMissGeMM
 from lib.utils import load_labels
 
 
@@ -42,22 +40,11 @@ def run_basic_gemm_model(args):
 def run_basic_bayespy_model(args):
     run_model('BasicBayesPy', args)
         
-##############################
-    
-def run_basic_miss_gemm_model(args):
-    run_model('BasicMissGeMM', args)
-
 ##############################    
 
 def run_region_gemm_model(args):
     run_model('RegionGeMM', args)
         
-##############################    
-
-def run_region_miss_gemm_model(args):
-    run_model('RegionMissGeMM', args)      
-     
-     
 ##############################    
 
 def run_Bishop_model_selection(mtype, args):
@@ -78,18 +65,9 @@ def run_Bishop_model_selection(mtype, args):
     elif (mtype == 'BasicBayesPy'):
         className = BasicBayesPy    
         
-    elif (mtype == 'BasicMissGeMM'):
-        className = BasicMissGeMM
-        impute = True
-        
     elif (mtype == 'RegionGeMM'):
         include_regions=True
         className = RegionGeMM
-        
-    elif (mtype == 'RegionMissGeMM'):
-        include_regions=True
-        className = RegionMissGeMM
-        impute = True
                        
     cell_ids, data, event_ids, priors, regions, initial_clusters, slsbulk_data = load_data (args, include_regions)                       
     maxmem = None
@@ -188,18 +166,9 @@ def run_model(mtype, args):
     elif (mtype == 'BasicBayesPy'):
         className = BasicBayesPy    
         
-    elif (mtype == 'BasicMissGeMM'):
-        className = BasicMissGeMM
-        impute = True
-        
     elif (mtype == 'RegionGeMM'):
         include_regions=True
         className = RegionGeMM
-        
-    elif (mtype == 'RegionMissGeMM'):
-        include_regions=True
-        className = RegionMissGeMM
-        impute = True
                        
     cell_ids, data, event_ids, priors, regions, initial_clusters, slsbulk = load_data (args, include_regions)
     # event_ids is "meth" etc.
