@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser(description='Evaluate the clustering v-measure 
 parser.add_argument('--true_clusters_file', required=True,
                     help='The file with the true clustering assignment')
 parser.add_argument('--true_prevalences', required=True,
-                    help='The file with the true clustering assignment')
+                    help='The file with the true prevalences, give "None" if not available.')
 parser.add_argument('--predicted_clusters_file', required=True,
                     help='The file with the epiclomal predicted clusters')
 parser.add_argument('--clusters_are_probabilities', default=True,

@@ -505,7 +505,8 @@ hfile <- paste0(outdir,"/EuclideanClust_clusters_region_based_maxk_",Max_K,".tsv
 pfile <- paste0(outdir,"/HammingClust_clusters_CpG_based_maxk_",Max_K,".tsv")
 peafile <- paste0(outdir,"/PearsonClust_clusters_CpG_based_maxk_",Max_K,".tsv")
 dfile <- paste0(outdir,"/DensityCut_clusters_Region_based_maxPC_",maxpc,".tsv")
-outfile <- paste0(outdir, "/all_hclust_maxk_",Max_K,"_DensityCut_PC", maxpc, ".tsv")
+#outfile <- paste0(outdir, "/all_hclust_maxk_",Max_K,"_DensityCut_PC", maxpc, ".tsv")
+outfile <- paste0(outdir, "/initial_inputs.tsv")
 print (paste0("Hfile ", hfile))
 print (paste0("Pfile ", pfile))
 print (paste0("Dfile ", dfile))
@@ -524,7 +525,7 @@ if(file.exists(paste0(hfile,".gz"))) {
     system(paste0 ("gunzip ", hfile,".gz"))
     htempfile <- paste0(outdir,"/EuclideanClust_temp_maxk_",Max_K,".tsv")
     system (paste0 ("cut -f1 ", hfile, " > ", idtempfile))
-    system (paste0 ("cut -f2-11 ", hfile, " > ", htempfile))
+    system (paste0 ("cut -f2-", Max_K+1, " ", hfile, " > ", htempfile))
     system (paste0("gzip --force ", hfile))
     
 }
@@ -535,7 +536,7 @@ if(file.exists(paste0(pfile,".gz"))) {
     system (paste0 ("gunzip ", pfile,".gz"))
     ptempfile <- paste0(outdir,"/HammingClust_temp_maxk_",Max_K,".tsv")
     system (paste0 ("cut -f1 ", pfile, " > ", idtempfile))    
-    system (paste0 ("cut -f2-11 ", pfile, " > ", ptempfile))
+    system (paste0 ("cut -f2-", Max_K+1, " ", pfile, " > ", ptempfile))
     system (paste0("gzip --force ", pfile))  
 }
 
@@ -546,7 +547,7 @@ if(file.exists(paste0(peafile,".gz"))) {
     system (paste0 ("gunzip ", peafile,".gz"))
     peatempfile <- paste0(outdir,"/PearsonClust_temp_maxk_",Max_K,".tsv")
     system (paste0 ("cut -f1 ", peafile, " > ", idtempfile))    
-    system (paste0 ("cut -f2-11 ", peafile, " > ", peatempfile))
+    system (paste0 ("cut -f2-", Max_K+1, " ", peafile, " > ", peatempfile))
     system (paste0("gzip --force ", peafile))  
 }
 

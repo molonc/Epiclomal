@@ -186,6 +186,7 @@ def run_model(mtype, args):
     # mem_usage = memory_usage((model.fit(convergence_tolerance=args.convergence_tolerance, num_iters=args.max_num_iters, debug=False)))
     # maxmem = max(mem_usage)
     maxmem = None
+    
     model.fit(convergence_tolerance=args.convergence_tolerance, num_iters=args.max_num_iters, debug=False)
 
     # Measuring the memory
@@ -219,7 +220,10 @@ def run_model(mtype, args):
             # Sometimes pred_clusters has fewer cells than true_clusters, so taking only those
             true_clusters = true_clusters[true_clusters['cell_id'].isin(cell_ids)]            
             # checking that they are in the same order
+            print("Len of cell_ids")
+            print(len(cell_ids))
             for i in range(len(cell_ids)):
+                print(i)
                 if (cell_ids[i] != true_clusters.iloc[i]['cell_id']):
                     print ("Cell ids are different for cell ", i, " predicted ", cell_ids[i], " true ", true_clusters.iloc[i]['cell_id'])
                     sys.exit(2)
