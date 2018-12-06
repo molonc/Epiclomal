@@ -1,5 +1,5 @@
 # Scripts for pre-processing the real data
-This are the scripts used by the pre-process pipeline.
+These are the scripts used by the pre-process pipeline.
 
 - Task 1: CpG_coordinates_accross_regions - Extracts the CpG coordinates for the given regions
 - Task 2: cell_based_methylation_extraction.R - Extracts the CpG coordinates in the given cells
