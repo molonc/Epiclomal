@@ -1,3 +1,5 @@
+# Calculates overall stats in all cells and final regions for Epiclomal
+
 #======================
 # libraries
 #======================
@@ -116,6 +118,7 @@ extraction_region_info_f <- function(region_info,type){  ### type should be "fil
   
 }
 
+#######################################################
 
 region_distance_CpGs_f <- function(CpG_based_data,type){ ### CpG_based_data is the region info from one of the cell files that contain also the CpG coordinates
   
@@ -150,6 +153,8 @@ region_distance_CpGs_f <- function(CpG_based_data,type){ ### CpG_based_data is t
   ggsave(paste0(outdir,"/scatter_dist_numCpGs_",type,"_",args$data_ID,".pdf"))
   
 }
+
+###################
 
 num_cells_miss_function <- function(x,cutoff){
   
