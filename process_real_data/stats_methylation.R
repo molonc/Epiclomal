@@ -5,6 +5,8 @@
 #======================
 # .libPaths(c("/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos5/3.2", "/clusterapp/software/linux-x86_64-centos5/R-3.2.3/lib64/R/library"))
 
+.libPaths(c("/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos6/3.5", "/home/mandronescu/R/x86_64-pc-linux-gnu-library/3.5"))
+
 suppressMessages(library(argparse))
 suppressMessages(library(ggplot2))
 suppressMessages(library(gridExtra))
@@ -35,6 +37,10 @@ parser$add_argument("--nloci_cutoff", type="double", default=0.0, help="keeping 
 #parser$add_argument("--all_cutoffs", type="character", default=NULL, help="<num_cells_cutoff>_<miss_prop_cutoff>_<IQR_cutoff>. If given, it overwrites the other 3 arguments")
 
 parser$add_argument("--all_cutoffs", type="character", default=NULL, help="<num_cells_cutoff>_<miss_prop_cutoff>_<nloci_cutoff>. If given, it overwrites the other 3 arguments")
+
+parser$add_argument("--filter_regions_same_meth", type="character", default=NULL, help="if 1, not NULL, we will filter out regions with same methylation across cells")
+parser$add_argument("--same_meth_cutoff", type="double", default=0.0, help="if 0.05 it means we allow 5% of regions (with data) to be different across cells, default is zero")
+
 
 parser$add_argument("--plot_heatmap_unfiltered", type="double", default=1, help=" 1 for plotting and 0 for not plotting the heatmaps for unfiltered data")
 parser$add_argument("--plot_heatmap_filtered", type="double", default=1, help=" 1 for plotting and 0 for not plotting the heatmaps for filtered data")
@@ -164,6 +170,31 @@ num_cells_miss_function <- function(x,cutoff){
   
 }
 
+##############################################
+
+same.meth.f <- function(x,same_cutoff){
+  if( (sum(!is.na(x))*same_cutoff) < 1 ){
+    cutoff <- 0
+  }else{
+    cutoff <- ceiling(sum(!is.na(x))*same_cutoff)}
+  
+  unique_meth <- length(unique(round(x[!is.na(x)],5)))  ### I am rounding up to 5 decimals
+  
+  if(unique_meth > cutoff){
+    if(unique_meth == 1){
+      same_meth <- TRUE
+    }else{
+    same_meth <- FALSE}
+  }
+  
+  if(unique_meth <= cutoff){
+    same_meth <- TRUE
+  }
+  
+  return(same_meth)
+}
+
+
 
 #===============================
 # end of auxiliary functions
@@ -225,7 +256,7 @@ print("End of extracting region info")
 ######################################################################
 
 ### TO TEST
-doThis <- TRUE
+doThis <- FALSE
 if(doThis == TRUE){
   
   print("checking missing proportion per cell")
@@ -330,7 +361,7 @@ colnames(region_IQR_meth) <- cell_ID
 rownames(region_IQR_meth) <- as.character(cell_stats$region_id)
 
 ### TO TEST
-doThis <- TRUE
+doThis <- FALSE
 if(doThis == TRUE){
   
   no_data_function <- function(x){
@@ -385,11 +416,48 @@ print("End of creating matrices")
 
 print("Finding IQR of region mean methylation across cells")
 
+# dim(region_mean_meth)
+# x <- region_mean_meth[10,]
+# print(x)
+# print(x[!is.na(x)])
+# 
+# round(x[!is.na(x)],5)
+# duplicated(round(x[!is.na(x)],5))
+# !duplicated(round(x[!is.na(x)],5))
+# unique(round(x[!is.na(x)],5))
+# 
+# sum(duplicated(round(x[!is.na(x)],5)))
+# sum(!duplicated(round(x[!is.na(x)],5)))
+# length(unique(round(x[!is.na(x)],5)))
+# 
+# same.meth.f(x=region_mean_meth[10,],same_cutoff = 0.05)
+
+
 IQR_meth <-as.matrix(apply(region_mean_meth,1,function(x){IQR(x,na.rm=TRUE)}))
 
 rownames(IQR_meth) <- rownames(region_mean_meth)
 
 write.table(IQR_meth,file=paste0(outdir,"/IQR_mean_meth_region_",args$data_ID,".tsv"),row.names=TRUE,col.names=FALSE,sep="\t",quote=FALSE)
+
+### Applying the new filter so that regions with same methylation across all regions are elimnated
+
+  if (!is.null(args$filter_regions_same_meth)){
+
+  same_meth <-as.matrix(apply(region_mean_meth,1,same.meth.f,same_cutoff=args$same_meth_cutoff))
+
+  rownames(same_meth) <- rownames(region_mean_meth)
+
+  write.table(same_meth,file=paste0(outdir,"/regions_same_mean_meth_",args$data_ID,".tsv"),row.names=TRUE,col.names=FALSE,sep="\t",quote=FALSE)
+  }
+
+
+# print(same_meth)
+# length(same_meth)
+# print(sum(same_meth))
+# test <- region_mean_meth[same_meth,]
+# dim(test)
+# test[1:5,]
+
 
 #####################################################
 ## Finding average missing proportion per region ####
@@ -872,6 +940,23 @@ if (args$nloci_cutoff <= 1 ){
     
     print("Finding final set of regions by average missing proportion type of cutoff")
     
+    #print( (!is.null(args$filter_regions_same_meth) && args$all_cutoffs == "0_1_0") )
+    
+    if ( (!is.null(args$filter_regions_same_meth) && args$all_cutoffs == "0_1_0") ) {
+    
+      print("applying new filter")
+    
+      index_IQR <- same_meth
+      
+      print(length(index_IQR))
+      print(dim(IQR_meth))
+      print(dim(IQR_meth[!index_IQR,]))
+      
+      write.table(IQR_meth[!index_IQR,]$region_id,file=paste0(outdir,"/final_regions_",args$data_ID,".tsv"),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE) 
+      
+    }
+    
+    if (is.null(args$filter_regions_same_meth)) {
     ### First finding the set of regions with missing proportion smaller than cutoff 
     
     index_miss <- which(mean_miss_prop$miss_prop <= args$miss_prop_cutoff)
@@ -884,11 +969,10 @@ if (args$nloci_cutoff <= 1 ){
     print(length(index_IQR))
     print(dim(IQR_meth_tmp))
     print(head(IQR_meth_tmp[index_IQR,]$region_id))
-    
     write.table(IQR_meth_tmp[index_IQR,]$region_id,file=paste0(outdir,"/final_regions_",args$data_ID,".tsv"),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE) 
+    }
     
-  } else {
-    
+    } else {
     ####################################################################################################################
     ### finding regions with at least 5 (or other value) cells with less than 95% (or other value) of missing data   ###
     ### and then regions with certain IQR                                                                            ###
@@ -919,14 +1003,22 @@ if (args$nloci_cutoff <= 1 ){
   print(head(region_mean_meth))
   print(dim(region_mean_meth))
   
-  new_region_mean_meth <- region_mean_meth[index_miss,]
+  if ( (!is.null(args$filter_regions_same_meth) && args$all_cutoffs == "0_1_0") ) {
   
+  print("saving mean methylation matrix based on the new filter")
+  new_region_mean_meth <- region_mean_meth[!index_IQR,]
   print(length(index_IQR))
   print(dim(new_region_mean_meth))
+  }else{
+    
+    new_region_mean_meth <- region_mean_meth[index_miss,]
+    print(length(index_IQR))
+    print(dim(new_region_mean_meth))
+    new_region_mean_meth <- new_region_mean_meth[index_IQR,]
+    
+  }
   
-  new_region_mean_meth <- new_region_mean_meth[index_IQR,]
-  
-  print(head(new_region_mean_meth))
+  #print(head(new_region_mean_meth))
   print(dim(new_region_mean_meth))
   
   write.table(new_region_mean_meth,file=paste0(outdir,"/final_mean_meth_region_",args$data_ID,".tsv"),row.names=TRUE,col.names=TRUE,sep="\t",quote=FALSE) 
@@ -934,6 +1026,9 @@ if (args$nloci_cutoff <= 1 ){
   ################################################################################
   ### Plot heatmaps for filtered IQR, mean methylation and missing proportion ####
   ################################################################################
+  
+  doThis <- FALSE
+  if(doThis == TRUE){
   
   ### Filtered IQR matrix
   print(head(region_IQR_meth))
@@ -984,10 +1079,15 @@ if (args$nloci_cutoff <= 1 ){
     
   }
   
+  }
+  
   
   #########################################################
   ### Region based stats and plots for filtered data ######
   #########################################################
+  
+  doThis <- FALSE
+  if(doThis == TRUE){
   
   filtered_regions <- IQR_meth_tmp[index_IQR,]$region_id
   
@@ -1017,7 +1117,9 @@ if (args$nloci_cutoff <= 1 ){
   print(number_regions_single_CpG)
   
   #region_distance_CpGs_f(CpG_based_data = tmp0,type="filtered") ## produces plots
-  
+ 
+  }
+   
 }
 
 print("Done")
