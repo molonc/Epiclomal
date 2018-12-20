@@ -256,7 +256,11 @@ print("End of extracting region info")
 ######################################################################
 
 ### TO TEST
-doThis <- FALSE
+
+if((args$nloci_cutoff > 1 )){
+  doThis <- TRUE}else{
+  doThis <- FALSE
+    }
 if(doThis == TRUE){
   
   print("checking missing proportion per cell")
@@ -361,7 +365,7 @@ colnames(region_IQR_meth) <- cell_ID
 rownames(region_IQR_meth) <- as.character(cell_stats$region_id)
 
 ### TO TEST
-doThis <- FALSE
+doThis <- TRUE
 if(doThis == TRUE){
   
   no_data_function <- function(x){
@@ -392,6 +396,8 @@ if(doThis == TRUE){
 
 if(args$plot_heatmap_unfiltered == 1){
   
+  print("plotting heatmaps unfiltered")
+  
   ### Plotting IQR, mean methylation and missing proportion for each cell and each region with data in at least one cell
   
   pheatmap(t(region_mean_meth[regions_no_data_index==FALSE,]),cluster_rows = FALSE,cluster_cols=FALSE,fontsize = 8, 
@@ -416,21 +422,24 @@ print("End of creating matrices")
 
 print("Finding IQR of region mean methylation across cells")
 
-# dim(region_mean_meth)
-# x <- region_mean_meth[10,]
-# print(x)
-# print(x[!is.na(x)])
-# 
-# round(x[!is.na(x)],5)
-# duplicated(round(x[!is.na(x)],5))
-# !duplicated(round(x[!is.na(x)],5))
-# unique(round(x[!is.na(x)],5))
-# 
-# sum(duplicated(round(x[!is.na(x)],5)))
-# sum(!duplicated(round(x[!is.na(x)],5)))
-# length(unique(round(x[!is.na(x)],5)))
-# 
-# same.meth.f(x=region_mean_meth[10,],same_cutoff = 0.05)
+if (!is.null(args$filter_regions_same_meth)){
+  
+  print("applying new filter") ## Applying the new filter so that regions with same methylation across all regions are eliminated
+  
+  same_meth <-as.matrix(apply(region_mean_meth,1,same.meth.f,same_cutoff=args$same_meth_cutoff))
+  
+  rownames(same_meth) <- rownames(region_mean_meth)
+  
+  write.table(same_meth,file=paste0(outdir,"/regions_same_mean_meth_",args$data_ID,".tsv"),row.names=TRUE,col.names=FALSE,sep="\t",quote=FALSE)
+  
+  #print(dim(region_mean_meth))
+  
+  #region_mean_meth <- region_mean_meth[!same_meth,]
+  
+  #print(dim(region_mean_meth))
+  
+  #stop()
+}
 
 
 IQR_meth <-as.matrix(apply(region_mean_meth,1,function(x){IQR(x,na.rm=TRUE)}))
@@ -438,26 +447,6 @@ IQR_meth <-as.matrix(apply(region_mean_meth,1,function(x){IQR(x,na.rm=TRUE)}))
 rownames(IQR_meth) <- rownames(region_mean_meth)
 
 write.table(IQR_meth,file=paste0(outdir,"/IQR_mean_meth_region_",args$data_ID,".tsv"),row.names=TRUE,col.names=FALSE,sep="\t",quote=FALSE)
-
-### Applying the new filter so that regions with same methylation across all regions are elimnated
-
-  if (!is.null(args$filter_regions_same_meth)){
-
-  same_meth <-as.matrix(apply(region_mean_meth,1,same.meth.f,same_cutoff=args$same_meth_cutoff))
-
-  rownames(same_meth) <- rownames(region_mean_meth)
-
-  write.table(same_meth,file=paste0(outdir,"/regions_same_mean_meth_",args$data_ID,".tsv"),row.names=TRUE,col.names=FALSE,sep="\t",quote=FALSE)
-  }
-
-
-# print(same_meth)
-# length(same_meth)
-# print(sum(same_meth))
-# test <- region_mean_meth[same_meth,]
-# dim(test)
-# test[1:5,]
-
 
 #####################################################
 ## Finding average missing proportion per region ####
@@ -568,6 +557,53 @@ if (args$nloci_cutoff > 1 ){
   
   print("FILTERING BY NUMBER OF LOCI")
   
+  regions_passed_miss_cutoff <- table_unfiltered_region_info
+  
+  CpG_nodata_df$region_id <- factor(CpG_nodata_df$region_id,levels=as.character(regions_passed_miss_cutoff$region_id))
+  
+  new_number_CpGs <- ddply( CpG_nodata_df, .(region_id), summarise,number_CpGs = sum(CpG_nodata == 1)) ### 1 means data present for that CpG
+  
+  regions_passed_miss_cutoff$region_cpgNum <- new_number_CpGs$number_CpGs
+  
+  print(dim(regions_passed_miss_cutoff))
+  print(dim(CpG_nodata_df))
+  
+  if ( (!is.null(args$filter_regions_same_meth)) ) {
+    
+    print("Applying new filter")
+    
+    index_same <- same_meth
+    #print(dim(IQR_meth))
+    #print(dim(mean_miss_prop))
+    
+    IQR_meth <- IQR_meth[!index_same,]
+    #print(dim(IQR_meth))
+    #print(head(IQR_meth))
+    
+    mean_miss_prop <- mean_miss_prop[!index_same,]
+    #print(dim(mean_miss_prop))
+    #print(head(mean_miss_prop))
+    
+    #print(dim(region_mean_meth))
+    region_mean_meth <- region_mean_meth[!index_same,]
+    #print(dim(region_mean_meth))
+    
+    #print(dim(region_IQR_meth))
+    region_IQR_meth <- region_IQR_meth[!index_same,]
+    #print(dim(region_IQR_meth))
+    
+    #print(dim(region_miss_prop))
+    region_miss_prop <- region_miss_prop[!index_same,]
+    #print(dim(region_miss_prop))
+    
+    regions_passed_miss_cutoff <- regions_passed_miss_cutoff[!index_same,]
+    print(dim(regions_passed_miss_cutoff))
+    #print(dim(CpG_nodata_df[!index_same,]))
+    
+    print("End of applying new filter")
+    
+  }
+  
   if(args$num_cells_cutoff == 0) {
     
     ###################################################################################
@@ -593,18 +629,17 @@ if (args$nloci_cutoff > 1 ){
     #   
     #   print(number_CpGs_passed_miss_cutoff )
     
-    
     ##################################################################
     ### new way: removing CpGs with no data across all cells first ###
     ##################################################################
     
-    regions_passed_miss_cutoff <- table_unfiltered_region_info
+    #regions_passed_miss_cutoff <- table_unfiltered_region_info
     
-    CpG_nodata_df$region_id <- factor(CpG_nodata_df$region_id,levels=as.character(regions_passed_miss_cutoff$region_id))
+    #CpG_nodata_df$region_id <- factor(CpG_nodata_df$region_id,levels=as.character(regions_passed_miss_cutoff$region_id))
     
-    new_number_CpGs <- ddply( CpG_nodata_df, .(region_id), summarise,number_CpGs = sum(CpG_nodata == 1)) ### 1 means data present for that CpG
+    #new_number_CpGs <- ddply( CpG_nodata_df, .(region_id), summarise,number_CpGs = sum(CpG_nodata == 1)) ### 1 means data present for that CpG
     
-    regions_passed_miss_cutoff$region_cpgNum <- new_number_CpGs$number_CpGs
+    #regions_passed_miss_cutoff$region_cpgNum <- new_number_CpGs$number_CpGs
     
     index_miss <- which(mean_miss_prop$miss_prop <= args$miss_prop_cutoff)
     
@@ -612,10 +647,14 @@ if (args$nloci_cutoff > 1 ){
     
     number_CpGs_passed_miss_cutoff <- sum(regions_passed_miss_cutoff$region_cpgNum)
     
+    #print(dim(mean_miss_prop))
+    print(dim(regions_passed_miss_cutoff))
+    
+    #stop()
+    
     print("Number of CpGs that passed miss_prop cutoff")
     
     print(number_CpGs_passed_miss_cutoff )
-    
     
     if ( (number_CpGs_passed_miss_cutoff + regions_average_number_CpGs)  <= args$nloci_cutoff ){
       
@@ -729,9 +768,13 @@ if (args$nloci_cutoff > 1 ){
       
       print(head(FINAL_reg))
       
+      print(length(FINAL_reg))
+      
       write.table(FINAL_reg,file=paste0(outdir,"/final_regions_",args$data_ID,".tsv"),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE) 
       
     }
+    
+    #stop()
     
   } else {
     
@@ -742,13 +785,13 @@ if (args$nloci_cutoff > 1 ){
     
     print("Finding final set of regions by using as cutoff number of cells with certain missing proportion")
     
-    regions_passed_miss_cutoff <- table_unfiltered_region_info
+    #regions_passed_miss_cutoff <- table_unfiltered_region_info
     
-    CpG_nodata_df$region_id <- factor(CpG_nodata_df$region_id,levels=as.character(regions_passed_miss_cutoff$region_id))
+    #CpG_nodata_df$region_id <- factor(CpG_nodata_df$region_id,levels=as.character(regions_passed_miss_cutoff$region_id))
     
-    new_number_CpGs <- ddply( CpG_nodata_df, .(region_id), summarise,number_CpGs = sum(CpG_nodata == 1)) ### 1 means data present for that CpG
+    #new_number_CpGs <- ddply( CpG_nodata_df, .(region_id), summarise,number_CpGs = sum(CpG_nodata == 1)) ### 1 means data present for that CpG
     
-    regions_passed_miss_cutoff$region_cpgNum <- new_number_CpGs$number_CpGs
+    #regions_passed_miss_cutoff$region_cpgNum <- new_number_CpGs$number_CpGs
     
     index_miss <- which(number_cells_miss_cutoff$number_cells_cutoff >= args$num_cells_cutoff)
     
@@ -931,7 +974,41 @@ if (args$nloci_cutoff <= 1 ){
   
   print("FILTERING BY IQR")
   
-  if(args$num_cells_cutoff == 0) {
+  if ( (!is.null(args$filter_regions_same_meth)) ) {
+    
+    print("Applying new filter")
+    
+    index_same <- same_meth
+    print(dim(IQR_meth))
+    print(dim(mean_miss_prop))
+    
+    IQR_meth <- IQR_meth[!index_same,]
+    print(dim(IQR_meth))
+    print(head(IQR_meth))
+    
+    mean_miss_prop <- mean_miss_prop[!index_same,]
+    print(dim(mean_miss_prop))
+    print(head(mean_miss_prop))
+    
+    print(dim(region_mean_meth))
+    region_mean_meth <- region_mean_meth[!index_same,]
+    print(dim(region_mean_meth))
+    
+    print(dim(region_IQR_meth))
+    region_IQR_meth <- region_IQR_meth[!index_same,]
+    print(dim(region_IQR_meth))
+    
+    print(dim(region_miss_prop))
+    region_miss_prop <- region_miss_prop[!index_same,]
+    print(dim(region_miss_prop))
+    
+    print("End of applying new filter")
+    
+  }
+  
+  print("applying missing proportion and IQR filters")
+  
+    if(args$num_cells_cutoff == 0) {
     
     ###################################################################################
     ### finding regions with less than a certain amount of data missing across all  ###
@@ -939,39 +1016,26 @@ if (args$nloci_cutoff <= 1 ){
     ###################################################################################
     
     print("Finding final set of regions by average missing proportion type of cutoff")
-    
-    #print( (!is.null(args$filter_regions_same_meth) && args$all_cutoffs == "0_1_0") )
-    
-    if ( (!is.null(args$filter_regions_same_meth) && args$all_cutoffs == "0_1_0") ) {
-    
-      print("applying new filter")
-    
-      index_IQR <- same_meth
-      
-      print(length(index_IQR))
-      print(dim(IQR_meth))
-      print(dim(IQR_meth[!index_IQR,]))
-      
-      write.table(IQR_meth[!index_IQR,]$region_id,file=paste0(outdir,"/final_regions_",args$data_ID,".tsv"),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE) 
-      
-    }
-    
-    if (is.null(args$filter_regions_same_meth)) {
-    ### First finding the set of regions with missing proportion smaller than cutoff 
+    print(paste0("miss prop cutoff = ",args$miss_prop_cutoff))
     
     index_miss <- which(mean_miss_prop$miss_prop <= args$miss_prop_cutoff)
+    
+    print(dim(IQR_meth))
     IQR_meth_tmp <- IQR_meth[index_miss,]
+    print(dim(IQR_meth_tmp))
     
     ### now for the remaining regions doing the IQR cutoff as well
     
+    print(paste0("IQR cutoff = ",args$nloci_cutoff))
     index_IQR <- which(IQR_meth_tmp$IQR >= args$nloci_cutoff)
     
-    print(length(index_IQR))
-    print(dim(IQR_meth_tmp))
-    print(head(IQR_meth_tmp[index_IQR,]$region_id))
+    #print(length(index_IQR))
+    #print(dim(IQR_meth_tmp))
+    #print(dim(IQR_meth_tmp[index_IQR,]))
+    #print(head(IQR_meth_tmp[index_IQR,]$region_id))
+
     write.table(IQR_meth_tmp[index_IQR,]$region_id,file=paste0(outdir,"/final_regions_",args$data_ID,".tsv"),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE) 
-    }
-    
+
     } else {
     ####################################################################################################################
     ### finding regions with at least 5 (or other value) cells with less than 95% (or other value) of missing data   ###
@@ -988,37 +1052,23 @@ if (args$nloci_cutoff <= 1 ){
     ### now for the remaining regions doing the IQR cutoff as well
     
     index_IQR <- which(IQR_meth_tmp$IQR >= args$nloci_cutoff)
-    print(length(index_IQR))
-    print(dim(IQR_meth_tmp))
-    print(head(IQR_meth_tmp[index_IQR,]$region_id))
+    print(dim(IQR_meth_tmp[index_IQR,]))
     
     write.table(IQR_meth_tmp[index_IQR,]$region_id,file=paste0(outdir,"/final_regions_",args$data_ID,".tsv"),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE) 
   }
   
+  print("End of applying all cutoffs")
   
-  ### saving the matrix with the region-based methylation for the final regions after applying the cutoffs
+  ###########################################################################################################
+  ### saving the matrix with the region-based methylation for the final regions after applying the cutoffs ##
+  ###########################################################################################################
+  print("saving the matrix with the region-based methylation for the final regions after applying cutoffs")
   
-  ### Filtered mean methylation matrix
-  
-  print(head(region_mean_meth))
   print(dim(region_mean_meth))
-  
-  if ( (!is.null(args$filter_regions_same_meth) && args$all_cutoffs == "0_1_0") ) {
-  
-  print("saving mean methylation matrix based on the new filter")
-  new_region_mean_meth <- region_mean_meth[!index_IQR,]
-  print(length(index_IQR))
-  print(dim(new_region_mean_meth))
-  }else{
-    
-    new_region_mean_meth <- region_mean_meth[index_miss,]
-    print(length(index_IQR))
-    print(dim(new_region_mean_meth))
-    new_region_mean_meth <- new_region_mean_meth[index_IQR,]
-    
-  }
-  
-  #print(head(new_region_mean_meth))
+  new_region_mean_meth <- region_mean_meth[index_miss,]
+  #print(length(index_IQR))
+  #print(dim(new_region_mean_meth))
+  new_region_mean_meth <- new_region_mean_meth[index_IQR,]
   print(dim(new_region_mean_meth))
   
   write.table(new_region_mean_meth,file=paste0(outdir,"/final_mean_meth_region_",args$data_ID,".tsv"),row.names=TRUE,col.names=TRUE,sep="\t",quote=FALSE) 
@@ -1027,41 +1077,28 @@ if (args$nloci_cutoff <= 1 ){
   ### Plot heatmaps for filtered IQR, mean methylation and missing proportion ####
   ################################################################################
   
-  doThis <- FALSE
+  doThis <- TRUE
   if(doThis == TRUE){
   
   ### Filtered IQR matrix
-  print(head(region_IQR_meth))
+    
   print(dim(region_IQR_meth))
-  
   new_region_IQR_meth <- region_IQR_meth[index_miss,]
-  
-  print(length(region_IQR_meth))
-  print(dim(new_region_IQR_meth))
-  
   new_region_IQR_meth <- new_region_IQR_meth[index_IQR,]
-  
-  print(head(new_region_IQR_meth))
   print(dim(new_region_IQR_meth))
   
   ### Filtered missing proportion matrix
   
-  print(head(region_miss_prop))
   print(dim(region_miss_prop))
-  
   new_region_miss_prop <- region_miss_prop[index_miss,]
-  
-  print(length(index_IQR))
-  print(dim(new_region_miss_prop ))
-  
   new_region_miss_prop  <- new_region_miss_prop[index_IQR,]
-  
-  print(head(new_region_miss_prop))
   print(dim(new_region_miss_prop))
   
   ### Plots
   
   if(args$plot_heatmap_filtered == 1){
+    
+    print("plotting heatmaps after filtering cutoffs")
     
     ### Plotting IQR, mean methylation and missing proportion for each cell and each region for filtered data
     
@@ -1080,7 +1117,6 @@ if (args$nloci_cutoff <= 1 ){
   }
   
   }
-  
   
   #########################################################
   ### Region based stats and plots for filtered data ######
