@@ -261,6 +261,7 @@ if((args$nloci_cutoff > 1 )){
   doThis <- TRUE}else{
   doThis <- FALSE
     }
+
 if(doThis == TRUE){
   
   print("checking missing proportion per cell")
@@ -290,16 +291,15 @@ if(doThis == TRUE){
     
     CpG_nodata_df$CpG_nodata[!is.na((tmp$meth_frac))] <- 1
     
-    print(head(CpG_nodata_df$CpG_nodata[!is.na((tmp$meth_frac))]))
+    #print(head(CpG_nodata_df$CpG_nodata[!is.na((tmp$meth_frac))]))
     
     print(sum(CpG_nodata_df$CpG_nodata == 0))
     
     miss_prop_per_cell <- c(miss_prop_per_cell,sum(is.na(tmp$meth_frac))/num_loci_unfiltered)
-    # print(miss_prop_per_cell)
     
   }
   
-  print("Number of loci with no data acrros all cells")
+  print("Number of loci with no data acrros all cells = ")
   print(sum(CpG_nodata_df$CpG_nodata == 0))
   
   ave_miss_prop <- mean(miss_prop_per_cell)
@@ -364,7 +364,6 @@ rownames(region_miss_prop) <- as.character(cell_stats$region_id)
 colnames(region_IQR_meth) <- cell_ID
 rownames(region_IQR_meth) <- as.character(cell_stats$region_id)
 
-### TO TEST
 doThis <- TRUE
 if(doThis == TRUE){
   
@@ -431,16 +430,8 @@ if (!is.null(args$filter_regions_same_meth)){
   rownames(same_meth) <- rownames(region_mean_meth)
   
   write.table(same_meth,file=paste0(outdir,"/regions_same_mean_meth_",args$data_ID,".tsv"),row.names=TRUE,col.names=FALSE,sep="\t",quote=FALSE)
-  
-  #print(dim(region_mean_meth))
-  
-  #region_mean_meth <- region_mean_meth[!same_meth,]
-  
-  #print(dim(region_mean_meth))
-  
-  #stop()
-}
 
+}
 
 IQR_meth <-as.matrix(apply(region_mean_meth,1,function(x){IQR(x,na.rm=TRUE)}))
 
@@ -558,6 +549,8 @@ if (args$nloci_cutoff > 1 ){
   print("FILTERING BY NUMBER OF LOCI")
   
   regions_passed_miss_cutoff <- table_unfiltered_region_info
+  dim(regions_passed_miss_cutoff)
+  dim(IQR_meth)
   
   CpG_nodata_df$region_id <- factor(CpG_nodata_df$region_id,levels=as.character(regions_passed_miss_cutoff$region_id))
   
@@ -573,32 +566,18 @@ if (args$nloci_cutoff > 1 ){
     print("Applying new filter")
     
     index_same <- same_meth
-    #print(dim(IQR_meth))
-    #print(dim(mean_miss_prop))
     
     IQR_meth <- IQR_meth[!index_same,]
-    #print(dim(IQR_meth))
-    #print(head(IQR_meth))
     
     mean_miss_prop <- mean_miss_prop[!index_same,]
-    #print(dim(mean_miss_prop))
-    #print(head(mean_miss_prop))
     
-    #print(dim(region_mean_meth))
+    number_cells_miss_cutoff <- number_cells_miss_cutoff[!index_same,]
+    
     region_mean_meth <- region_mean_meth[!index_same,]
-    #print(dim(region_mean_meth))
-    
-    #print(dim(region_IQR_meth))
     region_IQR_meth <- region_IQR_meth[!index_same,]
-    #print(dim(region_IQR_meth))
-    
-    #print(dim(region_miss_prop))
     region_miss_prop <- region_miss_prop[!index_same,]
-    #print(dim(region_miss_prop))
     
     regions_passed_miss_cutoff <- regions_passed_miss_cutoff[!index_same,]
-    print(dim(regions_passed_miss_cutoff))
-    #print(dim(CpG_nodata_df[!index_same,]))
     
     print("End of applying new filter")
     
@@ -608,38 +587,10 @@ if (args$nloci_cutoff > 1 ){
     
     ###################################################################################
     ### finding regions with less than a certain amount of data missing across all  ###
-    ### cells and then regions with certain IQR upt to a certain number of loci     ###                           
+    ### cells and then regions with certain IQR up to a certain number of loci      ###                           
     ###################################################################################
     
     print("Finding final set of regions by average missing proportion type of cutoff")
-    
-    ### First finding the set of regions with missing proportion smaller than cutoff 
-    
-    #   print("old way")
-    #   
-    #   index_miss <- which(mean_miss_prop$miss_prop <= args$miss_prop_cutoff)
-    #   
-    #   regions_passed_miss_cutoff <- table_unfiltered_region_info[index_miss,]
-    #   
-    #   print(dim(regions_passed_miss_cutoff))
-    #   
-    #   print(head(regions_passed_miss_cutoff))
-    #   
-    #   number_CpGs_passed_miss_cutoff <- sum(regions_passed_miss_cutoff$region_cpgNum)
-    #   
-    #   print(number_CpGs_passed_miss_cutoff )
-    
-    ##################################################################
-    ### new way: removing CpGs with no data across all cells first ###
-    ##################################################################
-    
-    #regions_passed_miss_cutoff <- table_unfiltered_region_info
-    
-    #CpG_nodata_df$region_id <- factor(CpG_nodata_df$region_id,levels=as.character(regions_passed_miss_cutoff$region_id))
-    
-    #new_number_CpGs <- ddply( CpG_nodata_df, .(region_id), summarise,number_CpGs = sum(CpG_nodata == 1)) ### 1 means data present for that CpG
-    
-    #regions_passed_miss_cutoff$region_cpgNum <- new_number_CpGs$number_CpGs
     
     index_miss <- which(mean_miss_prop$miss_prop <= args$miss_prop_cutoff)
     
@@ -647,14 +598,11 @@ if (args$nloci_cutoff > 1 ){
     
     number_CpGs_passed_miss_cutoff <- sum(regions_passed_miss_cutoff$region_cpgNum)
     
-    #print(dim(mean_miss_prop))
-    print(dim(regions_passed_miss_cutoff))
-    
-    #stop()
+    #print(dim(regions_passed_miss_cutoff))
     
     print("Number of CpGs that passed miss_prop cutoff")
     
-    print(number_CpGs_passed_miss_cutoff )
+    print(number_CpGs_passed_miss_cutoff)
     
     if ( (number_CpGs_passed_miss_cutoff + regions_average_number_CpGs)  <= args$nloci_cutoff ){
       
@@ -717,52 +665,12 @@ if (args$nloci_cutoff > 1 ){
       
       write.table(save_table,file=paste0(outdir,"/extra_info_after_applying_cutoffs_",args$data_ID,".tsv"),row.names=TRUE,col.names=FALSE,sep="\t",quote=FALSE) 
       
-      ### Ordering the regions by chr and start
-      
-      #       ### 1st, long way of doing it 
-      #       
-      #       final_regions <- IQR_meth_tmp[index_IQR,]$region_id
-      #     
-      #       final_regions <- as.vector(sapply(final_regions,function(x){sub(x,pattern="chr",replacement="")}))
-      #       
-      #       final_regions <- as.vector(sapply(final_regions,function(x){sub(x,pattern=":",replacement="-")}))
-      #     
-      #       regions_df <- (t(sapply(final_regions,function(x){unlist(strsplit(x,split="-"))})))
-      #       
-      #       regions_df <- as.data.frame(t(sapply(final_regions,function(x){unlist(strsplit(x,split="-"))})))
-      #     
-      #       rownames(regions_df) <- NULL
-      #     
-      #       colnames(regions_df) <- c("chr","start","end")
-      #       
-      #       regions_df$chr <- factor(as.character(regions_df$chr),levels=chrs_in_order)
-      #       
-      #       regions_df$start <- as.numeric(as.character(regions_df$start))
-      #       regions_df$end <- as.numeric(as.character(regions_df$end))
-      #        
-      #       regions_df <- regions_df[order(regions_df$chr,regions_df$start),]
-      #     
-      #       FINAL_reg <- as.vector(apply(regions_df,1,function(x){paste0("chr",as.character(x[1]),":",as.numeric(x[2]),"-",as.numeric(x[3]))}))
-      #       
-      #       print(length(FINAL_reg))
-      #       print(head(FINAL_reg))
-      #       print(tail(FINAL_reg))
-      
-      # 2nd way of doing it, faster and also gives me a way to obtain the heatmaps ordered
-      
       final_regions_unordered <- IQR_meth_tmp$region_id[index_IQR]
       
       prev_IQR_meth_tmp <- IQR_meth[index_miss,]
       
       ### new index_IQR that will give ordered regions:
       index_IQR <- sort(as.numeric(sapply(final_regions_unordered,function(x){which(prev_IQR_meth_tmp$region_id==x)})))
-      
-      ### checking that 1st and 2nd ways give same answers 
-      #final_regions_ordered <- prev_IQR_meth_tmp$region_id[index_IQR]
-      #print(length(final_regions_ordered))
-      #print(head(final_regions_ordered))
-      #print(tail(final_regions_ordered))
-      #print(sum(FINAL_reg != final_regions_ordered ))
       
       FINAL_reg <- prev_IQR_meth_tmp$region_id[index_IQR]
       
@@ -774,8 +682,7 @@ if (args$nloci_cutoff > 1 ){
       
     }
     
-    #stop()
-    
+  
   } else {
     
     ####################################################################################################################
@@ -785,13 +692,9 @@ if (args$nloci_cutoff > 1 ){
     
     print("Finding final set of regions by using as cutoff number of cells with certain missing proportion")
     
-    #regions_passed_miss_cutoff <- table_unfiltered_region_info
+    #print(dim(number_cells_miss_cutoff))
     
-    #CpG_nodata_df$region_id <- factor(CpG_nodata_df$region_id,levels=as.character(regions_passed_miss_cutoff$region_id))
-    
-    #new_number_CpGs <- ddply( CpG_nodata_df, .(region_id), summarise,number_CpGs = sum(CpG_nodata == 1)) ### 1 means data present for that CpG
-    
-    #regions_passed_miss_cutoff$region_cpgNum <- new_number_CpGs$number_CpGs
+    #print(dim(regions_passed_miss_cutoff))
     
     index_miss <- which(number_cells_miss_cutoff$number_cells_cutoff >= args$num_cells_cutoff)
     
@@ -799,8 +702,10 @@ if (args$nloci_cutoff > 1 ){
     
     number_CpGs_passed_miss_cutoff <- sum(regions_passed_miss_cutoff$region_cpgNum)
     
+    #print(number_CpGs_passed_miss_cutoff)
+    #print(regions_average_number_CpGs)
     
-    if ( (number_CpGs_passed_miss_cutoff + regions_average_number_CpGs)  <= args$nloci_cutoff ){
+    if ( (number_CpGs_passed_miss_cutoff + regions_average_number_CpGs)  <= args$nloci_cutoff ) {
       
       IQR_cutoff_implemented <- 0
       
@@ -953,24 +858,18 @@ if (args$nloci_cutoff > 1 ){
   
   tmp3 <- tmp2[index_IQR,]
   
-  #print(head(tmp3))
-  #print(dim(tmp3))
-  #print(head(filtered_regions))
-  #print(length(filtered_regions))
-  
   number_regions_single_CpG <- extraction_region_info_f(region_info=tmp3,type="filtered") ## returns a number and produces plots and tables
   print("Number of regions with only one CpG - filtered data")
   print(number_regions_single_CpG)
   
 }
 
-#region_distance_CpGs_f(CpG_based_data = tmp0,type="filtered") ## produces plots
 
 ########################################################################
 ###### Another way: considering IQR values not number of loci     ######
 ########################################################################
 
-if (args$nloci_cutoff <= 1 ){
+if (args$nloci_cutoff <= 1 ) {
   
   print("FILTERING BY IQR")
   
@@ -979,29 +878,19 @@ if (args$nloci_cutoff <= 1 ){
     print("Applying new filter")
     
     index_same <- same_meth
-    print(dim(IQR_meth))
-    print(dim(mean_miss_prop))
     
     IQR_meth <- IQR_meth[!index_same,]
-    print(dim(IQR_meth))
-    print(head(IQR_meth))
     
     mean_miss_prop <- mean_miss_prop[!index_same,]
-    print(dim(mean_miss_prop))
-    print(head(mean_miss_prop))
     
-    print(dim(region_mean_meth))
+    number_cells_miss_cutoff <- number_cells_miss_cutoff[!index_same,]
+    
     region_mean_meth <- region_mean_meth[!index_same,]
-    print(dim(region_mean_meth))
-    
-    print(dim(region_IQR_meth))
+  
     region_IQR_meth <- region_IQR_meth[!index_same,]
-    print(dim(region_IQR_meth))
-    
-    print(dim(region_miss_prop))
+  
     region_miss_prop <- region_miss_prop[!index_same,]
-    print(dim(region_miss_prop))
-    
+
     print("End of applying new filter")
     
   }
@@ -1028,11 +917,6 @@ if (args$nloci_cutoff <= 1 ){
     
     print(paste0("IQR cutoff = ",args$nloci_cutoff))
     index_IQR <- which(IQR_meth_tmp$IQR >= args$nloci_cutoff)
-    
-    #print(length(index_IQR))
-    #print(dim(IQR_meth_tmp))
-    #print(dim(IQR_meth_tmp[index_IQR,]))
-    #print(head(IQR_meth_tmp[index_IQR,]$region_id))
 
     write.table(IQR_meth_tmp[index_IQR,]$region_id,file=paste0(outdir,"/final_regions_",args$data_ID,".tsv"),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE) 
 
@@ -1066,8 +950,7 @@ if (args$nloci_cutoff <= 1 ){
   
   print(dim(region_mean_meth))
   new_region_mean_meth <- region_mean_meth[index_miss,]
-  #print(length(index_IQR))
-  #print(dim(new_region_mean_meth))
+
   new_region_mean_meth <- new_region_mean_meth[index_IQR,]
   print(dim(new_region_mean_meth))
   
@@ -1158,4 +1041,4 @@ if (args$nloci_cutoff <= 1 ){
    
 }
 
-print("Done")
+print("done!")
