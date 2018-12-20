@@ -17,7 +17,7 @@ suppressMessages(library(argparse))
 suppressMessages(library(NbClust))
 suppressMessages(library(pheatmap))
 
-RSCRIPT <- "/gsc/software/linux-x86_64-centos6/R-3.3.2/bin/Rscript"
+RSCRIPT <- "Rscript"
 
 #======================
 # arguments
