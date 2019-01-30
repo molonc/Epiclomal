@@ -220,10 +220,10 @@ def run_model(mtype, args):
             # Sometimes pred_clusters has fewer cells than true_clusters, so taking only those
             true_clusters = true_clusters[true_clusters['cell_id'].isin(cell_ids)]            
             # checking that they are in the same order
-            print("Len of cell_ids")
-            print(len(cell_ids))
+            # print("Len of cell_ids")
+            # print(len(cell_ids))
             for i in range(len(cell_ids)):
-                print(i)
+                # print(i)
                 if (cell_ids[i] != true_clusters.iloc[i]['cell_id']):
                     print ("Cell ids are different for cell ", i, " predicted ", cell_ids[i], " true ", true_clusters.iloc[i]['cell_id'])
                     sys.exit(2)

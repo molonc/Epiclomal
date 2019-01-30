@@ -36,6 +36,9 @@ parser$add_argument("--evaluate_clustering_software", type="character",help="Pat
 
 parser$add_argument("--index", type="character",default="ch",help="Index to be used to choose number of clusters, default = ch")
 
+# MA: 30Jan 2019: adding an optional imputation step
+parser$add_argument("--impute", default="0", type="integer",help="If it is 1, impute with the average per region/locus, if it is 0 do nothing.")
+
 args <- parser$parse_args() 
 
 print(args)
@@ -46,6 +49,7 @@ input_CpG_data_file <- args$methylation_file
 input_regions_file <- args$regions_file
 true_clusters_file <- args$true_clone_membership_file
 eval_soft <- args$evaluate_clustering_software
+impute <- args$impute
 
 
 ## TO TEST
@@ -95,10 +99,14 @@ index_type <- args$index
 #print(M)
 
 #======================
-# hiearchical clustering considering Euclidean distances and complete linkage 
+# EuclideanClust: hierarchical clustering considering Euclidean distances and complete linkage 
 #======================
 
 if (R == 1){
+  
+  if (impute == 1) {
+    stop("Imputing option not implemented for this case")
+  }
   
   print("One region, CpG based hiearchical clustering")
   
@@ -186,6 +194,37 @@ if (R > 1){
   mean_meth_matrix <- t(apply(input_CpG_data,1,extract_mean_meth_per_cell,region_coord=input_regions))
   
   # MA 8 May 2018: saving the mean methylation matrix
+  # MA 20 Jan 2019: doing imputation if required
+  if (impute == 1) {
+    imputed_file <- paste0(outdir,"/region_based_imputed.csv")
+    if (file.exists(paste0(imputed_file,".gz"))) {
+        print ("Reading the imputed file")
+        mean_meth_matrix <- read.csv(paste0(imputed_file,".gz"),sep="\t",header=TRUE,check.names=FALSE)
+        print (" ... done.")
+    } else {
+        input <- mean_meth_matrix
+        
+        # to remove
+        #input <- input[1:100,1:5]
+        
+        # replace with average values, for each col
+        print("Per region, replacing NAs with average values")
+        for (i in seq(1:ncol(input))) {
+            # for some reason mean(input[i,],na.rm=TRUE) doesn't work
+            vec <- input[!is.na(input[,i]),i]
+            mean <- sum(vec)/length(vec)
+            input[is.na(input[,i]),i] <- mean
+        }                       
+        print(" ... done.")
+
+        # eliminate the empty rows (features)
+        input <- input[ rowSums(input)!=0, ] 
+        write.table(input, file=imputed_file, sep="\t", col.names=TRUE, quote=FALSE,row.names=TRUE)
+        system(paste0("gzip --force ", imputed_file))    
+        mean_meth_matrix <- input
+    }
+  } 
+  
   save(mean_meth_matrix, file=paste0(outdir,"/EuclideanClust_mean_meth_matrix.Rda"))
   
   # pairwisedist_region <- dist(mean_meth_matrix ,method="euclidean")
@@ -272,7 +311,7 @@ if (R > 1){
 
 
 ###################################################
-### Tony's (PBAL manuscript) clustering approach ##
+### HammingClust: Tony's (PBAL manuscript) clustering approach ##
 ###################################################
 
 dist.pair <- function(v1,v2){
@@ -301,6 +340,19 @@ dist.PBAL <- function(d){ ### d is matrix where the rows correspond to cells and
 ### from PBAL manuscript: unsupervised learning was done by calculating a Euclidean distance from each cell’s dissimilarity vector and clustered using Ward’s linkage method.
 
 print("Tony's approach - CpG based clustering (HammingClust)")
+
+#input_CpG_data <- input_CpG_data[1:100,1:5]
+
+if (impute == 1) {
+    print("Per locus, replacing NAs with average values")
+    for (i in seq(1:ncol(input_CpG_data))) {
+        # for some reason mean(input[i,],na.rm=TRUE) doesn't work
+        vec <- input_CpG_data[!is.na(input_CpG_data[,i]),i]
+        mean <- sum(vec)/length(vec)
+        input_CpG_data[is.na(input_CpG_data[,i]),i] <- mean
+    }
+    print(" ... done.")    
+}
 
 dist_PBAL <- dist.PBAL(d=input_CpG_data)
 
@@ -377,7 +429,7 @@ if(sum(is.na(diss_matrix_T)) > 0){
 
 
 ############################################################
-## Pearson correlation approach similar to scTrio paper  ###
+## PearsonClust: Pearson correlation approach similar to scTrio paper  ###
 ############################################################
 
 dist.corr <- function(v1,v2){
@@ -469,8 +521,11 @@ if(sum(is.na(diss_matrix_P)) == 0){
 if(sum(is.na(diss_matrix_P)) > 0){
   
   Pearson_crash <- 1
-  write.table(Pearson_crash,file=paste0(outdir,"/PearsonClust_crash.tsv"),row.names=FALSE,col.names=FALSE)}
-
+  write.table(Pearson_crash,file=paste0(outdir,"/PearsonClust_crash.tsv"),row.names=FALSE,col.names=FALSE)
+}
+  
+#################################
+## DensityCut
 ####################
 # Now call densitycut
 print("Calling DensityCut")
@@ -491,7 +546,8 @@ maxpc <- 20
 command <- paste0(RSCRIPT, " ", densitycut.name, 
     " --output_directory ", outdir, 
     " --max_PC ", maxpc, " --methylation_file ", input_CpG_data_file,
-    " --regions_file ", input_regions_file)
+    " --regions_file ", input_regions_file,
+    " --impute ", impute)
 
 print(command)
 system(command)

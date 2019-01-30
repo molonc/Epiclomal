@@ -24,6 +24,8 @@ parser$add_argument("--methylation_file", type="character", help="Path to methyl
 parser$add_argument("--regions_file", type="character",help="Path to region coordinates")
 parser$add_argument("--max_PC", type="integer",default=20, help="maximum number of PC components") 
 parser$add_argument("--maxit", type="integer",default=100, help="maximum number iterations") 
+# MA: 30Jan 2019: adding an optional imputation step
+parser$add_argument("--impute", default="0", type="integer",help="If it is 1, impute with the average per region/locus, if it is 0 do nothing.")
 
 args <- parser$parse_args() 
 
@@ -33,6 +35,7 @@ outdir <- args$output_directory
 dir.create(file.path(outdir), showWarnings = FALSE)
 input_CpG_data_file <- args$methylation_file
 input_regions_file <- args$regions_file
+impute <- args$impute
 
 # input_CpG_data_file <- "data_incomplete.tsv.gz"
 # input_regions_file <- "regions_file.tsv.gz"
@@ -198,6 +201,39 @@ if (R > 1){
   #======================
   
   mean_meth_matrix <- t(apply(input_CpG_data,1,extract_mean_meth_per_cell,region_coord=input_regions))
+  # this code is redundant with the code in hclust.R, TO FIX
+  if (impute == 1) {
+    imputed_file <- paste0(outdir,"/region_based_imputed.csv")
+    if (file.exists(paste0(imputed_file,".gz"))) {
+        print ("Reading the imputed file")
+        mean_meth_matrix <- read.csv(paste0(imputed_file,".gz"),sep="\t",header=TRUE,check.names=FALSE)
+        print (" ... done.")
+    } else {
+        input <- mean_meth_matrix
+        
+        # to remove
+        #input <- input[1:100,1:5]
+        
+        # replace with average values, for each col
+        print("Per region, replacing NAs with average values")
+        for (i in seq(1:ncol(input))) {
+            # for some reason mean(input[i,],na.rm=TRUE) doesn't work
+            vec <- input[!is.na(input[,i]),i]
+            mean <- sum(vec)/length(vec)
+            input[is.na(input[,i]),i] <- mean
+        }                       
+        print(" ... done.")
+
+        # eliminate the empty rows (features)
+        input <- input[ rowSums(input)!=0, ] 
+        write.table(input, file=imputed_file, sep="\t", col.names=TRUE, quote=FALSE,row.names=TRUE)
+        system(paste0("gzip --force ", imputed_file))    
+        mean_meth_matrix <- input
+    }
+  }   
+  
+  
+  
   
   max_comp <- min(args$max_PC,R)
   
