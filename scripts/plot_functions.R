@@ -180,7 +180,7 @@ grab_point <- function(x){
 
 ################################################
 
-plot_data <- function(big_df, crash, xlabel, model, measure_name, add_points) {  
+plot_data <- function(big_df, crash, model, measure_name,add_points) {  
   
   our <- set_colors_and_labels(model)    
   ourcolors <- our$colors
@@ -195,7 +195,7 @@ plot_data <- function(big_df, crash, xlabel, model, measure_name, add_points) {
   
   if (measure_name == "HD") {
     measure_title <- "Hamming Distance"
-    fname <- "hdist"    
+    fname <- "hdist"
   } else if (measure_name == "Vmeasure") {
     measure_title <- "V-measure"
     fname <- "results"
@@ -213,8 +213,8 @@ plot_data <- function(big_df, crash, xlabel, model, measure_name, add_points) {
     fname <- "results"
   }      
   
-  # xlabel = "Data set"  
   xlabel = "Data set"  
+  
   #sub_big_df <- ddply(big_df, .(VAR,method),summarise,crash_perc=(1-mean(crash)))   # big_df[['crash']])))
   #print(sub_big_df)
   
@@ -228,19 +228,6 @@ plot_data <- function(big_df, crash, xlabel, model, measure_name, add_points) {
     
     df_point <- big_df[which(big_df$replicate == all_regions_criterion),]
     
-        #geom_boxplot(show.legend=F) + 
-        #facet_grid(~VAR) +
-        #labs(x="", y = measure_title)
-        
-        # MA: added this on 18 Jun, not sure if it works for synthetic
-        #if (measure_name == "nclusters") {            
-        #    pHD <- pHD + scale_y_continuous(limits = c(1, 11), breaks = 1:11, labels = function(x) format(round(x,2),nsmall=2))
-        #}
-    #}
-  
-    #if(add_points == FALSE){
-    
-
     df_point <- df_point[,c(1,3,4)]
     
     print(df_point)
@@ -294,10 +281,10 @@ plot_data <- function(big_df, crash, xlabel, model, measure_name, add_points) {
   pHD <- pHD + scale_fill_manual(values=ourcolors)  
   # plot bar plots for crash
   bHD <-ggplot(sub_big_df, aes(x=method, y=crash_perc, fill=method)) +
-    scale_y_continuous(limits=c(0,1), breaks=seq(0,1,0.50), labels = function(x) format(round(x,2),nsmall=2)) +
+    scale_y_continuous(breaks=seq(0,1,0.50), labels = function(x) format(round(x,2),nsmall=2)) +
     geom_bar(stat="identity") + facet_grid(~VAR) +
     # ggtitle(xlabel) +
-    labs(x="", y = paste0("Failed runs")) 
+    labs(x="", y = paste0("Unsuccess")) 
   bHD <- bHD + theme(plot.title = element_text(size=20), 
                      #axis.text.x  = element_text(angle=90, vjust=0.5, size=16, colour= "black"), 
                      axis.text.x  = element_blank(),
@@ -307,7 +294,7 @@ plot_data <- function(big_df, crash, xlabel, model, measure_name, add_points) {
                      axis.title.x=element_text(size=20),
                      legend.position="top",
                      legend.text=element_text(size=16),
-                     strip.text.x = element_text(size = 20) )
+                     strip.text.x = element_text(size =20) )
   
   bHD <- bHD +  scale_fill_manual(values=ourcolors)                   
   
@@ -406,6 +393,7 @@ plot_data <- function(big_df, crash, xlabel, model, measure_name, add_points) {
   
 }
 
+###############################
 
 plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {  
   
@@ -429,6 +417,9 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
   } else if (measure_name == "nclusters") {
     measure_title <- "Number of predicted clusters"
     fname <- "results"
+  } else if (measure_name == "nclusters2") {
+    measure_title <- "Number of predicted clusters"
+    fname <- "results"    
   } else if (measure_name == "clone_prev_MAE") {
     measure_title <- "Clone prevalence MAE"
     fname <- "results"
@@ -443,19 +434,28 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
   xlabel = "Data set"  
       
   
-    big_df$replicate[big_df$replicate=="0_0.95_10000"] <- "filter_1"  
-    big_df$replicate[big_df$replicate=="0_0.95_15000"] <- "filter_2" 
-    big_df$replicate[big_df$replicate=="0_0.95_20000"] <- "filter_3" 
-    big_df$replicate[big_df$replicate=="0_1_0.01"] <- "large_input" 
+    big_df$replicate[big_df$replicate=="0_0.95_10000_K10"] <- "filter_1"  
+    big_df$replicate[big_df$replicate=="0_0.95_15000_K10"] <- "filter_2" 
+    big_df$replicate[big_df$replicate=="0_0.95_20000_K10"] <- "filter_3" 
+    big_df$replicate[big_df$replicate=="0_0.95_10000_K30"] <- "filter_1"  
+    big_df$replicate[big_df$replicate=="0_0.95_15000_K30"] <- "filter_2" 
+    big_df$replicate[big_df$replicate=="0_0.95_20000_K30"] <- "filter_3"     
+    # MA: it may be 0.98
+    big_df$replicate[big_df$replicate=="0_0.98_10000_K10"] <- "filter_1"  
+    big_df$replicate[big_df$replicate=="0_0.98_15000_K10"] <- "filter_2" 
+    big_df$replicate[big_df$replicate=="0_0.98_20000_K10"] <- "filter_3" 
+    
+    big_df$replicate[big_df$replicate=="0_1_0.01_K10"] <- "large_input" 
+    big_df$replicate[big_df$replicate=="0_1_0.01_K30"] <- "large_input" 
   
     tmp_ind <- ((big_df$VAR == "Luo2017") & (big_df$replicate == "large_input"))
     print(tmp_ind)
     big_df <- big_df[!tmp_ind,]
     
-    replicate_method <- paste0(as.character(big_df$method),"_",as.character(big_df$replicate))
+    replicate_method <- paste0(as.character(big_df$method),"_",as.character(big_df$replicate),big_df$imputed)
     big_df <- cbind(big_df,replicate_method)
   
-    big_df <- subset(big_df, replicate_method != "EpiclomalRegion_large_input")
+    big_df <- subset(big_df, replicate_method != "EpiclomalRegion_large_input *")
     
     print(head(big_df))
     
@@ -470,17 +470,45 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
 #                                                                         "PearsonClust_0_0.95_15000"   , "PearsonClust_0_0.95_20000" ,  
 #                                                                         "PearsonClust_0_1_0.01" ))
   
-    big_df$replicate_method <- factor(big_df$replicate_method,levels= c("EpiclomalRegion_filter_1", "EpiclomalRegion_filter_2",
-                                                                      "EpiclomalRegion_filter_3" ,"EuclideanClust_filter_1" , "EuclideanClust_filter_2" ,
-                                                                      "EuclideanClust_filter_3" , "EuclideanClust_large_input"  , "DensityCut_filter_1"  ,
-                                                                      "DensityCut_filter_2"   ,   "DensityCut_filter_3"  ,    "DensityCut_large_input"  ,   "HammingClust_filter_1"  , 
-                                                                      "HammingClust_filter_2"  ,  "HammingClust_filter_3"  ,  "HammingClust_large_input"  ,      "PearsonClust_filter_1" ,   
-                                                                      "PearsonClust_filter_2"   , "PearsonClust_filter_3" ,  
-                                                                      "PearsonClust_large_input" ))
-    
+    # the levels are mentioned to specify the order. Don't need this though because I can relevel later
+#    big_df$replicate_method <- factor(big_df$replicate_method,levels= c("EpiclomalRegion_filter_1", 
+#                                                                        "EpiclomalRegion_filter_2", 
+#                                                                        "EpiclomalRegion_filter_3" ,
+#                                                                        "EuclideanClust_filter_1" , 
+#                                                                        "EuclideanClust_filter_2", 
+#                                                                        "EuclideanClust_filter_3" , 
+#                                                                        "EuclideanClust_large_input", 
+#                                                                        "DensityCut_filter_1"  , 
+#                                                                        "DensityCut_filter_2"   ,  
+#                                                                        "DensityCut_filter_3"  ,   
+#                                                                        "DensityCut_large_input"  , 
+#                                                                        "HammingClust_filter_1"  , 
+#                                                                        "HammingClust_filter_2"  , 
+#                                                                        "HammingClust_filter_3"  , 
+#                                                                        "HammingClust_large_input"  , 
+#                                                                        "PearsonClust_filter_1" ,   
+#                                                                        "PearsonClust_filter_2"   , 
+#                                                                        "PearsonClust_filter_3" ,  
+#                                                                        "PearsonClust_large_input" ),
+#                                                                        order = TRUE)
 
+    big_df$replicate_method <- factor(big_df$replicate_method)   
+
+ 
+    big_df$replicate_method <- relevel(big_df$replicate_method, "EpiclomalRegion_filter_3")
+    big_df$replicate_method <- relevel(big_df$replicate_method, "EpiclomalRegion_filter_2")
+    big_df$replicate_method <- relevel(big_df$replicate_method, "EpiclomalRegion_filter_1") 
+
+ 
     print(head(big_df))
     print(levels(big_df$VAR))
+    
+    Failure <- rep("F",dim(big_df)[1])
+    
+    big_df <- cbind(big_df,Failure)
+    
+    #print(big_df)
+    #stop()
 
     
 
@@ -492,22 +520,33 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
                                                "Farlik2016",
                                                 "InHouse"))
   
-   if(measure_name != "nclusters"){    
+   if(length(grep("nclusters",measure_name)) == 0){    
 
-    big_df$Measure[big_df$crash == 0] <- -0.125
+    #big_df$Measure[big_df$crash == 0] <- -0.125
+    big_df$Measure[big_df$crash == 0] <- 0
+    big_df$Failure[big_df$crash == 1] <- ""
+    #Failure[9:10] <- "F"
+    
+    print(big_df)
+    
+    #stop()
+    
     
    # pHD <- ggplot(big_df, aes(x=replicate, y=Measure, fill=method)) +
    #    geom_bar(stat="identity",position=position_dodge()) +    
    #    facet_grid(~VAR) +
    #    labs(x="", y = measure_title)
     
-  
+     #geom_text(aes(label=score), size=4)
+     
+     
     pHD <- ggplot(big_df, aes(x=replicate_method, y=Measure, fill=method)) +
       geom_bar(stat="identity",width=0.5,position=position_dodge(width=0.3)) + 
+      geom_text(aes(label=Failure), size=4) +
       #geom_bar(width=0.4, position = position_dodge(width=0.5))
       facet_grid(~VAR,scales="free_x", space = "free_x") +
       labs(x="", y = measure_title) +
-      scale_y_continuous(breaks=c(-0.125,0.00,0.25,0.50,0.75,1.00), labels = c("Failure",0.00,0.25,0.50,0.75,1.00),limits=c(-.125,1.00)) +
+      #scale_y_continuous(breaks=c(-0.125,0.00,0.25,0.50,0.75,1.00), labels = c("Failure",0.00,0.25,0.50,0.75,1.00),limits=c(-.125,1.00)) +
       theme(plot.title = element_text(size=8), 
             axis.text.x  = element_text(angle=90, vjust=0.5, size=14, colour= "black"),
             legend.position="top",
@@ -526,7 +565,7 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
   
    }
 
-  if(measure_name=="nclusters"){
+  if(length(grep("nclusters",measure_name)) > 0) {
     big_df$Measure[big_df$crash == 0] <- -1
     
     # pHD <- ggplot(big_df, aes(x=replicate, y=Measure, fill=method)) +
@@ -534,13 +573,17 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
     #    facet_grid(~VAR) +
     #    labs(x="", y = measure_title)
     
-    
+    # MA 4Feb2019. Trying to add horizontal lines to show the correct number of clusters.
+    hline.data <- data.frame(z = c(2,2,21,6,3),  method = factor(c("Smallwood2014","Hou2016","Luo2017","Farlik2016","InHouse")))        
+
+    #cutoff <- data.frame( x = c(-Inf, Inf), y = 2, cutoff = factor(2) )          
     pHD <- ggplot(big_df, aes(x=replicate_method, y=Measure, fill=method)) +
       geom_bar(stat="identity",width=0.5,position=position_dodge(width=0.3)) + 
-      #geom_bar(width=0.4, position = position_dodge(width=0.5))
+      # MA 4Feb2019: trying to add horizontal line to show the number of correct clusters
+      #geom_hline(aes(yintercept = z, fill=method), hline.data) +   #linetype="dashed", color = "red", size=2)
       facet_grid(~VAR,scales="free_x", space = "free_x") +
       labs(x="", y = measure_title) +
-      scale_y_continuous(breaks=c(-1,0,2,4,6,8,10,12), labels = c("Failure",0,2,4,6,8,10,12)) +
+#      scale_y_continuous(breaks=c(-1,0,2,4,6,8,10,12), labels = c("Failure",0,2,4,6,8,10,12)) +
       theme(plot.title = element_text(size=8), 
             axis.text.x  = element_text(angle=90, vjust=0.5, size=14, colour= "black"),
             legend.position="top",
