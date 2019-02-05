@@ -579,8 +579,6 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
     #cutoff <- data.frame( x = c(-Inf, Inf), y = 2, cutoff = factor(2) )          
     pHD <- ggplot(big_df, aes(x=replicate_method, y=Measure, fill=method)) +
       geom_bar(stat="identity",width=0.5,position=position_dodge(width=0.3)) + 
-      # MA 4Feb2019: trying to add horizontal line to show the number of correct clusters
-      #geom_hline(aes(yintercept = z, fill=method), hline.data) +   #linetype="dashed", color = "red", size=2)
       facet_grid(~VAR,scales="free_x", space = "free_x") +
       labs(x="", y = measure_title) +
 #      scale_y_continuous(breaks=c(-1,0,2,4,6,8,10,12), labels = c("Failure",0,2,4,6,8,10,12)) +
@@ -594,6 +592,10 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
             legend.title=element_text(size=22) ,
             strip.text.x = element_text(size = 22)
       )
+    if (measure_name == "nclusters") {  
+        # MA 4Feb2019: trying to add horizontal line to show the number of correct clusters
+        pHD <- pHD + geom_hline(aes(yintercept = z), hline.data, linetype="dashed", color = "coral", size=1)
+    }        
     
     pHD <- pHD + scale_fill_manual(values=ourcolors)   
     
