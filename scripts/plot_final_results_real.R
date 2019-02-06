@@ -45,16 +45,16 @@ datasets <- c("InHouse",
               "Farlik2016")
 ntrue_clusters <- c(3,2,2,21,6)              
               
-datapaths <- c("../EPI-112_inhouse_data/FINAL_RESULTS",
-               "../EPI-70_Smallwood2014/FINAL_RESULTS",
-               "../EPI-105_scTrio/FINAL_RESULTS",
-               "../EPI-106_Luo2017/FINAL_RESULTS_genebodies_all_clean_cells_MAXK30",
-               "../EPI-89_Farlik2016/FINAL_RESULTS")
-simplepaths <- c("../EPI-112_inhouse_data/OUTPUT_epiclomal_INHOUSE/RUN/epiclomal_INHOUSE_",
-                 "../EPI-70_Smallwood2014/OUTPUT_epiclomal_Smallwood2014/RUN/epiclomal_Smallwood2014_",
-                 "../EPI-105_scTrio/OUTPUT_epiclomal_scTrio/RUN/epiclomal_scTrio_",
-                 "../EPI-106_Luo2017/OUTPUT_epiclomal_Luo2017_genebodies_all_clean_cells_MAXK30/RUN/epiclomal_Luo2017_genebodies_all_clean_cells_MAXK30_",
-                 "../EPI-89_Farlik2016/OUTPUT_epiclomal_Farlik2016_6clusters/RUN/epiclomal_Farlik2016_6clusters_")
+datapaths <- c("/shahlab/mandronescu/EPI-112_inhouse_data/FINAL_RESULTS",
+               "/shahlab/mandronescu/EPI-70_Smallwood2014/FINAL_RESULTS",
+               "/shahlab/mandronescu/EPI-105_scTrio/FINAL_RESULTS",
+               "./shahlab/mandronescu/EPI-106_Luo2017/FINAL_RESULTS_genebodies_all_clean_cells_MAXK30",
+               "/shahlab/mandronescu/EPI-89_Farlik2016/FINAL_RESULTS")
+simplepaths <- c("/shahlab/mandronescu/EPI-112_inhouse_data/OUTPUT_epiclomal_INHOUSE/RUN/epiclomal_INHOUSE_",
+                 "/shahlab/mandronescu/EPI-70_Smallwood2014/OUTPUT_epiclomal_Smallwood2014/RUN/epiclomal_Smallwood2014_",
+                 "/shahlab/mandronescu/EPI-105_scTrio/OUTPUT_epiclomal_scTrio/RUN/epiclomal_scTrio_",
+                 "/shahlab/mandronescu/EPI-106_Luo2017/OUTPUT_epiclomal_Luo2017_genebodies_all_clean_cells_MAXK30/RUN/epiclomal_Luo2017_genebodies_all_clean_cells_MAXK30_",
+                 "/shahlab/mandronescu/EPI-89_Farlik2016/OUTPUT_epiclomal_Farlik2016_6clusters/RUN/epiclomal_Farlik2016_6clusters_")
 
 # each replicate file should be in inputs, for example inputs/Smallwood2014_replicates.txt
 

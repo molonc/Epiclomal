@@ -574,8 +574,11 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
     #    labs(x="", y = measure_title)
     
     # MA 4Feb2019. Trying to add horizontal lines to show the correct number of clusters.
-    hline.data <- data.frame(z = c(2,2,21,6,3),  method = factor(c("Smallwood2014","Hou2016","Luo2017","Farlik2016","InHouse")))        
-
+    #hline.data <- data.frame(z = c(2,2,21,6,3),  method = factor(c("Smallwood2014","Hou2016","Luo2017","Farlik2016","InHouse")))        
+   
+    # Camila 6Feb2019
+    hline.dat <- data.frame(VAR=levels(big_df$VAR), vl=c(2,2,21,6,3)) 
+    
     #cutoff <- data.frame( x = c(-Inf, Inf), y = 2, cutoff = factor(2) )          
     pHD <- ggplot(big_df, aes(x=replicate_method, y=Measure, fill=method)) +
       geom_bar(stat="identity",width=0.5,position=position_dodge(width=0.3)) + 
@@ -594,8 +597,30 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
       )
     if (measure_name == "nclusters") {  
         # MA 4Feb2019: trying to add horizontal line to show the number of correct clusters
-        pHD <- pHD + geom_hline(aes(yintercept = z), hline.data, linetype="dashed", color = "coral", size=1)
-    }        
+        
+      pHD <- ggplot(big_df, aes(x=replicate_method, y=Measure, fill=method)) +
+        geom_bar(stat="identity",width=0.5,position=position_dodge(width=0.3)) + 
+     
+        # Camila 6Feb2019
+        geom_hline(aes(yintercept=vl), data=hline.dat,linetype="dashed", color = "black", size=1) + 
+       
+        facet_grid(~VAR,scales="free_x", space = "free_x") +
+        labs(x="", y = measure_title) +
+        #      scale_y_continuous(breaks=c(-1,0,2,4,6,8,10,12), labels = c("Failure",0,2,4,6,8,10,12)) +
+        theme(plot.title = element_text(size=8), 
+              axis.text.x  = element_text(angle=90, vjust=0.5, size=14, colour= "black"),
+              legend.position="top",
+              axis.text.y  = element_text(size=18, colour= "black"),
+              axis.title.y =element_text(size=22), 
+              axis.title.x=element_text(size=20),
+              legend.text=element_text(size=22) ,
+              legend.title=element_text(size=22) ,
+              strip.text.x = element_text(size = 22)
+        )
+      
+  #pHD <- pHD + geom_hline(aes(yintercept = z), hline.data, linetype="dashed", color = "coral", size=1)
+   
+       }        
     
     pHD <- pHD + scale_fill_manual(values=ourcolors)   
     
