@@ -1,0 +1,289 @@
+__PIPELINE_INFO__: 
+    name: 'epiclomal'
+    version: '1.0.0'
+    author: 'dalai@bccrc.ca'
+    data_type: null
+    input_type: ''
+    output_type: 'tsv'
+    host_cluster: 
+    date_created: '2017-03-07'
+    factory_version: '2.1.0'
+__GENERAL__: 
+__SHARED__:
+__SAMPLES__:
+################################################################################
+__TASK_EPISYNTHETIC__: 
+    reserved: 
+        # do not change this section.
+        component_name: 'run_episynthetic'
+        component_version: '0.99.0'
+        seed_version: '0.99.0'
+    run:
+        use_cluster: ('__SHARED__', 'use_cluster')
+        memory: '10G'
+        num_cpus: 1
+        forced_dependencies: []
+        add_breakpoint: False
+        env_vars:
+            R_LIBS: ('__SHARED__', 'r_libs')
+            LD_LIBRARY_PATH: ('__SHARED__', 'ld_library_path')
+            PATH: ('__SHARED__', 'path')
+        boilerplate: 
+        parallel_run: False
+        parallel_params: []
+    component:
+        input_files:
+        output_files: 
+            output_dir: "synthetic/"
+        parameters: 
+            num_loci: ('__SAMPLES__', 'num_loci')
+            num_clones: ('__SAMPLES__', 'num_clones')
+            num_cells: ('__SAMPLES__', 'num_cells')
+            clone_prevalence: ('__SAMPLES__', 'clone_prev')
+            error_probability: ('__SAMPLES__', 'error_pb')
+            missing_probability: ('__SAMPLES__', 'missing_pb')
+            genotype_prob: ('__SAMPLES__', 'genotype_pb')
+            dirichlet_param_genotype_prob: ('__SAMPLES__', 'dir_par_pb')
+            num_regions: ('__SAMPLES__', 'num_regions')
+            region_size_type: ('__SAMPLES__', 'reg_size_type')
+            region_nonequal: ('__SAMPLES__', 'region_nonequal')
+            read_size: ('__SAMPLES__', 'read_size')
+            seed: ('__SAMPLES__', 'seed')
+            verbose: 0
+            saveall: 0
+            given_dir_complete: 1  
+################################################################################
+__TASK_BASIC_EPICLOMAL_TRUE__: 
+    reserved: 
+        # do not change this section.
+        component_name: 'run_epiclomal'
+        component_version: '0.99.0'
+        seed_version: '0.99.0'
+    run:
+        use_cluster: ('__SHARED__', 'use_cluster')
+        memory: '10G'
+        num_cpus: 1
+        forced_dependencies: ['__TASK_EPISYNTHETIC__']
+        add_breakpoint: False
+        env_vars:
+            # R_LIBS: ('__SHARED__', 'r_libs')
+            # LD_LIBRARY_PATH: ('__SHARED__', 'ld_library_path')
+            # PATH: ('__SHARED__', 'path')
+        boilerplate:         
+        parallel_run: True
+        parallel_params: []
+        interval_file: ('__SHARED__', 'interval_one')
+    component:
+        input_files:
+            #data_dir: ('__TASK_EPISYNTHETIC__', 'output_dir')
+            config_file: ('__SHARED__', 'epiclomal_config')
+        output_files: 
+            out_dir: 'epiclomal_basic_true/'
+        parameters: 
+            model: 'Basic-GeMM'
+            methylation_file: 'synthetic/data/data_incomplete.tsv.gz'
+            initial_clusters_file: 'synthetic/data/true_clone_membership.tsv.gz'
+            true_clusters_file: 'synthetic/data/true_clone_membership.tsv.gz'
+            regions_file: None
+            copynumber_file: None
+            bulk_file: None
+################################################################################
+__TASK_BULK_EPICLOMAL_TRUE__: 
+    reserved: 
+        # do not change this section.
+        component_name: 'run_epiclomal'
+        component_version: '0.99.0'
+        seed_version: '0.99.0'
+    run:
+        use_cluster: ('__SHARED__', 'use_cluster')
+        memory: '10G'
+        num_cpus: 1
+        forced_dependencies: ['__TASK_EPISYNTHETIC__']
+        add_breakpoint: False
+        env_vars:
+            # R_LIBS: ('__SHARED__', 'r_libs')
+            # LD_LIBRARY_PATH: ('__SHARED__', 'ld_library_path')
+            # PATH: ('__SHARED__', 'path')
+        boilerplate:         
+        parallel_run: True
+        parallel_params: []
+        interval_file: ('__SHARED__', 'interval_one')
+    component:
+        input_files:
+            #data_dir: ('__TASK_EPISYNTHETIC__', 'output_dir')
+            config_file: ('__SHARED__', 'epiclomal_config')
+        output_files: 
+            out_dir: 'epiclomal_bulk_true/'
+        parameters: 
+            model: 'Basic-GeMM'
+            methylation_file: 'synthetic/data/data_incomplete.tsv.gz'
+            initial_clusters_file: 'synthetic/data/true_clone_membership.tsv.gz'
+            true_clusters_file: 'synthetic/data/true_clone_membership.tsv.gz'
+            regions_file: None
+            copynumber_file: None
+            bulk_file: 'synthetic/data/bulk_data.tsv.gz'           
+################################################################################
+__TASK_REGION_EPICLOMAL_TRUE__: 
+    reserved: 
+        # do not change this section.
+        component_name: 'run_epiclomal'
+        component_version: '0.99.0'
+        seed_version: '0.99.0'
+    run:
+        use_cluster: ('__SHARED__', 'use_cluster')
+        memory: '10G'
+        num_cpus: 1
+        forced_dependencies: ['__TASK_EPISYNTHETIC__']
+        add_breakpoint: False
+        env_vars:
+            # R_LIBS: ('__SHARED__', 'r_libs')
+            # LD_LIBRARY_PATH: ('__SHARED__', 'ld_library_path')
+            # PATH: ('__SHARED__', 'path')
+        boilerplate:         
+        parallel_run: True
+        parallel_params: []
+        interval_file: ('__SHARED__', 'interval_one')
+    component:
+        input_files:
+            #data_dir: ('__TASK_EPISYNTHETIC__', 'output_dir')
+            config_file: ('__SHARED__', 'epiclomal_config')
+        output_files: 
+            out_dir: 'epiclomal_region_true/'
+        parameters: 
+            model: 'Region-GeMM'
+            methylation_file: 'synthetic/data/data_incomplete.tsv.gz'
+            initial_clusters_file: 'synthetic/data/true_clone_membership.tsv.gz'
+            true_clusters_file: 'synthetic/data/true_clone_membership.tsv.gz'
+            regions_file: 'synthetic/data/regions_file.tsv.gz'
+            copynumber_file: None
+            bulk_file: None           
+################################################################################            
+__TASK_EVAL_BASIC_EPICLOMAL_TRUE__:
+    reserved: 
+        # do not change this section.
+        component_name: 'eval_epiclomal'
+        component_version: '0.99.0'
+        seed_version: '0.99.0'
+    run:
+        use_cluster: ('__SHARED__', 'use_cluster')
+        memory: '10G'
+        num_cpus: 1
+        forced_dependencies: ['__TASK_BASIC_EPICLOMAL_TRUE__']
+        add_breakpoint: False
+        env_vars:
+            R_LIBS: ('__SHARED__', 'r_libs')
+            LD_LIBRARY_PATH: ('__SHARED__', 'ld_library_path')
+            PATH: ('__SHARED__', 'path')
+        boilerplate: 
+        parallel_run: False
+        parallel_params: []
+    component:
+        input_files:
+            input_dir: 'epiclomal_basic_true/'
+        output_files: 
+            output_dir: 'results_basic_true/'
+        parameters: 
+            model_name: 'basic_true'
+            methylation_file: 'synthetic/data/data_incomplete.tsv.gz'
+            regions_file: 'synthetic/data/regions_file.tsv.gz'    
+            true_clusters_file: 'synthetic/data/true_clone_membership.tsv.gz'
+            true_epigenotypes_file: 'synthetic/data/true_clone_epigenotypes.tsv.gz'  
+################################################################################            
+__TASK_EVAL_BULK_EPICLOMAL_TRUE__:
+    reserved: 
+        # do not change this section.
+        component_name: 'eval_epiclomal'
+        component_version: '0.99.0'
+        seed_version: '0.99.0'
+    run:
+        use_cluster: ('__SHARED__', 'use_cluster')
+        memory: '10G'
+        num_cpus: 1
+        forced_dependencies: ['__TASK_BULK_EPICLOMAL_TRUE__']
+        add_breakpoint: False
+        env_vars:
+            R_LIBS: ('__SHARED__', 'r_libs')
+            LD_LIBRARY_PATH: ('__SHARED__', 'ld_library_path')
+            PATH: ('__SHARED__', 'path')
+        boilerplate: 
+        parallel_run: False
+        parallel_params: []
+    component:
+        input_files:
+            input_dir: 'epiclomal_bulk_true/'
+        output_files: 
+            output_dir: 'results_bulk_true/'
+        parameters: 
+            model_name: 'bulk_true'
+            methylation_file: 'synthetic/data/data_incomplete.tsv.gz'
+            regions_file: 'synthetic/data/regions_file.tsv.gz'    
+            true_clusters_file: 'synthetic/data/true_clone_membership.tsv.gz'
+            true_epigenotypes_file: 'synthetic/data/true_clone_epigenotypes.tsv.gz'  
+################################################################################            
+__TASK_EVAL_REGION_EPICLOMAL_TRUE__:
+    reserved: 
+        # do not change this section.
+        component_name: 'eval_epiclomal'
+        component_version: '0.99.0'
+        seed_version: '0.99.0'
+    run:
+        use_cluster: ('__SHARED__', 'use_cluster')
+        memory: '10G'
+        num_cpus: 1
+        forced_dependencies: ['__TASK_REGION_EPICLOMAL_TRUE__']
+        add_breakpoint: False
+        env_vars:
+            R_LIBS: ('__SHARED__', 'r_libs')
+            LD_LIBRARY_PATH: ('__SHARED__', 'ld_library_path')
+            PATH: ('__SHARED__', 'path')
+        boilerplate: 
+        parallel_run: False
+        parallel_params: []
+    component:
+        input_files:
+            input_dir: 'epiclomal_region_true/'
+        output_files: 
+            output_dir: 'results_region_true/'
+        parameters: 
+            model_name: 'region_true'
+            methylation_file: 'synthetic/data/data_incomplete.tsv.gz'
+            regions_file: 'synthetic/data/regions_file.tsv.gz'    
+            true_clusters_file: 'synthetic/data/true_clone_membership.tsv.gz'
+            true_epigenotypes_file: 'synthetic/data/true_clone_epigenotypes.tsv.gz'                                  
+################################################################################
+### Breakpoint now - doesn't seem to work well
+################################################################################
+################################################################################
+### The following are computationally intensive tasks
+################################################################################
+__TASK_SIMPLE_EPICLUST__: 
+    reserved: 
+        # do not change this section.
+        component_name: 'run_simple_epiclustering'
+        component_version: '0.99.0'
+        seed_version: '0.99.0'
+    run:
+        use_cluster: ('__SHARED__', 'use_cluster')
+        memory: '10G'
+        num_cpus: 1
+        forced_dependencies: ['__TASK_EPISYNTHETIC__']
+        add_breakpoint: False
+        env_vars:
+            R_LIBS: ('__SHARED__', 'r_libs')
+            LD_LIBRARY_PATH: ('__SHARED__', 'ld_library_path')
+            PATH: ('__SHARED__', 'path')
+        boilerplate: 
+        parallel_run: False
+        parallel_params: []
+    component:
+        input_files:
+            #data_dir: ('__TASK_EPISYNTHETIC__', 'output_dir')
+            methylation_file: 'synthetic/data/data_incomplete.tsv.gz'
+            regions_file: 'synthetic/data/regions_file.tsv.gz'
+            true_clone_membership_file: None
+        output_files: 
+            output_directory: 'simple_hclust/'
+        parameters: 
+            max_k: ('__SHARED__', 'simple_hclust_maxkcut')    
+            
+            

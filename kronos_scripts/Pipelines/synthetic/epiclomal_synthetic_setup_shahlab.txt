@@ -1,0 +1,10 @@
+#section	key	value
+__GENERAL__	Rscript	/gsc/software/linux-x86_64-centos6/R-3.2.3/bin/Rscript
+__GENERAL__	python	/genesis/shahlab/danlai/.local/centos6/anaconda2/bin/python
+__GENERAL__	epiclomal	/home/mandronescu/Software/Epiclomal/epiclomal
+__GENERAL__	mesynthetic	/home/mandronescu/Software/Epiclomal/synthetic_data
+__SHARED__	r_libs	/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos6/3.2
+__SHARED__	ld_library_path	/gsc/software/linux-x86_64-centos6/gcc/gcc-5.2.0/lib64
+__SHARED__	path	/genesis/shahlab/danlai/.local/centos6/anaconda2/bin
+__SHARED__	interval_file	/home/mandronescu/EPI-87_Epiclomal_synthetic_pipeline/interval_file
+__SHARED__	epiclomal_config	/home/mandronescu/EPI-87_Epiclomal_synthetic_pipeline/kronos/inputs/config1.yaml
