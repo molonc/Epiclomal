@@ -136,7 +136,7 @@ collect_data <- function(model, number_data_sets, initial_path_to_each_RUN, summ
                     } else {     
                         results_file <- paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_",model[m],"/",criterion,"/all_",fname,"_bestrun_",model[m],".tsv")
                     }                      
-                    # print (paste0('file is ', results_file))
+                    #print (paste0('file is ', results_file))
                     t <- try(read.table(file=results_file,sep="\t",header=TRUE))   
                     if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
                         print("can't find file")
@@ -145,30 +145,61 @@ collect_data <- function(model, number_data_sets, initial_path_to_each_RUN, summ
                         VAR <- c(VAR,variable[j])
                         method <- c(method,model[m])                         
                     } else {
-                        f <- read.table(file=results_file,sep="\t",header=TRUE)
-                        crash <- c(crash,1)
-                        if (model[m] == "region_bulk") {
-                            if (measure_name == "Vmeasure") {
-                                column <- "slsbulk_vmeasure"
-                            }   
-                            if (measure_name == "clone_prev_MAE") {
-                                column <- "slsbulk_clone_prev_MAE"
+                        # for HD, we have to check 3 files
+                        for (index in c(1,2,3)) {
+							t <- try(read.table(file=results_file,sep="\t",header=TRUE))   
+							if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
+								print(paste0("Can't find file ", results_file, " skipping it"))
+								next
+							}	
+                            f <- read.table(file=results_file,sep="\t",header=TRUE)							
+                            if (model[m] == "region_bulk") {
+                                if (measure_name == "Vmeasure") {
+                                    column <- "slsbulk_vmeasure"
+                                }   
+                                if (measure_name == "clone_prev_MAE") {
+                                    column <- "slsbulk_clone_prev_MAE"
+                                } 
+                            } else {
+                                if (measure_name == "Vmeasure") {
+                                    column <- "best_vmeasure"
+                                }   
+                                if (measure_name == "clone_prev_MAE") {
+                                    column <- "clone_prev_MAE"
+                                }                                                
                             } 
-                        } else {
-                            if (measure_name == "Vmeasure") {
-                                column <- "best_vmeasure"
-                            }   
-                            if (measure_name == "clone_prev_MAE") {
-                                column <- "clone_prev_MAE"
-                            }                                                
-                        }   
-                        measure <- c(measure,f[,column])
-                        VAR <- c(VAR,variable[j])
-                        method <- c(method,model[m]) 
+                            new_method <- model[m]  
+                            if (measure_name == "HD") {
+                                if (index == 1) {
+                                    original_file <- results_file
+                                    new_method <- paste0 (new_method, "-uncorrected")
+                                    results_file <- paste0(results_file,".corr.tsv")
+                                } else if (index == 2) {
+                                    new_method <- paste0 (new_method, "-corrected")
+                                    results_file <- paste0(original_file,".naive.tsv")
+                                } else if (index == 3) {
+                                    new_method <- paste0 (new_method, "-naive")
+                                }
+                            } 
+                            if (is.na(f[,column])) {       # this can happen for uncertainty if they, added on 9 Apr 2019
+                                crash <- c(crash,0)
+                            } else {
+                                crash <- c(crash,1)
+                            }    
+                            measure <- c(measure,f[,column])
+                            VAR <- c(VAR,variable[j])
+                            method <- c(method,new_method) 
+                            if (measure_name != "HD") {
+                                break
+                            }
+                        }    
                     }      
                 }
             }
         }
+
+        VAR <- gsub("^1_", "", VAR)
+        variable <- gsub("^1_", "", variable)
 
         big_df <- cbind(as.data.frame(measure),as.data.frame(crash),VAR,method)
         colnames(big_df) <- c("Measure","crash","VAR","method")
@@ -208,6 +239,20 @@ print (initial_path_to_each_RUN)
 all_regions_criterion <- "0_1_0.01"
 
 ##################
+### plots hamming distance ####
+##################
+print ("Plots for hamming distance")
+#model <- c("region", "basic")
+model <- c("region")
+mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "HD")
+#model <- c("region-uncorrected", "region-corrected", "region-naive", "basic-uncorrected", "basic-corrected", "basic-naive")
+#model <- c("region-corrected", "region-naive", "basic-corrected", "basic-naive")
+model <- c("region-uncorrected", "region-corrected", "region-naive")
+plot_data(mylist$big_df, mylist$crash,  mylist$xlabel, model, "HD", add_points=FALSE)
+
+#stop("Stopped")
+
+##################
 ### plots clone_prev_MAE ####
 ##################
 print ("Plots for clone_prev_MAE")
@@ -216,15 +261,8 @@ model <- c("region","region_bulk", "basic","EuclideanClust","DensityCut","Hammin
 # label <- c("EpiclomalRegion","EpiclomalBulk","EpiclomalBasic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
 mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "clone_prev_MAE")
 plot_data(mylist$big_df, mylist$crash, mylist$xlabel, model, "clone_prev_MAE", add_points=FALSE)
+#plot_data(mylist$big_df, mylist$crash, model, "clone_prev_MAE", add_points=FALSE)
 
-
-##################
-### plots hamming distance ####
-##################
-print ("Plots for hamming distance")
-model <- c("region", "basic")
-mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "HD")
-plot_data(mylist$big_df, mylist$crash, mylist$xlabel, model, "HD", add_points=FALSE)
 
 ##################
 ### plots V-measure ####
@@ -234,7 +272,7 @@ print ("Plots for V-measure")
 #model <- c("region","region_bulk", "basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
 model <- c("region","basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
 mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "Vmeasure")
-plot_data(mylist$big_df, mylist$crash, mylist$xlabel, model, "Vmeasure", add_points=FALSE)
+plot_data(mylist$big_df, mylist$crash,  mylist$xlabel, model, "Vmeasure", add_points=FALSE)
 
 ##################
 ### plots nclusters ####
@@ -242,7 +280,7 @@ plot_data(mylist$big_df, mylist$crash, mylist$xlabel, model, "Vmeasure", add_poi
 print ("Plots for nclusters")
 model <- c("region","basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
 mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "nclusters")
-plot_data(mylist$big_df, mylist$crash, mylist$xlabel, model, "nclusters", add_points=FALSE)
+plot_data(mylist$big_df, mylist$crash,  mylist$xlabel, model, "nclusters", add_points=FALSE)
 
 ##################
 ### plots uncertainty ####
@@ -251,5 +289,5 @@ plot_data(mylist$big_df, mylist$crash, mylist$xlabel, model, "nclusters", add_po
 print ("Plots for uncertainty")
 model <- c("region")
 mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "uncertainty")
-plot_data(mylist$big_df, mylist$crash, mylist$xlabel, model, "uncertainty", add_points=FALSE)
+plot_data(mylist$big_df, mylist$crash,  mylist$xlabel, model, "uncertainty", add_points=FALSE)
 

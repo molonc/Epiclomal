@@ -48,13 +48,13 @@ ntrue_clusters <- c(3,2,2,21,6)
 datapaths <- c("/shahlab/mandronescu/EPI-112_inhouse_data/FINAL_RESULTS",
                "/shahlab/mandronescu/EPI-70_Smallwood2014/FINAL_RESULTS",
                "/shahlab/mandronescu/EPI-105_scTrio/FINAL_RESULTS",
-               "./shahlab/mandronescu/EPI-106_Luo2017/FINAL_RESULTS_genebodies_all_clean_cells_MAXK30",
-               "/shahlab/mandronescu/EPI-89_Farlik2016/FINAL_RESULTS")
+               "/shahlab/mandronescu/EPI-106_Luo2017/FINAL_RESULTS_genebodies_all_clean_cells_MAXK30",
+               "/shahlab/mandronescu/EPI-89_Farlik2016/FINAL_RESULTS_6clusters_Farlik_clustering")
 simplepaths <- c("/shahlab/mandronescu/EPI-112_inhouse_data/OUTPUT_epiclomal_INHOUSE/RUN/epiclomal_INHOUSE_",
                  "/shahlab/mandronescu/EPI-70_Smallwood2014/OUTPUT_epiclomal_Smallwood2014/RUN/epiclomal_Smallwood2014_",
                  "/shahlab/mandronescu/EPI-105_scTrio/OUTPUT_epiclomal_scTrio/RUN/epiclomal_scTrio_",
                  "/shahlab/mandronescu/EPI-106_Luo2017/OUTPUT_epiclomal_Luo2017_genebodies_all_clean_cells_MAXK30/RUN/epiclomal_Luo2017_genebodies_all_clean_cells_MAXK30_",
-                 "/shahlab/mandronescu/EPI-89_Farlik2016/OUTPUT_epiclomal_Farlik2016_6clusters/RUN/epiclomal_Farlik2016_6clusters_")
+                 "/shahlab/mandronescu/EPI-89_Farlik2016/OUTPUT_epiclomal_Farlik2016_6clusters_Farlik_clustering/RUN/epiclomal_Farlik2016_6clusters_Farlik_clustering_")
 
 # each replicate file should be in inputs, for example inputs/Smallwood2014_replicates.txt
 
@@ -206,6 +206,8 @@ collect_data <- function(model, criterion1, criterion2, measure_name){
       }
     }
     
+    # make the measure be at least some small value so we can see it
+    measure[measure<0.02] <- 0.02
     
     big_df <- cbind(as.data.frame(measure),as.data.frame(crash),VAR,method,replicate, imputed)
     colnames(big_df) <- c("Measure","crash","VAR","method","replicate","imputed")

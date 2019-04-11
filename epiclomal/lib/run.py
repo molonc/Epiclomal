@@ -198,10 +198,14 @@ def run_model(mtype, args):
             os.makedirs(args.out_dir)
             
         write_cluster_posteriors(cell_ids, model.pi_star, args.out_dir)        
-        labels_pred, labels_prob = write_cluster_MAP(cell_ids, model.pi_star, args.out_dir)                                      
-                      
+        labels_pred, labels_prob = write_cluster_MAP(cell_ids, model.pi_star, args.out_dir)                                                          
+					
         write_genotype_posteriors(model, args.out_dir) 
         epigenotype = write_genotype_MAP(model, args.out_dir)         
+        
+        # Not doing the correction here, but in the hamming_distance.R script when I check the hamming distance
+        # print("Doing genotype correction")
+        # epigenotype = write_genotype_MAP_corrected(model, args.out_dir, labels_pred)
         
         # function inherited from SCG which doesn't work right now
         # write_genotype_posteriors(event_ids, model.get_mu_star(), args.out_dir)         
@@ -324,17 +328,18 @@ def run_model(mtype, args):
         model.uncertainty_tpr = None
         if (args.check_uncertainty == True):
             different_regions = model._compute_different_regions(labels_pred, epigenotype)            
-            # print('The different regions are ', *different_regions)
+            print('The different regions are ', *different_regions)
             true_positive_rate = 0
             if len(different_regions) > 0:
             # DO this if there is at list one different region, otherwise there's no point
                 # Second find the cells that have completely missing data in the different regions
                 candidate_cells = model._compute_candidate_cells(labels_pred, epigenotype, different_regions)
+                print(candidate_cells)
                 # This is dictionary where the keys are the candidate cells and the values are the possible clusters for each candidate cell
                 candidate_keys =  list(candidate_cells.keys())        
                 for key in candidate_keys:
-                    # print ("Current prediction ", labels_prob[key])
-                    # print ("    Cell ", key, " with candidate clusters ", candidate_cells[key], "of size", len(candidate_cells[key]))
+                    print ("Current prediction ", labels_prob[key])
+                    print ("    Cell ", key, " with candidate clusters ", candidate_cells[key], "of size", len(candidate_cells[key]))
                     expected_prob = 1./len(candidate_cells[key])
                     if (labels_prob[key] >= expected_prob - 0.2 and labels_prob[key] <= expected_prob + 0.2):
                         true_positive_rate += 1
@@ -624,6 +629,37 @@ def write_genotype_MAP(model, out_dir):
         #     df.to_csv(fh, index_label='cluster_id', sep='\t')
         df.to_csv(file_name, index_label='cluster_id', sep='\t', mode='w', compression='gzip')    
     return map_mu_star
+	
+
+##########################
+
+# not finished
+# def correct_genotype (genotype, labels_pred):
+# 	print("In correct genotype")
+#	print(genotype.shape)
+#	print(genotype)
+#	print("Labels pred")
+#	print(labels_pred)
+#	return(genotype)
+
+##########################
+
+# not finished
+# def write_genotype_MAP_corrected(model, out_dir, labels_pred):
+#     file_name = os.path.join(out_dir, 'genotype_MAP_corrected.tsv.gz')
+#     
+#     for data_type in model.data_types:
+#         u_mu_star = model.unregion_mu_star(data_type)             
+#         map_mu_star = np.argmax(u_mu_star, axis=0)
+#         df = pd.DataFrame(map_mu_star, index=range(u_mu_star.shape[1]))
+#   
+#         # 11 Mar 2019: correcting the genotypes
+#         df = correct_genotype (df, labels_pred)
+#   
+#         # with gzip.GzipFile(file_name, 'w') as fh:
+#         #     df.to_csv(fh, index_label='cluster_id', sep='\t')
+#         df.to_csv(file_name, index_label='cluster_id', sep='\t', mode='w', compression='gzip')    
+#     return map_mu_star	
 
 ##########################
 

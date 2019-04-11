@@ -210,10 +210,26 @@ if (!is.null(inferred_clusters_file)) {
 # MA: we want to add the true clusters annotation no matter whether we order by true or predicted
 if(!is.null(true_clusters_file)){
   if (!is.null(args$inferred_clusters_file)) {
-    annotation_row <- cbind(inferred_cell_clusters,true_cell_clusters$true_clusters)          
-    colnames(annotation_row) <- c("inferred clusters", "true clusters")  
-    annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
-    annotation_row$`true clusters` <- as.factor(annotation_row$`true clusters`)
+    if (args$name == "InHouse") {
+        true <- true_cell_clusters$true_clusters
+        true[true==1] <- "SA501 TNBC"
+        true[true==2] <- "SA532 ER+PR-Her2+"
+        true[true==3] <- "SA609 TNBC"        
+        pred <- inferred_cell_clusters
+        # this depends on Epiclomal cluster labels
+        pred[pred==0] <- "cl. 2"
+        pred[pred==7] <- "cl. 1"
+        pred[pred==5] <- "cl. 3"
+        annotation_row <- cbind(pred,true)          
+        colnames(annotation_row) <- c("Epiclomal", "Patient")  
+        annotation_row$`Epiclomal` <- as.factor(annotation_row$`Epiclomal`)
+        annotation_row$`Patient` <- as.factor(annotation_row$`Patient`)
+    } else {    
+        annotation_row <- cbind(inferred_cell_clusters,true_cell_clusters$true_clusters)          
+        colnames(annotation_row) <- c("inferred clusters", "true clusters")  
+        annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
+        annotation_row$`true clusters` <- as.factor(annotation_row$`true clusters`)
+    }
   } else {
     annotation_row <- true_cell_clusters          
     colnames(annotation_row) <- "true clusters"
@@ -453,19 +469,42 @@ if (M > 250) {
     #ann_colors = list(
     #inferred_clusters = c(cl0="blue", cl3="green",cl4="pink"))
     
-    pheatmap(data,cluster_cols=FALSE,
-             cluster_rows=FALSE,
-             annotation_row = annotation_row,
-             #cellwidth = 5,cellheight = 5,
-             fontsize = 8, 
-	     main = paste0("Region-based mean methylation fraction data for ", args$name),
-             gaps_row = index_gaps,fontsize_row=fontrow,fontsize_col=6,
-             annotation_names_row = FALSE,
-             #annotation_colors = mycolors,
-             border_color=NA,
-             show_colnames=show_col_chr_labels_reg,
-             labels_col = labels_col_reg,
-             filename = paste0(out_dir,"/",args$name,"_region_based_PLOT.pdf"))             
+    #main = paste0("Region-based mean methylation data for ", args$name),    
+    
+    if (args$name == "InHouse") {       # plot for publication
+        #ann_colors = list(Epiclomal = c(`cl. 1`="red", `cl. 2`="green", `cl. 3`="blue"))
+        ann_colors = list(Epiclomal = c(`cl. 1`="orange3", `cl. 2`="seagreen", `cl. 3`="royalblue"))
+    
+        pheatmap(data,cluster_cols=FALSE,
+                 cluster_rows=FALSE,
+                 annotation_row = annotation_row,
+                 annotation_colors = ann_colors,
+                 # cellwidth = 5, cellheight = 5,
+                 fontsize = 12, 
+                 main = paste0("Mean methylation data for ", args$name),
+                 gaps_row = index_gaps, fontsize_row=fontrow, fontsize_col=8,
+                 annotation_names_row = FALSE,
+                 #annotation_colors = mycolors,
+                 border_color=NA,
+                 show_colnames=show_col_chr_labels_reg,
+                 show_rownames=FALSE,
+                 labels_col = labels_col_reg,
+                 filename = paste0(out_dir,"/",args$name,"_region_based_PLOT.pdf"))
+    } else {                              
+        pheatmap(data,cluster_cols=FALSE,
+                 cluster_rows=FALSE,
+                 annotation_row = annotation_row,
+                 # cellwidth = 5, cellheight = 5,
+                 fontsize = 8, 
+                 main = paste0("Region-based mean methylation fraction data for ", args$name),
+                 gaps_row = index_gaps, fontsize_row=fontrow, fontsize_col=6,
+                 annotation_names_row = FALSE,
+                 #annotation_colors = mycolors,
+                 border_color=NA,
+                 show_colnames=show_col_chr_labels_reg,
+                 labels_col = labels_col_reg,
+                 filename = paste0(out_dir,"/",args$name,"_region_based_PLOT.pdf"))  
+    }                    
     
     #filename = paste0(sub(input_CpG_data_file,pattern=".tsv",replacement=""),"_region_based_PLOT.pdf"))
     rm(data)

@@ -569,9 +569,9 @@ class BasicGeMM(object):
                           e_log_epsilon[:, :, np.newaxis, np.newaxis, np.newaxis, np.newaxis])
                           
         
-        return log_pi_star    
-    
-    
+        return log_pi_star        
+		
+	
     ##########################################################    
     
     def _compute_lower_bound(self, skip=0):
@@ -1173,7 +1173,7 @@ class BasicGeMM(object):
                 for r in different_regions:
                     # print("    Region ", r, "of length ", int(self.L[data_type][r]))
                     region = self.X[data_type][cell,r,0:int(self.L[data_type][r])]
-                    # print(*region)
+                    print(*region)
                     if (all(np.isnan(v) for v in region)):
                         empty_regions.append(str(cell)+"_"+str(r))
                         if (cell_added == 0):
@@ -1201,7 +1201,7 @@ class BasicGeMM(object):
                         otherepi.remove(labels_pred[cell])
                         for s in otherepi:
                             similarity[s] = 0
-                        #print("Similarity dict ", similarity)    
+                        # print("Similarity dict ", similarity)    
                         for cpg in range(self.regions[data_type]['start'][r], self.regions[data_type]['end'][r]+1):
                             for sim in otherepi:
                                 # print("Cell ", cell, " region ", r, " checking other epi ", sim, " my cluster ", labels_pred[cell])
@@ -1212,7 +1212,7 @@ class BasicGeMM(object):
                             similarity[s]/=rlen
                             if similarity[s] >= 0.8:
                                similar_clusters.append(s)
-                        print ("Cell ", cell, " region ", r, " similarity score ", similarity, " similar clusters ", *similar_clusters, " len ", len(similar_clusters))
+                        # print ("Cell ", cell, " region ", r, " similarity score ", similarity, " similar clusters ", *similar_clusters, " len ", len(similar_clusters))
                         if (len(similar_clusters) == 0):     # unique for this region
                             # print ("Removing cell ", cell)
                             candidate_cells.remove(cell)  

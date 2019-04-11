@@ -344,14 +344,17 @@ print("Tony's approach - CpG based clustering (HammingClust)")
 #input_CpG_data <- input_CpG_data[1:100,1:5]
 
 if (impute == 1) {
-    print("Per locus, replacing NAs with average values")
+    print("Per locus, replacing NAs with median values")
     for (i in seq(1:ncol(input_CpG_data))) {
         # for some reason mean(input[i,],na.rm=TRUE) doesn't work
         vec <- input_CpG_data[!is.na(input_CpG_data[,i]),i]
-        mean <- sum(vec)/length(vec)
-        input_CpG_data[is.na(input_CpG_data[,i]),i] <- mean
+        med <- floor(median(vec))
+        input_CpG_data[is.na(input_CpG_data[,i]),i] <- med
     }
     print(" ... done.")    
+    imputed_file <- paste0(outdir,"/cpg_based_imputed.csv")
+    write.table(input_CpG_data, file=imputed_file, sep="\t", col.names=TRUE, quote=FALSE,row.names=TRUE)
+    system(paste0("gzip --force ", imputed_file))    
 }
 
 dist_PBAL <- dist.PBAL(d=input_CpG_data)

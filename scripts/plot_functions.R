@@ -94,20 +94,40 @@ reformat <- function(x) {
 ##########################################
 
 set_colors_and_labels <- function(model) {
+  # the colors from RcolorBrewer set1:
+  # http://colorbrewer2.org/#type=qualitative&scheme=Set1&n=8  
   ourcolors <- vector(mode = "character", length = length(model))
   label <- vector(mode = "character", length = length(model))
   for (m in 1:length(model)) {
     if (model[m] == "region") {
-      ourcolors[m] <- "red"
+      ourcolors[m] <- "#e41a1c"        # was red, then red3
       label[m] <- "EpiclomalRegion"
+    } else if (model[m] == "region-uncorrected") {
+      ourcolors[m] <- "#a65628"
+      label[m] <- "EpiclomalRegion-unadjusted"
+    } else if (model[m] == "region-corrected") {
+      ourcolors[m] <- "#e41a1c"
+      label[m] <- "EpiclomalRegion-adjusted"      
+    } else if (model[m] == "region-naive") {
+      ourcolors[m] <- "grey15"     # brown
+      label[m] <- "EpiclomalRegion-naive"      
     } else if (model[m] == "region_bulk") {
-      ourcolors[m] <- "orange"
+      ourcolors[m] <- "#ff7f00"      # was orange
       label[m] <- "EpiclomalBulk"            
     } else if (model[m] == "basic") {
-      ourcolors[m] <- "yellow"
+      ourcolors[m] <- "gold"        # was yellow or gold
       label[m] <- "EpiclomalBasic"            
+    } else if (model[m] == "basic-uncorrected") {
+      ourcolors[m] <- "goldenrod"
+      label[m] <- "EpiclomalBasic-unadjusted"
+    } else if (model[m] == "basic-corrected") {
+      ourcolors[m] <- "gold"
+      label[m] <- "EpiclomalBasic-adjusted"     
+    } else if (model[m] == "basic-naive") {
+      ourcolors[m] <- "grey40"
+      label[m] <- "EpiclomalBasic-naive"                  
     } else if (model[m] == "EuclideanClust" || model[m] == "Hclust") {
-      ourcolors[m] <- "green"
+      ourcolors[m] <- "#4daf4a"       # was green or limegreen
       label[m] <- "EuclideanClust"            
     } else if (model[m] == "DensityCut" || model[m] == "densitycut") {
       ourcolors[m] <- "skyblue"
@@ -180,7 +200,12 @@ grab_point <- function(x){
 
 ################################################
 
-plot_data <- function(big_df, crash, model, measure_name,add_points) {  
+plot_data <- function(big_df, crash, xlabel, model, measure_name, add_points) {  
+  
+  # select only what is in "model"
+  big_df <- big_df[big_df$method %in% model,]
+  print("Big df after selecting model")
+  print(big_df)
   
   our <- set_colors_and_labels(model)    
   ourcolors <- our$colors
@@ -213,7 +238,7 @@ plot_data <- function(big_df, crash, model, measure_name,add_points) {
     fname <- "results"
   }      
   
-  xlabel = "Data set"  
+  # xlabel = "Data set"  # Now xlabel is given
   
   #sub_big_df <- ddply(big_df, .(VAR,method),summarise,crash_perc=(1-mean(crash)))   # big_df[['crash']])))
   #print(sub_big_df)
@@ -265,36 +290,42 @@ plot_data <- function(big_df, crash, model, measure_name,add_points) {
   
   pHD <- pHD + 
     #guides(fill=FALSE) +
-    theme(plot.title = element_text(size=20), 
-          axis.text.x  = element_text(angle=90, vjust=0.5, size=20, colour= "black"), 
+    theme(plot.title = element_text(size=25), 
+          axis.text.x  = element_text(angle=90, vjust=0.5, size=25, colour= "black"), 
           # axis.text.x  = element_blank()
-          axis.text.y  = element_text(size=16, colour= "black"),
+          axis.text.y  = element_text(size=21, colour= "black"),
           #panel.background = element_rect(fill="white",colour = 'black'), 
-          axis.title.y =element_text(size=20), 
-          axis.title.x=element_text(size=20),
+          axis.title.y =element_text(size=23), 
+          axis.title.x=element_text(size=25),
           strip.background = element_blank(),
           strip.text.x = element_blank(),
           legend.position="none",
-          legend.text=element_text(size=16)
+          legend.text=element_text(size=25)
           #strip.text.x = element_text(size =16)
     )
   pHD <- pHD + scale_fill_manual(values=ourcolors)  
   # plot bar plots for crash
+  if (measure_name == "uncertainty") {
+    ylabel <- "Undefined" 
+  } else {
+    ylabel <- "Failure"
+  }    
   bHD <-ggplot(sub_big_df, aes(x=method, y=crash_perc, fill=method)) +
-    scale_y_continuous(breaks=seq(0,1,0.50), labels = function(x) format(round(x,2),nsmall=2)) +
+    scale_y_continuous(breaks=seq(0,1,0.50), limits=c(0,1), labels = function(x) format(round(x,2),nsmall=2)) +
     geom_bar(stat="identity") + facet_grid(~VAR) +
     # ggtitle(xlabel) +
-    labs(x="", y = paste0("Unsuccess")) 
-  bHD <- bHD + theme(plot.title = element_text(size=20), 
+    labs(x="", y = ylabel) 
+  bHD <- bHD + theme(plot.title = element_text(size=25), 
                      #axis.text.x  = element_text(angle=90, vjust=0.5, size=16, colour= "black"), 
                      axis.text.x  = element_blank(),
-                     axis.text.y  = element_text(size=16, colour= "black"),
+                     axis.text.y  = element_text(size=21, colour= "black"),
                      #panel.background = element_rect(fill="white",colour = 'black'), 
-                     axis.title.y =element_text(size=20), 
-                     axis.title.x=element_text(size=20),
+                     axis.title.y =element_text(size=23), 
+                     axis.title.x=element_text(size=25),
                      legend.position="top",
-                     legend.text=element_text(size=16),
-                     strip.text.x = element_text(size =20) )
+                     legend.text=element_text(size=22),
+                     legend.title=element_text(size=25),
+                     strip.text.x = element_text(size =23) )
   
   bHD <- bHD +  scale_fill_manual(values=ourcolors)                   
   
@@ -313,6 +344,7 @@ plot_data <- function(big_df, crash, model, measure_name,add_points) {
   #
   # stop()
   
+  ######################################
   # plot the mean and median line plots
   #aggre <- c("mean")
   # TODO For some reason, it doesn't work for median, it says "need numeric data"
@@ -339,7 +371,6 @@ plot_data <- function(big_df, crash, model, measure_name,add_points) {
     print(agg)
     
     
-    
     # The errorbars overlapped, so use position_dodge to move them horizontally
     pd <- position_dodge(0.1) # move them .05 to the left and right, if 0 no move happens
     
@@ -350,14 +381,31 @@ plot_data <- function(big_df, crash, model, measure_name,add_points) {
         geom_line(aes(color=method), size=3,position=pd) + 
         geom_point(position=pd,size=4) +
         labs(x=xlabel, y = paste0(measure_title, " (", agg, ")")) 
-      pHD <- pHD + theme(axis.text.y  = element_text(size=20, colour= "black"),
-                         axis.text.x  = element_text(size=20, colour= "black"),      
-                         axis.title.y =element_text(size=22), 
-                         axis.title.x=element_text(size=22),
-                         legend.text=element_text(size=16),
-                         legend.position="top",
-                         strip.text.x = element_text(size =16) )  
-      pHD <- pHD + scale_color_manual(values=ourcolors)                           
+        
+      if (measure_name == "HD") {
+        lpos <- c(0.25,0.8)
+        if (xlabel == "Number of loci")    {  lpos <- c(0.6,0.8)  }
+        if (xlabel == "Clone prevalence")  {  lpos <- c(0.25,0.2) }
+        if (xlabel == "Number of cells")   {  lpos <- c(0.45,0.8) }
+        # lpos <- c(0.6,0.8)      # put legend on top left
+		# for NCELLS lpos <- c(0.45,0.8)
+		# for CLONE_PREV_500CELLS lpos <- c(0.25,0.2)
+		# for NLOCI lpos <- c(0.6,0.8)
+		# for others lpos <- c(0.25,0.8)		
+      }  else {
+        lpos <- "top"
+      }
+      print("Our colors")
+      print(ourcolors)      
+      pHD <- pHD + theme(axis.text.y  = element_text(size=25, colour= "black"),
+                         axis.text.x  = element_text(size=25, colour= "black"),      
+                         axis.title.y =element_text(size=27), 
+                         axis.title.x=element_text(size=27),
+                         legend.text=element_text(size=22),
+                         legend.title=element_text(size=25),
+                         legend.position=lpos,
+                         strip.text.x = element_text(size = 21) )  
+      pHD <- pHD + scale_color_manual(values=ourcolors) +  guides(fill=guide_legend(nrow=2,byrow=TRUE))                        
       
       
     }
@@ -377,13 +425,14 @@ plot_data <- function(big_df, crash, model, measure_name,add_points) {
         geom_line(aes(color=method), size=3,position=pd) + 
         geom_point(position=pd,size=4) +
         labs(x=xlabel, y = paste0(measure_title, " (", agg, ")")) 
-      pHD <- pHD + theme(axis.text.y  = element_text(size=20, colour= "black"),
-                         axis.text.x  = element_text(size=20, colour= "black"),
-                         axis.title.y =element_text(size=22), 
-                         axis.title.x=element_text(size=22),
-                         legend.text=element_text(size=16),
+      pHD <- pHD + theme(axis.text.y  = element_text(size=25, colour= "black"),
+                         axis.text.x  = element_text(size=25, colour= "black"),
+                         axis.title.y =element_text(size=27), 
+                         axis.title.x=element_text(size=27),
+                         legend.text=element_text(size=22),
+                         legend.title=element_text(size=25),                         
                          legend.position="top",
-                         strip.text.x = element_text(size =16) )    
+                         strip.text.x = element_text(size =21) )    
       pHD <- pHD + scale_color_manual(values=ourcolors)
       
     }
@@ -411,24 +460,45 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
   if (measure_name == "HD") {
     measure_title <- "Hamming Distance"
     fname <- "hdist"
+    legpos="top"
+    myheight=7
+    xtext <- element_text(angle=90, vjust=0.5, size=14, colour= "black")
   } else if (measure_name == "Vmeasure") {
     measure_title <- "V-measure"
     fname <- "results"
+    legpos="top"
+    myheight=5    
+    xtext <- element_blank()    
   } else if (measure_name == "nclusters") {
     measure_title <- "Number of predicted clusters"
     fname <- "results"
+    legpos="none"    
+    myheight=6.5    
+    xtext <- element_text(angle=90, vjust=0.5, size=14, colour= "black")    
   } else if (measure_name == "nclusters2") {
     measure_title <- "Number of predicted clusters"
     fname <- "results"    
+    legpos="none"    
+    myheight=6.3    
+    xtext <- element_text(angle=90, vjust=0.5, size=14, colour= "black")    
   } else if (measure_name == "clone_prev_MAE") {
     measure_title <- "Clone prevalence MAE"
     fname <- "results"
+    legpos="none"    
+    myheight=4.3
+    xtext <- element_blank()
   } else if (measure_name == "clone_prev_MSE") {
     measure_title <- "Clone prevalence MSE"
     fname <- "results"
+    legpos="none"
+    myheight=6.3 
+    xtext <- element_text(angle=90, vjust=0.5, size=14, colour= "black")       
   } else if (measure_name == "uncertainty") {
     measure_title <- "Uncertainty true positive rate"
     fname <- "results"
+    legpos="top"
+    myheight=7    
+    xtext <- element_text(angle=90, vjust=0.5, size=14, colour= "black")    
   }      
   
   xlabel = "Data set"  
@@ -548,20 +618,23 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
       labs(x="", y = measure_title) +
       #scale_y_continuous(breaks=c(-0.125,0.00,0.25,0.50,0.75,1.00), labels = c("Failure",0.00,0.25,0.50,0.75,1.00),limits=c(-.125,1.00)) +
       theme(plot.title = element_text(size=8), 
-            axis.text.x  = element_text(angle=90, vjust=0.5, size=14, colour= "black"),
-            legend.position="top",
+            axis.text.x  = xtext,
+            legend.position=legpos,    
+            #legend.position="top",
             axis.text.y  = element_text(size=18, colour= "black"),
             axis.title.y =element_text(size=22), 
             axis.title.x=element_text(size=20),
             legend.text=element_text(size=22) ,
-            legend.title=element_text(size=22) ,
+            legend.title= element_text(size=22) ,
+            #legend.text=element_blank() ,
+            #legend.title= element_blank() ,
             strip.text.x = element_text(size = 22)
             )
 
   pHD <- pHD + scale_fill_manual(values=ourcolors)   
              
  
-  ggsave(pHD,file=paste0(outdir,"/barplots_",measure_name,".pdf"),width=16,height=8)   
+  ggsave(pHD,file=paste0(outdir,"/barplots_",measure_name,".pdf"),width=16,height=myheight)   
   
    }
 
@@ -586,8 +659,9 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
       labs(x="", y = measure_title) +
 #      scale_y_continuous(breaks=c(-1,0,2,4,6,8,10,12), labels = c("Failure",0,2,4,6,8,10,12)) +
       theme(plot.title = element_text(size=8), 
-            axis.text.x  = element_text(angle=90, vjust=0.5, size=14, colour= "black"),
-            legend.position="top",
+            axis.text.x  = xtext,
+            #axis.text.x  = element_text(angle=90, vjust=0.5, size=14, colour= "black"),
+            legend.position=legpos,
             axis.text.y  = element_text(size=18, colour= "black"),
             axis.title.y =element_text(size=22), 
             axis.title.x=element_text(size=20),
@@ -608,8 +682,8 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
         labs(x="", y = measure_title) +
         #      scale_y_continuous(breaks=c(-1,0,2,4,6,8,10,12), labels = c("Failure",0,2,4,6,8,10,12)) +
         theme(plot.title = element_text(size=8), 
-              axis.text.x  = element_text(angle=90, vjust=0.5, size=14, colour= "black"),
-              legend.position="top",
+              axis.text.x  = xtext,
+              legend.position=legpos,
               axis.text.y  = element_text(size=18, colour= "black"),
               axis.title.y =element_text(size=22), 
               axis.title.x=element_text(size=20),
@@ -625,7 +699,7 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
     pHD <- pHD + scale_fill_manual(values=ourcolors)   
     
     
-    ggsave(pHD,file=paste0(outdir,"/barplots_",measure_name,".pdf"),width=16,height=8)   
+    ggsave(pHD,file=paste0(outdir,"/barplots_",measure_name,".pdf"),width=16,height=myheight)   
     
   }
       
