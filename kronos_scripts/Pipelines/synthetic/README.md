@@ -1,12 +1,5 @@
 ## Pipeline for generating synthetic methylation data and running Epiclomal
 
-```
-Development information
-
-Date Created : 6 Apr 2017
-Last Update  : 6 Apr 2017
-Developer    : Daniel Lai (dalai@bccrc.ca)
-```
 
 ### What it does
 * Generates synthetic methylation data
