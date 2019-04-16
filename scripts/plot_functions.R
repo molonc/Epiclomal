@@ -2,6 +2,7 @@
 library(ggplot2)
 library(gridExtra)
 library(plyr)
+library(xlsx)
 
 # plotting functions for the plot_final_results*.R files
 ##########################################
@@ -354,6 +355,9 @@ plot_data <- function(big_df, crash, xlabel, model, measure_name, add_points) {
   #big_df$Measure <- as.numeric(as.character(big_df$Measure))
   
   agg_df <- summarySE_new(big_df, measurevar="Measure", groupvars=c("VAR","method"),na.rm=TRUE)
+  
+  xlsfile <- paste0(outdir,"/SourceData.xlsx")
+  write.xlsx(agg_df, file=xlsfile, sheetName=measure_name,append=TRUE)
   print(agg_df)
   
   for (agg in aggre) {
@@ -577,19 +581,18 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
     
     big_df <- cbind(big_df,Failure)
     
-    #print(big_df)
-    #stop()
-
-    
-
-#stop()
+    #print(big_df)   
 
     big_df$VAR <- factor(big_df$VAR,levels=c("Smallwood2014",
                                                "Hou2016",
                                                "Luo2017",
                                                "Farlik2016",
                                                 "InHouse"))
-  
+	if (measure_name != "nclusters2") {
+		xlsfile <- paste0(outdir,"/SourceData.xlsx")
+		write.xlsx(subset(big_df, select=c("Measure", "VAR", "replicate_method")), file=xlsfile, sheetName=measure_name, append=TRUE)	
+	}
+      
    if(length(grep("nclusters",measure_name)) == 0){    
 
     #big_df$Measure[big_df$crash == 0] <- -0.125

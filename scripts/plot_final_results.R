@@ -238,6 +238,11 @@ print (initial_path_to_each_RUN)
 
 all_regions_criterion <- "0_1_0.01"
 
+xlsfile <- paste0(outdir,"/SourceData.xlsx")
+if (file.exists(xlsfile)) {
+	file.remove(xlsfile)
+}
+
 ##################
 ### plots hamming distance ####
 ##################
@@ -267,6 +272,8 @@ plot_data(mylist$big_df, mylist$crash, mylist$xlabel, model, "clone_prev_MAE", a
 ##################
 ### plots V-measure ####
 ##################
+
+
 ### V-measure
 print ("Plots for V-measure")
 #model <- c("region","region_bulk", "basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")

@@ -1,7 +1,7 @@
 # plotting Vmeasure, Hamming Distance, number of clusters, cluster prevalence mean absolute error and mean squared error
 
-.libPaths(c("/home/mandronescu/R/x86_64-pc-linux-gnu-library/3.2", 
-            "/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos6/3.2", "/clusterapp/software/linux-x86_64-centos6/R-3.2.3/lib64/R/library","/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos6/3.3"))
+#.libPaths(c("/home/mandronescu/R/x86_64-pc-linux-gnu-library/3.2", 
+#            "/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos6/3.2", "/clusterapp/software/linux-x86_64-centos6/R-3.2.3/lib64/R/library","/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos6/3.3"))
 
 
 
@@ -99,8 +99,8 @@ collect_data <- function(model, criterion1, criterion2, measure_name){
   # variable is the value of the changed variable, for example if we are varying misspb, variable is 0.5, 0.6, 0.7, 0.8, 0.9, 0.95
   
   savedfile <- paste0(outdir,"/data_",measure_name,"_",criterion1,"__",criterion2,".Rda")
-  #print(savedfile)
-
+  #print(savedfile) 
+  
  if (file.exists(savedfile)) {
    print("File already exists, loading it")
    load(savedfile)
@@ -227,6 +227,11 @@ collect_data <- function(model, criterion1, criterion2, measure_name){
 }  
 
 
+
+xlsfile <- paste0(outdir,"/SourceData.xlsx")
+if (file.exists(xlsfile)) {
+    file.remove(xlsfile)
+} 
 
 #############################
 ### plots clone_prev_MAE ####
