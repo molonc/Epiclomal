@@ -1,0 +1,2 @@
+best_vmeasure	clone_prev_MAE	clone_prev_MSE	nclusters_true	nclusters_pred
+1.0 	 0.0203 	 0.000481 	 3 	 3
