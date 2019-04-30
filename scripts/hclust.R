@@ -545,7 +545,7 @@ script.basename <- dirname(script.name)
 densitycut.name <- paste(sep="/", script.basename, "densitycut.R")
 # print(paste("Sourcing",densitycut.name,"from",script.name))
 
-maxpc <- 20
+maxpc <- min(20, R)
 command <- paste0(RSCRIPT, " ", densitycut.name, 
     " --output_directory ", outdir, 
     " --max_PC ", maxpc, " --methylation_file ", input_CpG_data_file,
@@ -659,7 +659,8 @@ if (!is.null(true_clusters_file)) {
         print(command)
         system(command)
     }    
-
+    print("DensityCut file")
+    print(paste0(dfile,".gz"))
     if(file.exists(paste0(dfile,".gz"))) {
         print("Calling evaluation software for DensityCut")
         command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --true_prevalences ", args$true_prevalences, " --predicted_clusters_file ", dfile, ".gz --clusters_are_probabilities False --results_file ", outdir, "/results_DensityCut.txt")

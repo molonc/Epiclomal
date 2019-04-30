@@ -3,7 +3,7 @@
 # - generates the clones independently 
 # - missing and error are probabilities, for each position, make it erroneous or missing with that probability
 # - the missing step is applied after the error step
-# - only 2 states: methylatated (1) and unmethylated (0)
+# - only 2 states: methylated (1) and unmethylated (0)
 
 # simulate synthetic data
 
@@ -13,7 +13,7 @@
 #.libPaths(c("/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos5/3.2", "/clusterapp/software/linux-x86_64-centos5/R-3.2.3/lib64/R/library"))
 
 
-suppressMessages(library("argparse"))
+library("argparse")
 suppressMessages(library("Matrix"))
 suppressMessages(library("MCMCpack")) # for generating values from a Dirichlet distribution
 
@@ -25,15 +25,15 @@ parser <- ArgumentParser()
 
 parser$add_argument("--read_size", type="character",default="1_0", help="mean and std dev for the number of CpGs per read when generating data considering a read-based approach, default is no read based approach, that is 1_0") 
 
-parser$add_argument("--num_samples", type="integer", default=1, help="Number different samples") 
+parser$add_argument("--num_samples", type="integer", default=1, help="Number of different samples, default is 1. More than 1 was not fully implemented and tested.") 
 
 parser$add_argument("--num_loci", type="integer", default=100, help="Number of loci") 
 parser$add_argument("--num_clones", type="integer", default=3, help="Number of clones")
 
-parser$add_argument("--num_cells", type="character", default="10", help="Number of cells per sample, starting with sample 1, then sample 2, etc")
+parser$add_argument("--num_cells", type="character", default=10, help="Number of cells per sample, starting with sample 1, then sample 2, etc")
 
-parser$add_argument("--clone_prevalence", type="character", default="0.2_0.5_0.3", help="Probability of clone prevalences for all samples")
-parser$add_argument("--error_probability", type="character", default="0.01_0.01", help="Error probability for each methylation state")
+parser$add_argument("--clone_prevalence", type="character", default="0.2_0.5_0.3", help="Probability of clone prevalences for all samples, separated by _, they have to sum up to 1. For example 0.2_0.5_0.3 for 3 clones generates clone 1 with pb. 0.2, clone 2 with pb 0.5 and clone 3 with pb. 0.3")
+parser$add_argument("--error_probability", type="character", default="0.01_0.01", help="Error probability for each methylation state, for example 0.01_0.01")
 # error_probability="0.01_0.01" corresponds to P(Y=1|G=0)=0.01 and P(Y=0|G=1)=0.01, respectively
 # If we assume more than 2 states it would be better if error_probability is written as matrix
 
@@ -44,34 +44,28 @@ parser$add_argument("--missing_probability", type="character", default=0.1, help
 parser$add_argument("--genotype_prob", type="character", default="dirichlet", help="dirichlet (genotype probabilities are draws from a dirichlet distribution) or 0.5_fixed (all genotype probabilities fixed to 0.5)") 
 
 ### Generate them using a Dirichlet distribution
-parser$add_argument("--dirichlet_param_genotype_prob", type="character", default="1_1", help="Dirichlet parameters to draw genotype probabilities for each region r and clone k") 
-parser$add_argument("--percent_regions_dirichlet_param", type="character", default="0.9", 
-                    help="The percentage of the regions that have methylation drawn from the above distribution. For example if I want 90% of the regions to be hypermethylated and 10% to be hypomethylated, I will set dirichlet_param_genotype_prob=99_1 and percent_regions_dirichlet_param=0.9") 
+parser$add_argument("--dirichlet_param_genotype_prob", type="character", default="1_1", help="Dirichlet parameters to draw genotype probabilities for each region r and clone k, for example 1_1") 
+parser$add_argument("--percent_regions_dirichlet_param", type="character", default="0.9", help="The percentage of the regions that have methylation drawn from the above distribution. For example if I want 90 percent of the regions to be hypermethylated and 10 percent to be hypomethylated, I will set dirichlet_param_genotype_prob=99_1 and percent_regions_dirichlet_param=0.9") 
 
 
 parser$add_argument("--num_regions", type="double", default=5, help="Number of regions")  
 parser$add_argument("--region_size_type", type="character", default="multinomial_equal", help="uniform, multinomial_equal or multinomial_nonequal. Fixed generated from uniform (from 1 to nloci), multinomial_equal (with prob 1/nregions) or multinomial_nonequal (currently this has hard-coded probabilities)")
 
 parser$add_argument("--output_dir", type="character", default="output", help="Entire or just the beginning of the output directory file ")
-parser$add_argument("--given_dir_complete", type="integer", default=0, help="If this is 0, it creates a long output dir name with the input parameters, if it's 1, the output dir is output_dir ")
+parser$add_argument("--given_dir_complete", type="integer", default=0, help="If this is 0, it creates a long output dir name with the input parameters, if it is 1, the output dir is output_dir ")
 
 parser$add_argument("--plot_data", type="character", default=0, help="If this is 1, use the visualization software to plot the data")
 parser$add_argument("--visualization_software", type="character", default=NULL, help="Use this visualization software to plot the data if requested")
 
-parser$add_argument("--prop_add_var", type="character", default="0_0.5", help="proportion (0-1) of non-flipped regions to have their methylation calls changed with prob = 0.5, default is to NO cell to cell variability") 
+parser$add_argument("--prop_add_var", type="character", default="0_0.5", help="Proportion (0-1) of non-flipped regions to have their methylation calls changed with prob = 0.5, default is to NO cell to cell variability") 
 
 parser$add_argument("--bulk_depth", type="integer", default=60, help="Number of cells that will be used to generate bulk methylation levels. If zero no bulk data will be saved.")
 
 
 ### arguments to generate following a phylogenetic tree
-# TODO's for Camila
-# TO PUT BACK the non-phylo
-# To ADD fixing of the tree
 parser$add_argument("--phylogenetic_generation", type="integer", default=1, help="1 or 0. If this is 1, use phylogenetic tree to generate the clones, if this is 0, the clones are independent.")
 
-parser$add_argument("--prop_cpg_flip", type="double", default=1, help="proportion of CpGs to be flipped inside a region")  
-
-#parser$add_argument("--fixing_seed", default=2, help="The seed to be used for fixing region sizes, genotype probabilities and phylogenetic tree.")  
+parser$add_argument("--prop_cpg_flip", type="double", default=1, help="Proportion of CpGs to be flipped inside a region")  
 
 # writes: 6 files 
 # 1: all input parameters 
@@ -81,10 +75,9 @@ parser$add_argument("--prop_cpg_flip", type="double", default=1, help="proportio
 # 5: complete data ( all X's already with error)
 # 6: incomplete data (data with some X's missing)
 
-parser$add_argument("--seed", help="The variability seed. You can set the seed for reproducibility")  
+parser$add_argument("--seed", help="The variability seed. You can set the seed for reproducibility. If this is not set, it will generate a random one and save it in the output params.yaml file")  
 parser$add_argument("--verbose", type="integer", default=1, help="Set to 1 if you want details of the data generation")  
 parser$add_argument("--saveall", type="integer", default=1, help="Set to 1 if you want the save all the data (with errors but without missing observations)")  
-
 
 args <- parser$parse_args() 
 

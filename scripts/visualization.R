@@ -9,7 +9,7 @@
 #======================
 library(pheatmap)
 library(RColorBrewer)
-library(xlsx)
+#library(xlsx)
 
 #======================
 # arguments
@@ -476,10 +476,10 @@ if (M > 250) {
         #ann_colors = list(Epiclomal = c(`cl. 1`="red", `cl. 2`="green", `cl. 3`="blue"))
         ann_colors = list(Epiclomal = c(`cl. 1`="orange3", `cl. 2`="seagreen", `cl. 3`="royalblue"))
     
-        xlsfile <- paste0(out_dir,"/SourceData.xlsx")
-        write.xlsx(data, file=xlsfile, sheetName=paste0("Fig6a_", args$name,"_heatmap"), append=TRUE)
-        write.xlsx(annotation_row, file=xlsfile, sheetName=paste0("Fig6a_", args$name,"_annotation_row"), append=TRUE)
-        write.xlsx(labels_col_reg, file=xlsfile, sheetName=paste0("Fig6a_", args$name,"_annotation_col"), append=TRUE)        
+        #xlsfile <- paste0(out_dir,"/SourceData.xlsx")
+        #write.xlsx(data, file=xlsfile, sheetName=paste0("Fig6a_", args$name,"_heatmap"), append=TRUE)
+        #write.xlsx(annotation_row, file=xlsfile, sheetName=paste0("Fig6a_", args$name,"_annotation_row"), append=TRUE)
+        #write.xlsx(labels_col_reg, file=xlsfile, sheetName=paste0("Fig6a_", args$name,"_annotation_col"), append=TRUE)        
     
         pheatmap(data,cluster_cols=FALSE,
                  cluster_rows=FALSE,
