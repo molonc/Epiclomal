@@ -21,7 +21,11 @@ do
         --config_file inputs/config1.yaml \
         --true_clusters_file synthetic/data/true_clone_membership.tsv.gz \
         --methylation_file synthetic/data/data_incomplete.tsv.gz \
-        --initial_clusters_file simple_hclust/initial_inputs.tsv.gz
+        --initial_clusters_file simple_hclust/initial_inputs.tsv.gz \
+        --regions_file synthetic/data/regions_file.tsv.gz \
+        --slsbulk_iterations 10 \
+        --slsbulk_file synthetic/data/bulk_data_sample_1.tsv.gz \
+        --check_uncertainty True
 
 done
 
