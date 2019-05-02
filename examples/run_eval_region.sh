@@ -14,6 +14,7 @@ $RSCRIPT ../scripts/eval_epiclomal.R \
     --true_clusters_file synthetic/data/true_clone_membership.tsv.gz \
     --true_epigenotypes_file synthetic/data/true_clone_epigenotypes.tsv.gz \
     --methylation_file synthetic/data/data_incomplete.tsv.gz \
+    --regions_file synthetic/data/regions_file.tsv.gz \
     --model_name region \
     --hdist_software ../scripts/hamming_distance.R \
     --visualization_software ../scripts/visualization.R
