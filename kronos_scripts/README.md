@@ -1,2 +1,4 @@
-# Kronos pipelines, components and template runs.
+# Kronos pipelines
+
+Components and template runs will come soon.
 
