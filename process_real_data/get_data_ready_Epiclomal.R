@@ -115,21 +115,26 @@ for (c in 1:length(all_CpG_cell_files)){
   
   #tmp <- read.csv(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[c]),sep="\t",header=TRUE)
   tmp <- fread(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[c]),showProgress=FALSE,sep="\t",header=TRUE)
+  print("  ...read")
+
+  sub_tmp <- tmp[tmp$region_id %in% final_regions$region_id,]  # fast
+  print("  ...got sub_tmp")
   
-  sub_tmp <- tmp[tmp$region_id %in% final_regions$region_id,]
-  
-  cell_id <- as.character(sub_tmp$cell_id[1])
+  cell_id <- as.character(sub_tmp$cell_id[1])   # fast
+  print("  ...got cell_id")
   
   CpG_data <- as.vector(binary_function(x=as.matrix((sub_tmp$meth_frac))))
+  print("  ...got CpG_data")
   
   CpG_with_data[!is.na(CpG_data)] <- 1 
+  print("  ...got CpG_with_data")
   
    #print(head(CpG_data))
   
    #print(head(t(as.matrix(c(cell_id,CpG_data)))))
     
    write.table(t(as.matrix(c(cell_id,CpG_data))), file = paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t", na = "",append=TRUE)
-    
+   print("  ...wrote in table") 
   }
 
  if(args$filter_CpG_no_data == 1){  
