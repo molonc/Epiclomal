@@ -1,0 +1,9 @@
+*.pyc
+*.DS_Store
+*.egg-info
+*.project
+*.pydevproject
+build
+dist
+files.txt
+.Rproj.user

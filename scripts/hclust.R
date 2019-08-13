@@ -210,10 +210,7 @@ if (R > 1){
         # replace with average values, for each col
         print("Per region, replacing NAs with average values")
         for (i in seq(1:ncol(input))) {
-            # for some reason mean(input[i,],na.rm=TRUE) doesn't work
-            vec <- input[!is.na(input[,i]),i]
-            mean <- sum(vec)/length(vec)
-            input[is.na(input[,i]),i] <- mean
+          input[is.na(input[,i]), i] <- mean(input[,i], na.rm = TRUE)
         }
         print(" ... done.")
 
@@ -331,9 +328,8 @@ dist.PBAL <- function(d){ ### d is matrix where the rows correspond to cells and
   dist.data <- matrix(NA,nrow=nrow(d),ncol=nrow(d))
   rownames(dist.data) <- rownames(d)
   colnames(dist.data) <- rownames(d)
-  # MA 13 Aug 2019: Reduced this loop in half, it was doing the pairing twice because j was going from 1 
+  # MA 13 Aug 2019: Reduced this loop in half, it was doing the pairing twice because j was going from 1
   for (i in 1:nrow(d)){
-    dist.data[i,i] <- 0
     for(j in i+1:nrow(d)){
       dist.data[i,j] <- dist.pair(v1=d[i,],v2=d[j,])
     }
@@ -350,10 +346,7 @@ print("Tony's approach - CpG based clustering (HammingClust)")
 if (impute == 1) {
     print("Per locus, replacing NAs with median values")
     for (i in seq(1:ncol(input_CpG_data))) {
-        # for some reason mean(input[i,],na.rm=TRUE) doesn't work
-        vec <- input_CpG_data[!is.na(input_CpG_data[,i]),i]
-        med <- floor(median(vec))
-        input_CpG_data[is.na(input_CpG_data[,i]),i] <- med
+          input[is.na(input[,i]), i] <- mean(input[,i], na.rm = TRUE)
     }
     print(" ... done.")
     imputed_file <- paste0(outdir,"/cpg_based_imputed.csv")
