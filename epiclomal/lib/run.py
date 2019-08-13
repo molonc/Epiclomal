@@ -227,7 +227,7 @@ def run_model(mtype, args):
             # print("Len of cell_ids")
             # print(len(cell_ids))
             for i in range(len(cell_ids)):
-                # print(i)
+                #print(i, " ", cell_ids[i])
                 if (cell_ids[i] != true_clusters.iloc[i]['cell_id']):
                     print ("Cell ids are different for cell ", i, " predicted ", cell_ids[i], " true ", true_clusters.iloc[i]['cell_id'])
                     sys.exit(2)
@@ -421,6 +421,7 @@ def load_data(args, include_regions=False):
         # priors['beta'][data_type] = priors['beta'][data_type] / priors['beta'][data_type].sum()
         
         cell_ids.append(data[data_type].index)
+        #print(cell_ids)
         
         event_ids[data_type] = list(data[data_type].columns)
 
