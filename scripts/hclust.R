@@ -325,12 +325,16 @@ dist.pair <- function(v1,v2){
   
 }
 
+
+## I think this function takes a very long time
 dist.PBAL <- function(d){ ### d is matrix where the rows correspond to cells and columns to CpGs
   dist.data <- matrix(NA,nrow=nrow(d),ncol=nrow(d))
   rownames(dist.data) <- rownames(d)
   colnames(dist.data) <- rownames(d)
+  # MA 13 Aug 2019: Reduced this loop in half, it was doing the pairing twice because j was going from 1 
   for (i in 1:nrow(d)){
-    for(j in 1:nrow(d)){
+    dist.data[i,i] <- 0
+    for(j in i+1:nrow(d)){
       dist.data[i,j] <- dist.pair(v1=d[i,],v2=d[j,])
     }
   }
