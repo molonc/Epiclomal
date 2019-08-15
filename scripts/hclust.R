@@ -75,17 +75,26 @@ extract_mean_meth_per_cell <- function(cell_data,region_coord){
 #======================
 
 # Methylation data
-tmp <- read.csv(input_CpG_data_file,sep="\t",header=TRUE,check.names=FALSE)
-input_CpG_data <- as.matrix(tmp[,-1])
-rownames(input_CpG_data) <- tmp$cell_id
-rm(tmp)
+cached_data <- gsub(".tsv.gz", ".RData.gz", input_CpG_data_file)
+if (file.exists(cached_data)) {
+  load(cached_data)
+} else {
+  tmp <- read.csv(input_CpG_data_file,sep="\t",header=TRUE,check.names=FALSE)
+  input_CpG_data <- as.matrix(tmp[,-1])
+  rownames(input_CpG_data) <- tmp$cell_id
+  rm(tmp)
 
-# Region coordinates
-tmp <- read.csv(input_regions_file,sep="\t",header=TRUE,check.names=FALSE)
-input_regions <- as.matrix(tmp[,-1]) + 1 ## adding 1 to match R indexing - previously coordinates were for python starting on zero
-colnames(input_regions) <- c("start","end") ## input_regions gives already the columns in input_CpG_data that correspond to which regions considered in the construction of input_CpG_data
-rownames(input_regions) <- tmp$region_id
-rm(tmp)
+  # Region coordinates
+  tmp <- read.csv(input_regions_file,sep="\t",header=TRUE,check.names=FALSE)
+  input_regions <- as.matrix(tmp[,-1]) + 1 ## adding 1 to match R indexing - previously coordinates were for python starting on zero
+  colnames(input_regions) <- c("start","end") ## input_regions gives already the columns in input_CpG_data that correspond to which regions considered in the construction of input_CpG_data
+  rownames(input_regions) <- tmp$region_id
+  rm(tmp)
+
+  mean_meth_matrix <- t(apply(input_CpG_data,1,extract_mean_meth_per_cell,region_coord=input_regions))
+
+  save(input_CpG_data, input_regions, mean_meth_matrix, file = cached_data, compress = "gzip")
+}
 
 R <- dim(input_regions)[1] ## number of regions
 M <- dim(input_CpG_data)[2] ## number of loci
@@ -110,7 +119,15 @@ if (R == 1){
 
   print("One region, CpG based hiearchical clustering")
 
-  pairwisedist <- dist(input_CpG_data,method="euclidean")
+  pairwisedist_file <- paste0(outdir, "/pairwisedist.RData.gz")
+  if (file.exists(pairwisedist_file)) {
+    print("loading previously calculated pairwise dist")
+    load(pairwisedist_file)
+    print("... done.")
+  } else {
+    pairwisedist <- dist(input_CpG_data,method="euclidean")
+    save(pairwisedist, file = pairwisedist_file, compress = "gzip")
+  }
 
   if(sum(is.na(pairwisedist)==TRUE) == 0){
 
@@ -131,11 +148,12 @@ if (R == 1){
     t <- try(NbClust(input_CpG_data, diss = pairwisedist,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "cindex"))
     if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
       print("can't find a best partition")
-      error_ch_index <- 1 }
-    else {
+      error_ch_index <- 1
+    } else {
       error_ch_index <- 0
       hcluster_Nb <- NbClust(input_CpG_data, diss = pairwisedist,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "cindex")
-      print(hcluster_Nb)}
+      print(hcluster_Nb)
+    }
     if(error_ch_index == 1){
       write.table(error_ch_index,file=paste0(outdir,"/EuclideanClust_CpGbased_bestpartition_crash.tsv"),row.names=FALSE,col.names=FALSE)
 
@@ -191,46 +209,49 @@ if (R > 1){
   # this will result in matrix with N cells by R regions - regions are columns and cells the lines
   #======================
 
-  mean_meth_matrix <- t(apply(input_CpG_data,1,extract_mean_meth_per_cell,region_coord=input_regions))
-
   # MA 8 May 2018: saving the mean methylation matrix
   # MA 20 Jan 2019: doing imputation if required
   if (impute == 1) {
-    imputed_file <- paste0(outdir,"/region_based_imputed.csv")
-    if (file.exists(paste0(imputed_file,".gz"))) {
-        print ("Reading the imputed file")
-        mean_meth_matrix <- read.csv(paste0(imputed_file,".gz"),sep="\t",header=TRUE,check.names=FALSE)
-        print (" ... done.")
+    imputed_file <- paste0(outdir,"/region_based_imputed.RData.gz")
+    if (file.exists(imputed_file)) {
+      print ("Reading the imputed file")
+      load(imputed_file)
+      print (" ... done.")
     } else {
-        input <- mean_meth_matrix
+      # to remove
+      #mean_meth_matrix <- mean_meth_matrix[1:100,1:5]
 
-        # to remove
-        #input <- input[1:100,1:5]
+      # replace with average values, for each col
+      print("Per region, replacing NAs with average values")
+      for (i in seq(1:ncol(mean_meth_matrix))) {
+        mean_meth_matrix[is.na(mean_meth_matrix[,i]), i] <- mean(mean_meth_matrix[,i], na.rm = TRUE)
+      }
+      print(" ... done.")
 
-        # replace with average values, for each col
-        print("Per region, replacing NAs with average values")
-        for (i in seq(1:ncol(input))) {
-          input[is.na(input[,i]), i] <- mean(input[,i], na.rm = TRUE)
-        }
-        print(" ... done.")
-
-        # eliminate the empty rows (features)
-        input <- input[ rowSums(input)!=0, ]
-        write.table(input, file=imputed_file, sep="\t", col.names=TRUE, quote=FALSE,row.names=TRUE)
-        system(paste0("gzip --force ", imputed_file))
-        mean_meth_matrix <- input
+      # eliminate the empty rows (features)
+      mean_meth_matrix <- mean_meth_matrix[ rowSums(mean_meth_matrix)!=0, ]
+      save(mean_meth_matrix, file = imputed_file, compress = "gzip")
     }
   }
 
   save(mean_meth_matrix, file=paste0(outdir,"/EuclideanClust_mean_meth_matrix.Rda"))
 
-  # pairwisedist_region <- dist(mean_meth_matrix ,method="euclidean")
+  pairwisedist_region_file <- paste0(outdir, "/pairwisedist_region.RData.gz")
+  if(file.exists(pairwisedist_region_file)){
+    print("loading pairwise hamming distances")
+    load(pairwisedist_region_file)
+    print("... done.")
+  } else {
+    print("Doing hclust on (dis)similarity matrix")
+    ### Feb 27th, 2018
+    ### doing hclust on the (dis)similarity matrix. Similar to PBAL but based on region mean methylation
+    pairwisedist_region <- dist(dist(mean_meth_matrix ,method="euclidean"),method="euclidean")
+    save(pairwisedist_region, file = pairwisedist_region_file, compress = "gzip")
+    print("... done.")
+  }
 
-  ### Feb 27th, 2018
-  ### doing hclust on the (dis)similarity matrix. Similar to PBAL but based on region mean methylation
-  pairwisedist_region <- dist(dist(mean_meth_matrix ,method="euclidean"),method="euclidean")
 
-  if(sum(is.na(pairwisedist_region)==TRUE) == 0){
+  if(sum(is.na(pairwisedist_region)) == 0){
 
     hclust_region_crash <- 0
     write.table(hclust_region_crash,file=paste0(outdir,"/EuclideanClust_region_crash.tsv"),row.names=FALSE,col.names=FALSE)
@@ -254,7 +275,8 @@ if (R > 1){
     t <- try(NbClust(as.matrix(dist(mean_meth_matrix, method="euclidean")), diss = pairwisedist_region, distance=NULL, min.nc=1, max.nc=Max_K,method = "complete",index = index_type))
     if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
       print("can't use ch or gap index")
-      error_ch_index <- 1 } else {
+      error_ch_index <- 1
+    } else {
       error_ch_index <- 0
       hcluster_Nb <- NbClust(as.matrix(dist(mean_meth_matrix, method="euclidean")), diss = pairwisedist_region, distance=NULL, min.nc=1, max.nc=Max_K,method = "complete",index = index_type)
       print(hcluster_Nb)
@@ -312,27 +334,22 @@ if (R > 1){
 ###################################################
 
 dist.pair <- function(v1,v2){
-  na.idx <- is.na(v1) | is.na(v2)
-  v1a  <- v1[!na.idx]
-  v2a  <- v2[!na.idx]
-  l.na <- (sum(!na.idx)) ## = length(v1a) = length(v2a), the number of entries with data on both vectors
-
-  d <- (sum(abs(v1a - v2a)) / l.na) ### this should be what dist() does!
+  diff <- abs(v1 - v2)
+  d <- sum(diff, na.rm = TRUE) / sum(!is.na(diff))
   return(d)
-
 }
 
 
 ## I think this function takes a very long time
 dist.PBAL <- function(d){ ### d is matrix where the rows correspond to cells and columns to CpGs
-  dist.data <- matrix(NA,nrow=nrow(d),ncol=nrow(d))
+  rows <- nrow(d)
+  dist.data <- matrix(NA,nrow=rows,ncol=rows)
   rownames(dist.data) <- rownames(d)
   colnames(dist.data) <- rownames(d)
-  # MA 13 Aug 2019: Reduced this loop in half, it was doing the pairing twice because j was going from 1
-  for (i in 1:nrow(d)){
-    for(j in i+1:nrow(d)){
-      dist.data[i,j] <- dist.pair(v1=d[i,],v2=d[j,])
-    }
+  for (i in 1:rows) {
+      for(j in i:rows){
+          dist.data[i,j] <- dist.pair(v1=d[i,],v2=d[j,])
+      }
   }
   return(dist.data)
 }
@@ -342,21 +359,38 @@ dist.PBAL <- function(d){ ### d is matrix where the rows correspond to cells and
 print("Tony's approach - CpG based clustering (HammingClust)")
 
 #input_CpG_data <- input_CpG_data[1:100,1:5]
-
 if (impute == 1) {
-    print("Per locus, replacing NAs with median values")
+  imputed_file <- paste0(outdir,"/CpG_based_imputed.RData.gz")
+  if (file.exists(imputed_file)) {
+    print ("Reading the imputed file")
+    load(imputed_file)
+    print (" ... done.")
+  } else {
+    # replace with average values, for each col
+    print("Per region, replacing NAs with median values")
     for (i in seq(1:ncol(input_CpG_data))) {
-          input[is.na(input[,i]), i] <- mean(input[,i], na.rm = TRUE)
+      input_CpG_data[is.na(input_CpG_data[,i]), i] <- floor(median(input_CpG_data[,i], na.rm = TRUE))
     }
     print(" ... done.")
-    imputed_file <- paste0(outdir,"/cpg_based_imputed.csv")
-    write.table(input_CpG_data, file=imputed_file, sep="\t", col.names=TRUE, quote=FALSE,row.names=TRUE)
-    system(paste0("gzip --force ", imputed_file))
+
+    # eliminate the empty rows (features)
+    input_CpG_data <- input_CpG_data[ rowSums(input_CpG_data)!=0, ]
+    save(input_CpG_data, file = imputed_file, compress = "gzip")
+  }
 }
 
-dist_PBAL <- dist.PBAL(d=input_CpG_data)
+dist_PBAL_file <- paste0(outdir, "/dist_PBAL.RData.gz")
+if (file.exists(dist_PBAL_file)) {
+  load(dist_PBAL_file)
+} else {
+  dist_PBAL <- dist.PBAL(d = input_CpG_data)
+  diss_matrix_T <- dist(dist_PBAL,method="euclidean")
+  save(dist_PBAL, diss_matrix_T, file = dist_PBAL_file, compress = "gzip")
+}
 
-diss_matrix_T <- dist(dist_PBAL,method="euclidean")
+# dist_PBAL <- dist.PBAL(d=input_CpG_data)
+
+# diss_matrix_T <- dist(dist_PBAL,method="euclidean")
 
 if(sum(is.na(diss_matrix_T)) == 0){
 
@@ -382,7 +416,8 @@ if(sum(is.na(diss_matrix_T)) == 0){
   t <- try(NbClust(dist_PBAL, diss = diss_matrix_T,distance=NULL, min.nc=1, max.nc=Max_K,method = "ward.D2",index = index_type)) ### changing to cindex as cindex also works for CpG based clustering
   if("try-error" %in% class(t)) {
     print("can't find best partition")
-    error_ch_index <- 1 } else {
+    error_ch_index <- 1
+  } else {
     error_ch_index <- 0
     hcluster_Nb_T <- NbClust(dist_PBAL, diss = diss_matrix_T,distance=NULL, min.nc=1, max.nc=Max_K,method = "ward.D2",index = index_type)
     print(hcluster_Nb_T)
@@ -441,15 +476,16 @@ dist.corr <- function(v1,v2){
 
 }
 
-dist_Pearson <- cor(x=t(input_CpG_data),method="pearson", use ="pairwise.complete.obs")
-
-# d <- dist.corr(v1=input_CpG_data[1,],v2=input_CpG_data[2,]) ### my own way same as above
-
-### from PBAL manuscript: unsupervised learning was done by calculating a Euclidean distance from each cell’s dissimilarity vector and clustered using Ward’s linkage method.
-
-print("scTrio's approach - CpG based clustering")
-
-diss_matrix_P <- 1 - cor(x=dist_Pearson,method="pearson", use ="pairwise.complete.obs")
+dist_Pearson_file <- paste0(outdir, "/dist_Pearson.RData.gz")
+if (file.exists(dist_Pearson_file)) {
+  load(dist_Pearson_file)
+} else {
+  dist_Pearson <- cor(x=t(input_CpG_data),method="pearson", use ="pairwise.complete.obs")
+  ### from PBAL manuscript: unsupervised learning was done by calculating a Euclidean distance from each cell’s dissimilarity vector and clustered using Ward’s linkage method.
+  print("scTrio's approach - CpG based clustering")
+  diss_matrix_P <- 1 - cor(x=dist_Pearson,method="pearson", use ="pairwise.complete.obs")
+  save(dist_Pearson, diss_matrix_P, file = dist_Pearson_file, compress = "gzip")
+}
 
 if(sum(is.na(diss_matrix_P)) == 0){
 
@@ -478,7 +514,8 @@ if(sum(is.na(diss_matrix_P)) == 0){
   t <- try(NbClust(dist_Pearson, diss = as.dist(diss_matrix_P),distance=NULL, min.nc=1, max.nc=Max_K,method = "ward.D2",index = index_type))
   if("try-error" %in% class(t)) {
     print("can't find best partition")
-    error_ch_index <- 1 } else {
+    error_ch_index <- 1
+  } else {
       error_ch_index <- 0
       hcluster_Nb_P <- NbClust(dist_Pearson , diss = as.dist(diss_matrix_P),distance=NULL, min.nc=1, max.nc=Max_K,method = "ward.D2",index = index_type)
       print(hcluster_Nb_P)
