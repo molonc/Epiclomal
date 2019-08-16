@@ -58,6 +58,10 @@ file.arg.name <- "--file="
 script.name <- sub(file.arg.name, "", initial.options[grep(file.arg.name, initial.options)])
 script.basename <- dirname(script.name)
 
+if(impute == 1){
+  sourceCpp(paste(sep="/", script.basename, "impute.cpp"))
+}
+
 
 ## TO TEST
 #input_CpG_data_file <- "/Users/camila/Documents/shahlab15/BS-seq/whole_genome_single_cell/synthetic_data_tests/data/data_incomplete.tsv.gz"
@@ -208,7 +212,7 @@ if (R > 1){
       load(imputed_file)
       print (" ... done.")
     } else {
-      sourceCpp(paste(sep="/", script.basename, "impute.cpp"))
+
       print("Per region, replacing NAs with average values")
       mean_meth_matrix <- impute_means(mean_meth_matrix)
       print(" ... done.")
@@ -316,7 +320,6 @@ if (impute == 1) {
     print (" ... done.")
   } else {
     # replace with average values, for each col
-    sourceCpp(paste(sep="/", script.basename, "impute.cpp"))
     print("Per region, replacing NAs with median values")
     input_CpG_data <- impute_medians(input_CpG_data)
     print(" ... done.")
@@ -608,14 +611,14 @@ if (!is.null(true_clusters_file)) {
       system(command)
   }
 
-  if (PBAL_crash ==0 && PBALclust_bestpartition_crash == 0) {
+  if (PBAL_crash == 0 && PBALclust_bestpartition_crash == 0) {
       print("Calling evaluation software for HammingClust")
       command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --true_prevalences ", args$true_prevalences, " --predicted_clusters_file ", pfile, ".gz --clusters_are_probabilities False --results_file ", outdir, "/results_HammingClust.txt")
       print(command)
       system(command)
   }
 
-  if (Pearson_crash ==0 && Pearsonclust_bestpartition_crash == 0) {
+  if (Pearson_crash == 0 && Pearsonclust_bestpartition_crash == 0) {
       print("Calling evaluation software for PearsonClust")
       command <- paste0("python3 ", eval_soft, " --true_clusters_file ", true_clusters_file, " --true_prevalences ", args$true_prevalences, " --predicted_clusters_file ", peafile, ".gz --clusters_are_probabilities False --results_file ", outdir, "/results_PearsonClust.txt")
       print(command)
