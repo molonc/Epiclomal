@@ -15,7 +15,7 @@ parser$add_argument("--path_regions", type="character", help="Path to the folder
 
 # each replicate file should be in inputs, for example inputs/Smallwood2014_replicates.txt
 
-args <- parser$parse_args() 
+args <- parser$parse_args()
 
 print(args)
 
@@ -24,18 +24,18 @@ path_regions <- args$path_regions
 outdir2 <- args$output_dir
 
 if (!dir.exists(path_regions)){
-  
+
   all_regions_files <- path_regions
   print(all_regions_files)
-  
+
 }else{
-  
+
   print("path_regions is a directory")
-  
+
   all_regions_files <- list.files(path = regionsFile)
-  
+
   print(all_regions_files)
-  
+
 }
 
 print(length(all_regions_files))
@@ -49,93 +49,93 @@ cat(sapply(c("chr","start","end"), toString), file= paste0(outdir2,"/all_regions
 cat("\n", file=paste0(outdir2,"/all_regions_with_overlap.tsv") , append=TRUE)
 
 for (j in 1:length(all_regions_files)){
-  
+
   print(j)
-  
+
   if (!dir.exists(path_regions)){
   region_coordinates <- read.table(all_regions_files[j],sep="\t",header=FALSE)
   }else{
-    region_coordinates <- read.table(paste0(regionsFile,all_regions_files[j]),sep="\t",header=FALSE) 
+    region_coordinates <- read.table(paste0(regionsFile,all_regions_files[j]),sep="\t",header=FALSE)
   }
-  
+
   print(head(region_coordinates))
-  
+
   if(dim(region_coordinates)[2] > 3){
     region_coordinates <- region_coordinates[,1:3]
   }
-  
+
   print(head(region_coordinates))
-  
+
   colnames(region_coordinates) <- c("chr","start","end")
-  
+
   region_coord <- region_coordinates
-  
+
   rm(region_coordinates)
-  
+
   region_coord$chr <- as.character(region_coord$chr)
-  
+
   rownames(region_coord) <- NULL
-  
+
   print(head(region_coord))
-  
+
   #print(unique(region_coord$chr))
-  
+
   #region_coord <- subset(region_coord, chr %in% paste0("chr", c(1:22, "X", "Y")))
-  
+
   print(unique(region_coord$chr))
-  
+
   print(length(unique(region_coord$chr)))
-  
+
   region_coord$chr <- factor(region_coord$chr, level = paste0("chr", c(1:22)))
-  
+
   region_coord <-region_coord[order(region_coord$chr, region_coord$start), ]
-  
+
   region_coord$chr <- as.character(region_coord$chr)
-  
+
   list_chr <-  unique(region_coord$chr)
-  
+
   print(list_chr)
-  
+
   all_regions_overlap <- NULL
-  
+
   for(c in 1:length(list_chr)){
-    
+
     print(c)
-     
+
     tmp <- region_coord[region_coord$chr == list_chr[c],]
-    
+
     #print(dim(tmp))
-    
+
     if(dim(tmp)[1] == 1){
       new_regions <- tmp[1,]
     }else{
-  
+
     new_regions <- NULL
-    
+
     current_end <- tmp$end[1]
-    
+
     new_regions <- tmp[1,]
-    
+
     for(i in 2:nrow(tmp)){
-      
+
       print(i)
       if (tmp$start[i] < new_regions$end[dim(new_regions)[1]]){
         new_regions$end[dim(new_regions)[1]] <- tmp$end[i]
       }else{
         new_regions <- rbind(new_regions,tmp[i,])
       }
-      
-      
+
+
     }
-    
+
     }
-    
+
     all_regions_overlap <- rbind(all_regions_overlap,new_regions)
-    
+
   }
-  
-  print(head(all_regions_overlap)) 
-  
+
+  print(head(all_regions_overlap))
+
   ### checking overlap
 
   tmp <- all_regions_overlap
@@ -166,14 +166,14 @@ for (j in 1:length(all_regions_files)){
   print(sum(tmp$overlap==TRUE))
 
   number_of_regions <- c(number_of_regions,dim(all_regions_overlap)[1])
-  
+
   #pdf(paste0(outdir2,all_regions_files[j],"_Histogram_length_regions_with_overlap.pdf"))
   #hist((all_regions_overlap$end-all_regions_overlap$start),main="",xlab="coord_end - coord_start")
   #dev.off()
-  
-  write.table(all_regions_overlap[,1:3], paste0(outdir2,"/all_regions_with_overlap.tsv") , sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE) 
-  
-  
+
+  write.table(all_regions_overlap[,1:3], paste0(outdir2,"/all_regions_with_overlap.tsv") , sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE)
+
+
 }
 
 #### Now from the file containing all regions do the following:
@@ -201,41 +201,41 @@ list_chr <-  unique(region_coord$chr)
 all_regions_overlap <- NULL
 
 for(c in 1:length(list_chr)){
-  
+
   print(c)
-  
+
   tmp <- region_coord[region_coord$chr == list_chr[c],]
-  
+
   print(dim(tmp))
-  
+
   if(dim(tmp)[1] == 1){
     new_regions <- tmp[1,]
   }else{
-    
-    
+
+
     new_regions <- NULL
-    
+
     current_end <- tmp$end[1]
-    
+
     new_regions <- tmp[1,]
-    
+
     for(i in 2:nrow(tmp)){
-      
+
       #print(i)
-      
+
       if (tmp$start[i] <= new_regions$end[dim(new_regions)[1]]){
         new_regions$end[dim(new_regions)[1]] <- tmp$end[i]
       }else{
         new_regions <- rbind(new_regions,tmp[i,])
       }
-      
-      
+
+
     }
-    
+
   }
-  
+
   all_regions_overlap <- rbind(all_regions_overlap,new_regions)
-  
+
 }
 
 ### stopped here 4:16pm May 9th

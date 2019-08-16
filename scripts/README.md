@@ -10,6 +10,6 @@ This folder contains the following:
 - plot_final_results.R creates final plots for the synthetic data.
 - plot_final_results_real.R creates final plots for the real data.
 - plot_functions.R are used by the two scripts above to plot.
-- visualization.R creates heatmaps of the methylation data and clustering result. 
+- visualization.R creates heatmaps of the methylation data and clustering result.
 
 

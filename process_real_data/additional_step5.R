@@ -86,7 +86,7 @@ print(tmp4[1:2,1:15])
 print("saving the final data without CpGs with no data")
 
 fwrite(tmp4, file = paste0(outdir,"/input_Epiclomal_",args$data_ID,"_only_CpGs_with_Data.tsv"), row.names = FALSE, quote = FALSE, sep = "\t", na = "",showProgress=FALSE)
-system(paste0("gzip --force ", outdir,"/input_Epiclomal_",args$data_ID,"_only_CpGs_with_Data.tsv"))  
+system(paste0("gzip --force ", outdir,"/input_Epiclomal_",args$data_ID,"_only_CpGs_with_Data.tsv"))
 
 print("adjusting for right set of regions")
 
@@ -99,32 +99,32 @@ print("adjusting for right set of regions")
     print(dim(sub_tmp))
 
     print(length(CpG_with_data))
-    
+
     sub_tmp <- sub_tmp[(CpG_with_data == 1),]
 
     print(dim(sub_tmp))
-    
+
     col_num_id <- 1:dim(sub_tmp)[1]
-    num_regions <- sum(!duplicated(sub_tmp$region_id)) 
-    
+    num_regions <- sum(!duplicated(sub_tmp$region_id))
+
     region_sizes <- diff(col_num_id[!duplicated(sub_tmp$region_id)]) ### does not include the size of last region
-      
+
     region_sizes <- c(region_sizes, (dim(sub_tmp)[1] - sum(region_sizes)))
-      
+
        reg_coord <- NULL
        for(r in 1:sum(!duplicated(sub_tmp$region_id))){
          if(r==1){
            reg_coord <- rbind(reg_coord,c(1, region_sizes[r]))} else{
              reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) ) }
        }
-      
+
        reg_coord <- cbind((1:num_regions),reg_coord)
        colnames(reg_coord) <- c("region_id","start","end")
-      
+
        write.table(as.matrix(reg_coord-1 ), file = paste0(outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t")
        system(paste0("gzip --force ", outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"))
-    
-print("End of getting input ready for Luo diamonds")   
+
+print("End of getting input ready for Luo diamonds")
 
 
 

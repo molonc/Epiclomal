@@ -7,14 +7,14 @@ suppressMessages(library(argparse))
 library(pheatmap)
 # create parser object
 parser <- ArgumentParser()
-parser$add_argument("--output_file", type="character", help="Path to the output file for the Bayesian estimates") 
-parser$add_argument("--true_epigenotype_file", type="character", help="Path to true epigenotypes") 
-parser$add_argument("--true_membership_file", type="character", help="Path to true cell membership") 
+parser$add_argument("--output_file", type="character", help="Path to the output file for the Bayesian estimates")
+parser$add_argument("--true_epigenotype_file", type="character", help="Path to true epigenotypes")
+parser$add_argument("--true_membership_file", type="character", help="Path to true cell membership")
 parser$add_argument("--estimated_epigenotype_file", type="character",help="Path to estimated epigenotypes")
-parser$add_argument("--estimated_membership_file", type="character", help="Path to estimated cell membership") 
-parser$add_argument("--methylation_file", type="character", help="Path to the methylation file") 
-parser$add_argument("--regions_file", type="character", help="Path to the region file") 
-args <- parser$parse_args() 
+parser$add_argument("--estimated_membership_file", type="character", help="Path to estimated cell membership")
+parser$add_argument("--methylation_file", type="character", help="Path to the methylation file")
+parser$add_argument("--regions_file", type="character", help="Path to the region file")
+args <- parser$parse_args()
 
 # print(args)
 
@@ -110,13 +110,13 @@ for (r in 1:num_regions) {
                 vector1 <- as.numeric(estimate_epi[estimate_epi$cluster_id==cluster_set[cid1],rstart:rend])
                 vector2 <- as.numeric(estimate_epi[estimate_epi$cluster_id==cluster_set[cid2],rstart:rend])
                 di <- sum(abs(vector1-vector2))/length(vector1)
-                print(paste0("Region ", r, " cluster1 ", cluster_set[cid1], " cluster2 ", cluster_set[cid2], " di ", di))                             
+                print(paste0("Region ", r, " cluster1 ", cluster_set[cid1], " cluster2 ", cluster_set[cid2], " di ", di))
                 if (di > 0.5) {  # large distance
                     variable_region <- TRUE
                 }
-            }            
-        }        
-    }    
+            }
+        }
+    }
     for (j in seq(rstart, rend)) {
         # traverse by cluster
         # print (paste0("Region ", r, " , CpG ", j))
@@ -128,20 +128,20 @@ for (r in 1:num_regions) {
                 val <- floor(median(meth_data[,j],na.rm=TRUE))
                 if (is.na(val)) {
                     val <- 0
-                }    
+                }
                 # also correct the estimated matrix only in this case and if the region is not variable
                 # may have to check that this is a region that is mostly similar across clusters
                 if (variable_region == FALSE) {
                     vec_corr <- meth_data[estimate_Z[,2]==c,j]
                     data_estimate_corr[estimate_Z[,2]==c,j] <- replace(vec_corr,is.na(vec_corr),val)
-                }                    
+                }
             }
             vec <- meth_data[estimate_Z[,2]==c,j]
             meth_data[estimate_Z[,2]==c,j] <- replace(vec,is.na(vec),val)
         }
-    }        
+    }
 }
- 
+
 
 
 ############
@@ -150,30 +150,30 @@ compute_and_save_hd <- function (data_true, data_estimate, outfile) {
     ncells <- dim(data_true)[1]
     nloci <- dim(data_true)[2]
     hamming_distance_per_cell <- NULL
-    
+
     for(i in 1:ncells){
       hd <- sum(data_true[i,] != data_estimate[i,])/nloci
       hamming_distance_per_cell <- c(hamming_distance_per_cell,hd)
     }
-    
+
     # inferring the methylation profiles not from the G matrix, but from the clustering result
     print("number of cells")
     print(ncells)
     print("number of CpGs")
     print(nloci)
-    
+
     hd_stats <- t(as.matrix(summary(hamming_distance_per_cell)))
     iqr <- IQR(hamming_distance_per_cell)
     hd_stats <- cbind(hd_stats,iqr)
     colnames(hd_stats) <- c("min","1stQu","median","mean","3rdQu","max","IQR")
-    
+
     print("Stats for the relative hamming distances across cells")
     print(hd_stats)
     ### if we just want the median and IQR
     #hd_stats <-t(as.matrix(c(median(hamming_distance_per_cell),IQR(hamming_distance_per_cell))))
     #print("median cell relative hamming distance and IQR")
     #colnames(hd_stats) <- c("median","IQR")
-    
+
     write.table (hd_stats, file=outfile, sep="\t", row.names=FALSE)
 }
 
@@ -181,10 +181,10 @@ compute_and_save_hd <- function (data_true, data_estimate, outfile) {
 plot_cell_matrix <- function (matrix, file) {
     # get just a part of the matrix
     matrix <- matrix[1:40,4950:5100]
-    pheatmap(matrix,cluster_rows = FALSE,cluster_cols=FALSE, 
+    pheatmap(matrix,cluster_rows = FALSE,cluster_cols=FALSE,
              annotation_names_row = FALSE, annotation_names_col= FALSE,
              cex = 0.8, cellwidth = 6, cellheight = 4,
-             filename = file) 
+             filename = file)
 }
 
 ########

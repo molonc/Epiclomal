@@ -12,7 +12,7 @@ parser <- ArgumentParser()
 # specify our desired options
 # by default ArgumentParser will add a help option
 
-parser$add_argument("--summary_file", type="character", help="File path to the summary table") 
+parser$add_argument("--summary_file", type="character", help="File path to the summary table")
 
 parser$add_argument("--output_dir", type="character", default="output", help="Entire or just the beginning of the output directory file ")
 
@@ -20,7 +20,7 @@ parser$add_argument("--var", type="character", help="The variable value")
 
 parser$add_argument("--criterion", type="character", help="The selection criterion for the best run: lower_bound or log_posterior")
 
-args <- parser$parse_args() 
+args <- parser$parse_args()
 
 print(args)
 
@@ -86,8 +86,8 @@ collect_data <- function(model, number_data_sets, initial_path_to_each_RUN, summ
         measure_title <- " uncertainty true positive rate"
         column <- "uncertainty"
         fname <- "results"
-    }      
-     
+    }
+
     if(grepl("MISSPB", args$var, fixed=TRUE))   {
         xlabel <- "Missing data proportion"
     } else if (grepl("NREGIONS", args$var, fixed=TRUE))   {
@@ -95,25 +95,25 @@ collect_data <- function(model, number_data_sets, initial_path_to_each_RUN, summ
         # xlabel <- "Percentage of loci different between clusters"
         # variable <- 100.0/variable
     } else if (grepl("CLONE_PREV", args$var, fixed=TRUE))   {
-        xlabel <- "Clone prevalence"    
+        xlabel <- "Clone prevalence"
     } else if (grepl("ERROR", args$var, fixed=TRUE))   {
         xlabel <- "Error"
     } else if (grepl("NCELLS", args$var, fixed=TRUE))   {
-        xlabel <- "Number of cells"    
+        xlabel <- "Number of cells"
     } else if (grepl("NCLONES", args$var, fixed=TRUE))   {
-        xlabel <- "Number of clones"    
+        xlabel <- "Number of clones"
     } else if (grepl("NLOCI", args$var, fixed=TRUE))   {
-        xlabel <- "Number of loci"   
+        xlabel <- "Number of loci"
     } else if (grepl("READSIZE", args$var, fixed=TRUE))   {
-        xlabel <- "Read size"     
-    } else if (grepl("CELL_CELL_VAR", args$var, fixed=TRUE))   {    
+        xlabel <- "Read size"
+    } else if (grepl("CELL_CELL_VAR", args$var, fixed=TRUE))   {
         xlabel <- "Cell to cell variability"
     } else if (grepl("PROP_CPG_FLIP", args$var, fixed=TRUE))   {
-        xlabel <- "Proportions of CpGs flipped in the different region"     
-    }     
- 
-    
-     
+        xlabel <- "Proportions of CpGs flipped in the different region"
+    }
+
+
+
     savedfile <- paste0(outdir,"/data_",measure_name,"_",criterion,".Rda")
     if (file.exists(savedfile)) {
         print("File already exists, loading it")
@@ -131,44 +131,44 @@ collect_data <- function(model, number_data_sets, initial_path_to_each_RUN, summ
                 for(i in 1:number_data_sets){
                     if (model[m] == "HammingClust" || model[m] == "DensityCut" || model[m] == "PearsonClust" || model[m] == "EuclideanClust") {
                         results_file <- paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/simple_hclust/results_", model[m], ".txt")
-                    } else if (model[m] == "region_bulk") {     
+                    } else if (model[m] == "region_bulk") {
                         results_file <- paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_region/",criterion,"/all_",fname,"_bestrun_region.tsv")
-                    } else {     
+                    } else {
                         results_file <- paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_",model[m],"/",criterion,"/all_",fname,"_bestrun_",model[m],".tsv")
-                    }                      
+                    }
                     #print (paste0('file is ', results_file))
-                    t <- try(read.table(file=results_file,sep="\t",header=TRUE))   
+                    t <- try(read.table(file=results_file,sep="\t",header=TRUE))
                     if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
                         print("can't find file")
                         crash <- c(crash,0)
                         measure <- c(measure,NA)
                         VAR <- c(VAR,variable[j])
-                        method <- c(method,model[m])                         
+                        method <- c(method,model[m])
                     } else {
                         # for HD, we have to check 3 files
                         for (index in c(1,2,3)) {
-							t <- try(read.table(file=results_file,sep="\t",header=TRUE))   
+							t <- try(read.table(file=results_file,sep="\t",header=TRUE))
 							if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
 								print(paste0("Can't find file ", results_file, " skipping it"))
 								next
-							}	
-                            f <- read.table(file=results_file,sep="\t",header=TRUE)							
+							}
+                            f <- read.table(file=results_file,sep="\t",header=TRUE)
                             if (model[m] == "region_bulk") {
                                 if (measure_name == "Vmeasure") {
                                     column <- "slsbulk_vmeasure"
-                                }   
+                                }
                                 if (measure_name == "clone_prev_MAE") {
                                     column <- "slsbulk_clone_prev_MAE"
-                                } 
+                                }
                             } else {
                                 if (measure_name == "Vmeasure") {
                                     column <- "best_vmeasure"
-                                }   
+                                }
                                 if (measure_name == "clone_prev_MAE") {
                                     column <- "clone_prev_MAE"
-                                }                                                
-                            } 
-                            new_method <- model[m]  
+                                }
+                            }
+                            new_method <- model[m]
                             if (measure_name == "HD") {
                                 if (index == 1) {
                                     original_file <- results_file
@@ -180,20 +180,20 @@ collect_data <- function(model, number_data_sets, initial_path_to_each_RUN, summ
                                 } else if (index == 3) {
                                     new_method <- paste0 (new_method, "-naive")
                                 }
-                            } 
+                            }
                             if (is.na(f[,column])) {       # this can happen for uncertainty if they, added on 9 Apr 2019
                                 crash <- c(crash,0)
                             } else {
                                 crash <- c(crash,1)
-                            }    
+                            }
                             measure <- c(measure,f[,column])
                             VAR <- c(VAR,variable[j])
-                            method <- c(method,new_method) 
+                            method <- c(method,new_method)
                             if (measure_name != "HD") {
                                 break
                             }
-                        }    
-                    }      
+                        }
+                    }
                 }
             }
         }
@@ -205,9 +205,9 @@ collect_data <- function(model, number_data_sets, initial_path_to_each_RUN, summ
         colnames(big_df) <- c("Measure","crash","VAR","method")
         str(big_df)
 #label <- c("EpiclomalRegion","EpiclomalBulk","EpiclomalBasic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
-        #for (i in 1:length(model)){      
-        #  big_df$method <- sub(pattern=model[i],x=big_df$method,replacement=label[i])      
-        #}    
+        #for (i in 1:length(model)){
+        #  big_df$method <- sub(pattern=model[i],x=big_df$method,replacement=label[i])
+        #}
         #big_df$method <- factor(big_df$method,levels=label)
 
         # big_df$method <- factor(big_df$method,levels=model)
@@ -215,13 +215,13 @@ collect_data <- function(model, number_data_sets, initial_path_to_each_RUN, summ
 
         # Now saving the data frame
         save(big_df, crash, file=savedfile)
-    }  # end make the data files  
+    }  # end make the data files
 
     print("Big DF")
     print(big_df)
 
     return(list("big_df"=big_df, "crash"=crash, "xlabel"=xlabel))
-}    
+}
 
 
 ##################

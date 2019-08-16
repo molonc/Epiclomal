@@ -38,60 +38,60 @@ suppressMessages(library(args$genome_library,character.only=TRUE))
 ### Auxiliar functions
 #=======================
 
-## the function CpG_coordinates_per_region_function takes the chr and start/end coordinates of a region plus the genome of interest and 
+## the function CpG_coordinates_per_region_function takes the chr and start/end coordinates of a region plus the genome of interest and
 ## find the coordinates from each CpG inside that region considering the POSITIVE STRAND
 CpG_coordinates_per_region_function <- function(region_coord,genome,type_C){
-  
+
   CpGs_per_region_coordinates <- NULL
-    
+
   for(i in 1:dim(region_coord)[1]){
-   
+
     if(genome == "Mmusculus") {
-      
+
       if(type_C == "CpG"){ ### extracting coordinates of CpG Cs
         C_coords <- start(matchPattern("CG", Mmusculus[[as.character(region_coord$chr[i])]][region_coord$start[i]:region_coord$end[i]]))
       }
-      
+
       if(type_C == "nonCpG"){ ### extracting coordinates of nonCpG Cs
         Cs <- as.vector(gregexpr("C", Mmusculus[[as.character(region_coord$chr[i])]][region_coord$start[i]:region_coord$end[i]])[[1]])
         CGs <- as.vector(gregexpr("CG", Mmusculus[[as.character(region_coord$chr[i])]][region_coord$start[i]:region_coord$end[i]])[[1]])
         C_coords <- setdiff(Cs,CGs)
       }
-      
+
       if (length(C_coords) == 0){
         C_coords_positions <- NULL
       } else {
         C_coords_positions <- (C_coords-1) + region_coord$star[i]
-        
+
       }
-      
+
     }
-    
+
     #print("region coord")
     #print(region_coord)
-    
+
     if(genome == "Hsapiens") {
-      
+
       if(type_C == "CpG"){ ### extracting coordinates of CpG Cs
         C_coords <- start(matchPattern("CG", Hsapiens[[as.character(region_coord$chr[i])]][region_coord$start[i]:region_coord$end[i]]))
       }
-      
+
       if(type_C == "nonCpG"){ ### extracting coordinates of nonCpG Cs
       Cs <- as.vector(gregexpr("C", Hsapiens[[as.character(region_coord$chr[i])]][region_coord$start[i]:region_coord$end[i]])[[1]])
       CGs <- as.vector(gregexpr("CG", Hsapiens[[as.character(region_coord$chr[i])]][region_coord$start[i]:region_coord$end[i]])[[1]])
       C_coords <- setdiff(Cs,CGs)
       }
-    
+
        if (length(C_coords) == 0){
          C_coords_positions <- NULL
        } else {
          C_coords_positions <- (C_coords-1) + region_coord$star[i]
-        
+
        }
-  
+
     }
-      
-    
+
+
     if(length(C_coords_positions) == 0){
       CpGs_per_region_coordinates  <- rbind(CpGs_per_region_coordinates,NULL)
     } else {
@@ -108,9 +108,9 @@ CpG_coordinates_per_region_function <- function(region_coord,genome,type_C){
       CpGs_per_region_coordinates  <- rbind(CpGs_per_region_coordinates,table)
 
     }
-    
+
   }
-    
+
   return(CpGs_per_region_coordinates)
 
 }
@@ -131,7 +131,7 @@ print("Genome")
 print(genome_used)
 print(args$genome_library)
 
-region_interest <- args$name_regions 
+region_interest <- args$name_regions
 
 region_coordinates <- read.table(args$regions_file,header=TRUE)  ### for some reason argument sep="\t" leads to a weird header --> chr.start.end
 
@@ -162,67 +162,67 @@ print(head(region_coord))
 print(dim(region_coord))
 
 if( (args$genome_library == "BSgenome.Hsapiens.UCSC.hg19") | (args$genome_library == "BSgenome.Mmusculus.UCSC.mm10") ){
-  
+
     if( sum( grepl(x=region_coord$chr, pattern="chr") ) == length(region_coord$chr) ){ ### chr column should contain chr, that is, chr1, chr2, etc
         print("right format for chr column")
     } else {
         print("putting chr column on the right format")
         region_coord$chr <- paste0("chr",region_coord$chr)
-    } 
-  
+    }
+
 }
 
 if(args$genome_library == "BSgenome.Hsapiens.NCBI.GRCh38"){
-  
+
     if( sum(grepl(x=region_coord$chr, pattern="chr")) == 0 ){ ### chr column should not contain chr, just 1,2,..., X,Y
         print("right format for chr column")
     } else {
         print("putting chr column on the right format")
         region_coord$chr <- sub(region_coord$chr,pattern="chr",replacement="")
-    } 
-  
+    }
+
 }
 
 print(head(region_coord))
 print(dim(region_coord))
 
 if(!is.null(args$chr)){ ### it is supposed to be always by chr, the argument chr should always be non-empty
-  
+
   region_coord$chr <- as.character(region_coord$chr)
-  
+
   #print((sum(region_coord$chr==args$chr)))
-  
+
   if(sum(region_coord$chr==args$chr) != 0 ){
-    
+
   region_tmp <- region_coord[region_coord$chr==args$chr,]
-  
+
   outdir <- args$output_directory
-  
+
   ### output for Cecilia, all CpGs in hg19
   #cat(sapply(c("chrm", "CpGposition"), toString), file= paste0(outdir,"/CpGs_coordinates_",region_interest,"_",args$chr,".tsv"), sep="\t")
   #cat("\n", file=paste0(outdir,"/CpGs_coordinates_",region_interest,"_",args$chr,".tsv"), append=TRUE)
-  
+
   cat(sapply(c("chr","CpG_start","CpG_end","region_start","region_end","region_cpgNum","region_length","region_id"), toString), file= paste0(outdir,"/CpGs_coordinates_",region_interest,"_",args$chr,".tsv"), sep="\t")
   cat("\n", file=paste0(outdir,"/CpGs_coordinates_",region_interest,"_",args$chr,".tsv"), append=TRUE)
-  
+
   for( r in 1:dim(region_tmp)[1]){
- 
+
     print(r)
-    
+
     CpG_coordinates_per_chr  <- NULL
-  
+
     CpG_coordinates_per_chr <- CpG_coordinates_per_region_function(region_coord = region_tmp[r,],genome=genome_used,type_C=args$type_of_C)
-        
+
     if(!is.null(CpG_coordinates_per_chr)){
-    
-    write.table(CpG_coordinates_per_chr,file=paste0(outdir,"/CpGs_coordinates_",region_interest,"_",args$chr,".tsv"),row.names=FALSE,col.names=FALSE,sep="\t",append=TRUE,quote=FALSE) 
-    
+
+    write.table(CpG_coordinates_per_chr,file=paste0(outdir,"/CpGs_coordinates_",region_interest,"_",args$chr,".tsv"),row.names=FALSE,col.names=FALSE,sep="\t",append=TRUE,quote=FALSE)
+
     }
-    
+
   }
-  
-  system(paste0("gzip --force ", paste0(outdir,"/CpGs_coordinates_",region_interest,"_",args$chr,".tsv"))) 
-  
+
+  system(paste0("gzip --force ", paste0(outdir,"/CpGs_coordinates_",region_interest,"_",args$chr,".tsv")))
+
   } else {
     print(paste0("Error: chromosome ",args$chr," contain no region of interest"))
   }
