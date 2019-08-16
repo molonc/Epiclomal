@@ -83,17 +83,28 @@ extract_mean_meth_per_cell <- function(cell_data,region_coord){
 #======================
 
 # Methylation data
-tmp <- read.csv(input_CpG_data_file,sep="\t",header=TRUE,check.names=FALSE)
-input_CpG_data <- as.matrix(tmp[,-1])
-rownames(input_CpG_data) <- tmp$cell_id
-rm(tmp)
+cached_data <- gsub(".tsv.gz", ".RData.gz", input_CpG_data_file)
+if (file.exists(cached_data)) {
+  print("loading cached data")
+  load(cached_data)
+} else {
+  tmp <- read.csv(input_CpG_data_file,sep="\t",header=TRUE,check.names=FALSE)
+  input_CpG_data <- as.matrix(tmp[,-1])
+  rownames(input_CpG_data) <- tmp$cell_id
+  rm(tmp)
 
-# Region coordinates
-tmp <- read.csv(input_regions_file,sep="\t",header=TRUE,check.names=FALSE)
-input_regions <- as.matrix(tmp[,-1]) + 1 ## adding 1 to match R indexing - previously coordinates were for python starting on zero
-colnames(input_regions) <- c("start","end") ## input_regions gives already the columns in input_CpG_data that correspond to which regions considered in the construction of input_CpG_data
-rownames(input_regions) <- tmp$region_id
-rm(tmp)
+  # Region coordinates
+  tmp <- read.csv(input_regions_file,sep="\t",header=TRUE,check.names=FALSE)
+  input_regions <- as.matrix(tmp[,-1]) + 1 ## adding 1 to match R indexing - previously coordinates were for python starting on zero
+  colnames(input_regions) <- c("start","end") ## input_regions gives already the columns in input_CpG_data that correspond to which regions considered in the construction of input_CpG_data
+  rownames(input_regions) <- tmp$region_id
+  rm(tmp)
+
+  mean_meth_matrix <- t(apply(input_CpG_data,1,extract_mean_meth_per_cell,region_coord=input_regions))
+
+  save(input_CpG_data, input_regions, mean_meth_matrix, file = cached_data, compress = "gzip")
+}
+
 
 R <- dim(input_regions)[1] ## number of regions
 M <- dim(input_CpG_data)[2] ## number of loci
@@ -201,11 +212,10 @@ if (R > 1){
   # this will result in matrix with N cells by R regions - regions are columns and cells the lines
   #======================
 
-  mean_meth_matrix <- t(apply(input_CpG_data,1,extract_mean_meth_per_cell,region_coord=input_regions))
   # this code is redundant with the code in hclust.R, TO FIX
   if (impute == 1) {
     imputed_file <- paste0(outdir,"/region_based_imputed.RData.gz")
-    if (file.exists(paste0(imputed_file,".gz"))) {
+    if (file.exists(imputed_file)) {
       print ("Reading the imputed file")
       load(imputed_file)
       print (" ... done.")
@@ -243,14 +253,15 @@ if (R > 1){
     print("Stop! At least one cell has NO data across all regions, can't do PCA")
     stop()
     } else {
-    pc <- pca( mean_meth_matrix ,method="nipals",nPcs=max_comp) }
+    pc <- t }
 
   pc_scores <- scores(pc)
 
   #print(head(pc_scores))
   #plot(pc_scores[,1],pc_scores[,2],col=true_membership)
 
-  checking_warning <- capture.output(DensityCut(pc_scores,maxit=args$maxit))
+  cluster.out <- DensityCut(pc_scores,maxit=args$maxit) # DensityCut clustering analysis CS: increased max number of iterations from 50 to 100
+  checking_warning <- capture.output(cluster.out)
 
   #print(checking_warning)
 
@@ -260,7 +271,6 @@ if (R > 1){
 
     print("densitycut converged!")
 
-    cluster.out <- DensityCut(pc_scores,maxit=args$maxit) # DensityCut clustering analysis CS: increased max number of iterations from 50 to 100
 
     #print(cluster.out$cluster)
 

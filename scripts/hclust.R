@@ -163,7 +163,7 @@ if (R == 1){
       error_ch_index <- 1
     } else {
       error_ch_index <- 0
-      hcluster_Nb <- NbClust(input_CpG_data, diss = pairwisedist,distance=NULL, min.nc=2, max.nc=Max_K,method = "complete",index = "cindex")
+      hcluster_Nb <- t
       # print(hcluster_Nb)
     }
 
@@ -269,7 +269,7 @@ if (R > 1){
       error_ch_index <- 1
     } else {
       error_ch_index <- 0
-      hcluster_Nb <- NbClust(as.matrix(dist_region), diss = pairwisedist_region, distance=NULL, min.nc=1, max.nc=Max_K,method = "complete",index = index_type)
+      hcluster_Nb <- t
       # print(hcluster_Nb)
     }
 
@@ -341,7 +341,7 @@ if (file.exists(dist_PBAL_file)) {
   print(paste("getting dist_pbal from file", paste(sep="/", script.basename, "dist_PBAL.cpp")))
   sourceCpp(paste(sep="/", script.basename, "dist_PBAL.cpp"))
   print('Computing PBAL distance matrix')
-  dist_PBAL <- dist_PBAL(d = input_CpG_data)
+  dist_PBAL <- as.dist(dist_PBAL(d = input_CpG_data))
   print('Computing pairwise PBAL distance matrix')
   diss_matrix_T <- dist(dist_PBAL,method="euclidean")
   print("Done Computing, saving to file")
@@ -380,7 +380,7 @@ if(sum(is.na(diss_matrix_T)) == 0){
     error_ch_index <- 1
   } else {
     error_ch_index <- 0
-    hcluster_Nb_T <- NbClust(dist_PBAL, diss = diss_matrix_T,distance=NULL, min.nc=1, max.nc=Max_K,method = "ward.D2",index = index_type)
+    hcluster_Nb_T <- t
     # print(hcluster_Nb_T)
   }
 

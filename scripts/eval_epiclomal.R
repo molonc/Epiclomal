@@ -342,7 +342,7 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
                     " --estimated_membership_file=", clMAPfile, " --methylation_file=", meth_file,
                     " --regions_file=", regions_file)
             print ("Calling the hamming distance software")
-            command <- paste0 ("RSCRIPT ", hdist_software, " ", hline)
+            command <- paste (RSCRIPT, hdist_software, hline)
             print(command)
             system(command)
             # source (hdist_software)
@@ -363,7 +363,7 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
 
     # Order will be by predicted
     print ("Calling the visualization software")
-    command <- paste0 ("RSCRIPT ", visualization_software, " ", visline, " --order_by_true=0 --name=", flag, "_bestrun_order_pred")
+    command <- paste0 (RSCRIPT, " ", visualization_software, " ", visline, " --order_by_true=0 --name=", flag, "_bestrun_order_pred")
     print(command)
     system(command)
 
@@ -372,7 +372,7 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
     if (!is.null(true_clusters_file))
     {
         print ("Calling the visualization software the second time")
-        command <- paste0 ("RSCRIPT ", visualization_software, " ", visline, " --order_by_true=1 --name=", flag, "_bestrun_order_true")
+        command <- paste0 (RSCRIPT, " ", visualization_software, " ", visline, " --order_by_true=1 --name=", flag, "_bestrun_order_true")
         #command <- paste0 ("Rscript ", visualization_software, " ", visline, " --order_by_true=1 --name=InHouse")
         print(command)
         system(command)

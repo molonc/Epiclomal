@@ -24,8 +24,7 @@ NumericMatrix dist_PBAL(NumericMatrix d){
     for(int i = 0; i < rows; i++){
         for(int j = i; j < rows; j++){
             double dist = dist_pair(d.row(i), d.row(j));
-            dist_data(i, j) = dist;
-            dist_data(j, i) = dist;
+            dist_data(j,i) = dist;
         }
     }
     return(dist_data);
