@@ -243,7 +243,7 @@ if (R > 1){
 
     hcluster <- hclust(pairwisedist_region,method = "complete")
 
-    if(file.exists(paste0(outdir,"/Region_based_EuclideanClust_PLOT.pdf"))){
+    if(!file.exists(paste0(outdir,"/Region_based_EuclideanClust_PLOT.pdf"))){
       pheatmap(as.matrix(dist_region),cluster_rows = TRUE,cluster_cols=TRUE, cellwidth = 8,
                cellheight = 8,fontsize = 8,
                clustering_distance_rows = "euclidean",
@@ -335,10 +335,11 @@ if (file.exists(dist_PBAL_file)) {
 } else {
   # assume dist_PBAL is in the same directory as this file
   # trying to figure out the path of this file so I can call dist_PBAL.cpp
-  print(paste("getting dist_pbal from file", dist_PBAL.name))
+  print(paste("getting dist_pbal from file", paste(sep="/", script.basename, "dist_PBAL.cpp")))
   sourceCpp(paste(sep="/", script.basename, "dist_PBAL.cpp"))
   print('Computing PBAL distance matrix')
   dist_PBAL <- dist_PBAL(d = input_CpG_data)
+  print('Computing pairwise PBAL distance matrix')
   diss_matrix_T <- dist(dist_PBAL,method="euclidean")
   print("Done Computing, saving to file")
   save(dist_PBAL, diss_matrix_T, file = dist_PBAL_file, compress = "gzip")
@@ -354,7 +355,7 @@ if(sum(is.na(diss_matrix_T)) == 0){
 
   hcluster_T <- hclust(diss_matrix_T,method = "ward.D2")
 
-  if(file.exists(paste0(outdir,"/HammingClust_PLOT.pdf"))){
+  if(!file.exists(paste0(outdir,"/HammingClust_PLOT.pdf"))){
     pheatmap(dist_PBAL,cluster_rows = TRUE,cluster_cols=TRUE, cellwidth = 8,
              cellheight = 8,fontsize = 8,
              clustering_distance_rows = "euclidean",
@@ -420,7 +421,7 @@ if (file.exists(dist_Pearson_file)) {
   load(dist_Pearson_file)
   print("... done.")
 } else {
-  print("computing Pearon distnaces")
+  print("computing Pearson distances")
   dist_Pearson <- cor(x=t(input_CpG_data),method="pearson", use ="pairwise.complete.obs")
   ### from PBAL manuscript: unsupervised learning was done by calculating a Euclidean distance from each cell’s dissimilarity vector and clustered using Ward’s linkage method.
   print("scTrio's approach - CpG based clustering")
@@ -435,7 +436,7 @@ if(sum(is.na(diss_matrix_P)) == 0){
 
   hcluster_P <- hclust(as.dist(diss_matrix_P),method = "ward.D2") ### BECAUSE IT IS CORRELATION diss_matrix_P IS ACTUALLY A SIMILARITY MATRIX, SO HAVE TO DO 1 - diss_matrix_P
 
-  if(file.exists(paste0(outdir,"/PearsonClust_PLOT.pdf"))){
+  if(!file.exists(paste0(outdir,"/PearsonClust_PLOT.pdf"))){
     pheatmap(dist_Pearson ,cluster_rows = TRUE,cluster_cols=TRUE, cellwidth = 8,
              cellheight = 8,fontsize = 8,
              #clustering_distance_rows = "correlation",
@@ -628,3 +629,5 @@ if (!is.null(true_clusters_file)) {
       system(command)
   }
 }
+
+print("Done!")
