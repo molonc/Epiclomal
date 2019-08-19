@@ -229,7 +229,7 @@ if (R > 1){
       file.arg.name <- "--file="
       script.name <- sub(file.arg.name, "", initial.options[grep(file.arg.name, initial.options)])
       script.basename <- dirname(script.name)
-      sourceCpp(paste(sep="/", script.basename, "impute.cpp"))
+      sourceCpp(paste(sep="/", script.basename, "cpp_functions","impute.cpp"))
       print("Per region, replacing NAs with average values")
       mean_meth_matrix <- impute_means(mean_meth_matrix)
       print(" ... done.")

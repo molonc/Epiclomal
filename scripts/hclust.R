@@ -59,7 +59,7 @@ script.name <- sub(file.arg.name, "", initial.options[grep(file.arg.name, initia
 script.basename <- dirname(script.name)
 
 if(impute == 1){
-  sourceCpp(paste(sep="/", script.basename, "impute.cpp"))
+  sourceCpp(paste(sep="/", script.basename, "cpp_functions", "impute.cpp"))
 }
 
 
@@ -339,7 +339,7 @@ if (file.exists(dist_PBAL_file)) {
   # assume dist_PBAL is in the same directory as this file
   # trying to figure out the path of this file so I can call dist_PBAL.cpp
   print(paste("getting dist_pbal from file", paste(sep="/", script.basename, "dist_PBAL.cpp")))
-  sourceCpp(paste(sep="/", script.basename, "dist_PBAL.cpp"))
+  sourceCpp(paste(sep="/", script.basename, "cpp_functions", "dist_PBAL.cpp"))
   print('Computing PBAL distance matrix')
   dist_PBAL <- as.dist(dist_PBAL(d = input_CpG_data))
   print('Computing pairwise PBAL distance matrix')
