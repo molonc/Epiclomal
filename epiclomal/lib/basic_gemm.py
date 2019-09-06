@@ -11,6 +11,7 @@ from __future__ import division
 
 import numpy as np
 import pandas as pd
+from numba import njit, prange
 
 from lib.utils import compute_e_log_dirichlet, compute_e_log_q_dirichlet, compute_e_log_p_dirichlet, \
                       compute_e_log_q_discrete, init_log_pi_star, log_space_normalise, safe_multiply
@@ -124,8 +125,10 @@ class BasicGeMM(object):
         # For each cell (row), one of the k values will be 1 and the others 0.
         # Then, return the log of this matrix (log_pi_star) of size N rows x K columns
 
+        self.pi_star = self.set_pi_star()
+
         self.lower_bound = [float('-inf')]
-        self.log_likelihood = [float('-inf')]
+        self.log_likelihood = float('-inf')
         self.log_posterior = [float('-inf')]
 
         self._debug_lower_bound = [float('-inf')]
@@ -256,8 +259,7 @@ class BasicGeMM(object):
 
         return mu_star
 
-    @property
-    def pi_star(self):
+    def set_pi_star(self):
         return np.exp(self.log_pi_star)
 
     def fit(self, convergence_tolerance=1e-4, debug=False, num_iters=100):
@@ -334,7 +336,7 @@ class BasicGeMM(object):
                 print ('ELBO:', ELBO)
 
                 self.mean_or_mode = "mean"
-                loglik = self._compute_log_likelihood()
+                loglik = self.compute_log_likelihood()
                 print ('Log likelihood mean: ', loglik)
                 self.log_likelihood_mean = loglik
                 self.log_likelihood = loglik
@@ -548,6 +550,7 @@ class BasicGeMM(object):
 
         #print 'log_pi_star before normalize', log_pi_star[cellnum,0:4]
         self.log_pi_star = log_space_normalise(log_pi_star, axis=1)
+        self.pi_star = self.set_pi_star()
         #print 'pi_star after normalize', np.exp(self.log_pi_star[cellnum,0:4])
 
     def _get_log_pi_star_d(self, data_type):
@@ -865,9 +868,9 @@ class BasicGeMM(object):
 
         self.whichK = "cluster"     # only the ones used
         # print ('Which K: ', self.whichK)
-        logPZ = self._compute_log_P_Z()
+        logPZ = self.compute_log_P_Z()
         # print("logPZ ", logPZ)
-        logPG = self._compute_log_P_G()
+        logPG = self.compute_log_P_G()
         # print("logPG ", logPG)
         logPpi = 0
         if (self.Bishop_model_selection is False):
@@ -881,9 +884,9 @@ class BasicGeMM(object):
 
         self.whichK = "all"
         print ('Which K: ', self.whichK)
-        logPZ = self._compute_log_P_Z()
+        logPZ = self.compute_log_P_Z()
         print("logPZ ", logPZ)
-        logPG = self._compute_log_P_G()
+        logPG = self.compute_log_P_G()
         print("logPG ", logPG)
         logPpi = 0
         if (self.Bishop_model_selection is False):
@@ -899,35 +902,40 @@ class BasicGeMM(object):
 
     ###############
 
-    def _compute_log_likelihood(self):
+    def compute_log_likelihood(self):
+        loglik = 0
+        for data_type in self.data_types:
+            loglik += self._compute_log_likelihood(self.X[data_type], self.mu_star[data_type], self.gamma_star[data_type], self.N, self.pi_star, self.R[data_type], self.maxL[data_type], self.mean_or_mode)
+        return loglik
+
+    @staticmethod
+    @njit(parallel=True, cache=True)
+    def _compute_log_likelihood(X, mu_star, gamma_star, N, pi_star, R, maxL, mean_or_mode):
         logl = 0
         # first add the likelihood of the methylation data
         # check which is the mode of Z and G
         # log P(X|Z,G,eps) = sum_n sum_r sum_l log  [gamma_star[g_krl,X_nrl]-1 /(gamma_star[g_krl,0]+gamma_star[g_krl,1]-2)]
-        for data_type in self.data_types:
-            X = self.X[data_type]
-            mu_star = self.mu_star[data_type]
-            gamma_star = self.gamma_star[data_type]
-            for n in range(self.N):
-                cluster = np.argmax(self.pi_star[n,])
-                # print 'pi_star for n=', n, 'is ', self.pi_star[n,], ' cluster is ', cluster
-                for r in range(self.R[data_type]):
-                    for l in range(int(self.maxL[data_type])):
-                        if not np.isnan(X[n,r,l]):
-                            epigeno = int(np.argmax(mu_star[:,cluster,r,l]))
-                            # if (epigeno is not int(X[n,r,l])):
-                            #     print ('IS NOT NA n=', n, ' r=', r, ' l=', l, 'X=', X[n,r,l], 'cluster=', cluster)
-                            #     print ('Epigeno is ', epigeno)
-                            #     print ('gamma_star is ', gamma_star[epigeno, int(X[n,r,l])])
-                            if (self.mean_or_mode is "mean"):
-                                logl = logl + np.log(gamma_star[epigeno, int(X[n,r,l])] / (gamma_star[epigeno,0] + gamma_star[epigeno,1]))
-                            #else:
-                            #    logl = logl + np.log((gamma_star[epigeno, int(X[n,r,l])]-1) / (gamma_star[epigeno,0] + gamma_star[epigeno,1]-2))
+        for n in prange(N):
+            cluster = np.argmax(pi_star[n,])
+            # print 'pi_star for n=', n, 'is ', pi_star[n,], ' cluster is ', cluster
+            for r in prange(R):
+                for l in prange(int(maxL)):
+                    X_0 = X[n,r,l]
+                    if not np.isnan(X_0):
+                        epigeno = int(np.argmax(mu_star[:,cluster,r,l]))
+                        # if (epigeno is not int(X_0)):
+                        #     print ('IS NOT NA n=', n, ' r=', r, ' l=', l, 'X=', X_0, 'cluster=', cluster)
+                        #     print ('Epigeno is ', epigeno)
+                        #     print ('gamma_star is ', gamma_star[epigeno, int(X_0)])
+                        if (mean_or_mode == "mean"):
+                            logl += np.log(gamma_star[epigeno, int(X_0)] / (gamma_star[epigeno,0] + gamma_star[epigeno,1]))
+                        #else:
+                        #    logl = logl + np.log((gamma_star[epigeno, int(X[n,r,l])]-1) / (gamma_star[epigeno,0] + gamma_star[epigeno,1]-2))
         return logl
 
     ###############
 
-    def _compute_log_P_Z(self):
+    def compute_log_P_Z(self):
     # For every cell, I look at this cluster assignment and add the log prob for that pi_star
         logp = 0
         all_clusters = []
@@ -941,6 +949,8 @@ class BasicGeMM(object):
         # print('All clusters: ', *all_clusters)
         # print('Length ', len(all_clusters))
 
+        alpha_sum = sum(self.alpha_star[i] for i in all_clusters)
+
         for data_type in self.data_types:
             for n in range(self.N):
                 cluster = np.argmax(self.pi_star[n,:])
@@ -949,7 +959,7 @@ class BasicGeMM(object):
                 # logp = logp + self.log_pi_star[n,cluster]
                 if (self.mean_or_mode is "mean"):
                     if (self.Bishop_model_selection is False):
-                        logp = logp + np.log(self.alpha_star[cluster]/sum(self.alpha_star[i] for i in all_clusters))
+                        logp = logp + np.log(self.alpha_star[cluster]/alpha_sum)
                     else:
                         logp = logp + np.log(self.pi[cluster])
                 #else:
@@ -959,39 +969,64 @@ class BasicGeMM(object):
 
     ###############
 
-    def _compute_log_P_G(self):
-    # We use beta_star, not mu_star
-    # Here include only the k's that were found - No, that doesn't make sense
+    def compute_log_P_G(self):
         logp = 0
         all_clusters = []
+
+        if (self.whichK is "all"):
+            all_clusters = range(self.K)
+        else:
+            # Get the final clusters for each cell
+            for n in prange(self.N):
+                cluster = np.argmax(self.pi_star[n,:])
+                if cluster not in all_clusters:
+                   all_clusters.append(cluster)
+
+        all_clusters = np.array(all_clusters)
+
         for data_type in self.data_types:
             log_mu_star = self.log_mu_star[data_type]
             mu_star = self.get_mu_star(data_type)
-            if (self.whichK is "all"):
-                all_clusters = range(self.K)
-            else:
-                # Get the final clusters for each cell
-                for n in range(self.N):
-                    cluster = np.argmax(self.pi_star[n,:])
-                    if cluster not in all_clusters:
-                       all_clusters.append(cluster)
-            for k in all_clusters:
-                for r in range(self.R[data_type]):
-                    for l in range(int(self.maxL[data_type])):
-                        bests = np.argmax(log_mu_star[:,k,r,l])
-                        # print("k ", k)
-                        # print(" beta star ", self.beta_star[data_type][k][r][bests])
-                        # print(" argmax ", np.argmax(log_mu_star[:,k,r,l]))
-                        if (self.mu_has_k):
-                            if (self.mean_or_mode is "mean"):
-                                logp = logp + np.log(self.beta_star[data_type][k][r][bests]/sum(self.beta_star[data_type][k][r]))
-                            #else:
-                            #    logp = logp + np.log((self.beta_star[data_type][k][r][bests]-1)/(sum(self.beta_star[data_type][k][r])-2))
-                        else:
-                            if (self.mean_or_mode is "mean"):
-                                logp = logp + np.log(self.beta_star[data_type][r][bests]/sum(self.beta_star[data_type][r]))
-                            #else:
-                            #    logp = logp + np.log((self.beta_star[data_type][r][bests]-1)/(sum(self.beta_star[data_type][r])-2))
+            beta_star = self.beta_star[data_type]
+            maxL = self.maxL[data_type]
+            R = self.R[data_type]
+
+            logp += self._compute_log_P_G(
+                log_mu_star,
+                mu_star,
+                beta_star,
+                maxL,
+                R,
+                self.mu_has_k,
+                self.mean_or_mode,
+                all_clusters
+                )
+        return logp
+
+
+    @staticmethod
+    @njit(parallel=True, cache=True)
+    def _compute_log_P_G(log_mu_star, mu_star, beta_star, maxL, R, mu_has_k, mean_or_mode, all_clusters):
+        logp = 0
+    # We use beta_star, not mu_star
+    # Here include only the k's that were found - No, that doesn't make sense
+        for k in all_clusters:
+            for r in prange(R):
+                for l in prange(int(maxL)):
+                    bests = np.argmax(log_mu_star[:,k,r,l])
+                    # print("k ", k)
+                    # print(" beta star ", self.beta_star[data_type][k][r][bests])
+                    # print(" argmax ", np.argmax(log_mu_star[:,k,r,l]))
+                    if (mu_has_k):
+                        if (mean_or_mode == "mean"):
+                            logp += np.log(beta_star[k][r][bests]/np.sum(beta_star[k][r]))
+                        #else:
+                        #    logp = logp + np.log((self.beta_star[data_type][k][r][bests]-1)/(sum(self.beta_star[data_type][k][r])-2))
+                    else:
+                        if (mean_or_mode == "mean"):
+                            logp += np.log(np.max(beta_star[r][bests])/np.sum(beta_star[r]))
+                        #else:
+                        #    logp = logp + np.log((self.beta_star[data_type][r][bests]-1)/(sum(self.beta_star[data_type][r])-2))
         return logp
 
     ###############
