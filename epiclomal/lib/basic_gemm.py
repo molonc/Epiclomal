@@ -866,7 +866,7 @@ class BasicGeMM(object):
     ###############
 
     def _diff_lower_bound(self):
-        (ELBO, ElogP, ElogQ) = self._compute_lower_bound()
+        (ELBO, ElogP, ElogP_X, ElogQ) = self._compute_lower_bound()
 
         self._debug_lower_bound.append(ELBO)
 
