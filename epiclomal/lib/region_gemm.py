@@ -10,6 +10,7 @@ Created on 2017-03-07
 
 from __future__ import division
 
+from numba import njit, prange
 import numpy as np
 import pandas as pd
 import sys
@@ -66,12 +67,23 @@ class RegionGeMM(BasicGeMM):
     def _region_data_matrix(self, data_type, X):
     # Here in the regions class I will fill up to 0 the remaining values for each region
     # TO DO: maybe this reshaping can be done more efficiently
-        matrix = np.empty((self.N, self.R[data_type], int(self.maxL[data_type])))
+        return self._region_data_matrix_helper(
+            self.N, self.R[data_type],
+            int(self.maxL[data_type]),
+            self.Rstart[data_type],
+            self.Rend[data_type],
+            X.values
+            )
+
+    @staticmethod
+    @njit(parallel=True, cache=True)
+    def _region_data_matrix_helper(N, R, maxL, Rstart, Rend, X):
+        matrix = np.empty((N, R, maxL))
         matrix[:] = np.NAN
-        for n in range(self.N):
-            for r in range(self.R[data_type]):
-                for l in range(int(self.Rstart[data_type][r]), int(self.Rend[data_type][r]+1)):
-                    matrix[n,r, int(l - self.Rstart[data_type][r])] = X.values[n,l]
+        for n in prange(N):
+            for r in prange(R):
+                for l in prange(int(Rstart[r]), int(Rend[r])+1):
+                    matrix[n, r, int(l - int(Rstart[r]))] = X[n,l]
         return matrix
 
     ######################

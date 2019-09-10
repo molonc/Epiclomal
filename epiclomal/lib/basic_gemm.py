@@ -22,7 +22,10 @@ from sklearn.metrics import mean_absolute_error
 from collections import defaultdict
 from random import random, shuffle
 
+from math import exp
+
 class BasicGeMM(object):
+    # @profile
     def __init__(self,
                  gamma_prior,
                  alpha_prior,
@@ -99,10 +102,9 @@ class BasicGeMM(object):
             self.T[data_type] = gamma_prior[data_type].shape[1]
             # T is 2 when gamma_prior is [99, 1; 1, 99]
 
-            matrix = self._region_data_matrix(data_type, X[data_type])
-            self.X[data_type] = matrix
+            self.X[data_type] = self._region_data_matrix(data_type, X[data_type])
 
-            self.IX[data_type] = self._get_indicator_X(data_type, matrix)
+            self.IX[data_type] = self._get_indicator_X(data_type, self.X[data_type])
             # size TxNxM, now TxNxRxmaxL
             # self.IX is actually  the indicator matrix I(X_nm=t)
             # Now self.IX contains 2 matrices:
@@ -172,7 +174,7 @@ class BasicGeMM(object):
             total = total + ti
         entries = self.N*self.M[data_type]
         print ("Total number of loci in all cells: ", entries)
-        print ("Missing proportion: ", (entries-np.sum(Y))/entries)
+        print ("Missing proportion: ", (entries-total)/entries)
         return Y
 
 
@@ -229,7 +231,6 @@ class BasicGeMM(object):
 
 
     def _init_alpha_star(self):
-        self.alpha_star = {}
         self.alpha_star = np.ones(self.K)
 
 
@@ -262,6 +263,7 @@ class BasicGeMM(object):
     def set_pi_star(self):
         return np.exp(self.log_pi_star)
 
+    # @profile
     def fit(self, convergence_tolerance=1e-4, debug=False, num_iters=100):
         print ("Iter  ELBO difference")
 
@@ -269,17 +271,17 @@ class BasicGeMM(object):
 
         for i in range(num_iters):
 
-            if (self.Bishop_model_selection is False):
-                # update alpha_star
-                self._update_alpha_star()
-                if debug:
-                    print ('ELBO, diff after update_alpha_star', self._diff_lower_bound())
-
             # update E(I(Gmk=s))
             self._update_mu_star()
 
             if debug:
                 print ('ELBO, diff after update_mu_star', self._diff_lower_bound())
+
+            if (self.Bishop_model_selection is False):
+                # update alpha_star
+                self._update_alpha_star()
+                if debug:
+                    print ('ELBO, diff after update_alpha_star', self._diff_lower_bound())
 
             # update beta_star
             self._update_beta_star()
@@ -336,7 +338,7 @@ class BasicGeMM(object):
                 print ('ELBO:', ELBO)
 
                 self.mean_or_mode = "mean"
-                loglik = self.compute_log_likelihood()
+                loglik = self._compute_log_likelihood()
                 print ('Log likelihood mean: ', loglik)
                 self.log_likelihood_mean = loglik
                 self.log_likelihood = loglik
@@ -389,7 +391,7 @@ class BasicGeMM(object):
 
     def _update_mu_star_d(self, data_type):
 
-        log_mu_star = self._update_mu_star_big_sum (data_type)
+        log_mu_star = self._update_mu_star_big_sum(data_type)
 
         # Now log_mu_star has 3 dimensions: s (2 groups), k (total number of clusters), m (num loci)
         # With 1 region, log_mu_star has 4 dimensions: s, k, r, maxl
@@ -460,7 +462,7 @@ class BasicGeMM(object):
 
         # SxNxKxRxL
         # pi_star_nk + mu_star_skrl
-        data_term = np.exp(self.log_pi_star[np.newaxis, :, :, np.newaxis, np.newaxis] + log_mu_star[:, np.newaxis, :, :, :])
+        data_term = self._get_exp_data_term(self.log_pi_star[np.newaxis, :, :, np.newaxis, np.newaxis] + log_mu_star[:, np.newaxis, :, :, :])
 
 
         # \sum_n \sum_k \sum_m E[I(Z_n=k)] E[I(G_mk=s)] I(X_nm=t)
@@ -470,6 +472,22 @@ class BasicGeMM(object):
         return np.einsum('stnkrl, stnkrl -> st',
                          data_term[:, np.newaxis, :, :, :, :],
                          IX[np.newaxis, :, :, np.newaxis, :, :])
+
+    # faster than np.exp() for 5d array
+    @staticmethod
+    @njit(parallel=True, cache=True)
+    def _get_exp_data_term(log_data):
+        shape = log_data.shape
+        data_term = np.zeros(shape)
+        shape = list(shape)
+        for s in prange(shape[0]):
+            for c in prange(shape[1]):
+                for k in prange(shape[2]):
+                    for r in prange(shape[3]):
+                        for l in prange(shape[4]):
+                            data_term[s][c][k][r][l] = exp(log_data[s][c][k][r][l])
+
+        return data_term
 
     ####################
 
@@ -594,7 +612,6 @@ class BasicGeMM(object):
         e_log_p_term1 = self._compute_e_log_p_term1()   # term 1
         e_log_p_term2 = self._compute_e_log_p_term2()   # term 2
         e_log_p_term3 = self._compute_e_log_p_term3()   # term 3
-
         e_log_p_term4 = self._compute_e_log_p_term4()   # term 4
 
         e_log_p_term5 = 0
@@ -863,14 +880,15 @@ class BasicGeMM(object):
 
     ###############
 
+    # @profile
     def _compute_log_likelihood_times_priors(self):
         logl = self.log_likelihood
 
         self.whichK = "cluster"     # only the ones used
         # print ('Which K: ', self.whichK)
-        logPZ = self.compute_log_P_Z()
+        logPZ = self._compute_log_P_Z()
         # print("logPZ ", logPZ)
-        logPG = self.compute_log_P_G()
+        logPG = self._compute_log_P_G()
         # print("logPG ", logPG)
         logPpi = 0
         if (self.Bishop_model_selection is False):
@@ -884,9 +902,9 @@ class BasicGeMM(object):
 
         self.whichK = "all"
         print ('Which K: ', self.whichK)
-        logPZ = self.compute_log_P_Z()
+        logPZ = self._compute_log_P_Z()
         print("logPZ ", logPZ)
-        logPG = self.compute_log_P_G()
+        logPG = self._compute_log_P_G()
         print("logPG ", logPG)
         logPpi = 0
         if (self.Bishop_model_selection is False):
@@ -902,15 +920,16 @@ class BasicGeMM(object):
 
     ###############
 
-    def compute_log_likelihood(self):
+    # @profile
+    def _compute_log_likelihood(self):
         loglik = 0
         for data_type in self.data_types:
-            loglik += self._compute_log_likelihood(self.X[data_type], self.mu_star[data_type], self.gamma_star[data_type], self.N, self.pi_star, self.R[data_type], self.maxL[data_type], self.mean_or_mode)
+            loglik += self._compute_log_likelihood_helper(self.X[data_type], self.mu_star[data_type], self.gamma_star[data_type], self.N, self.pi_star, self.R[data_type], self.maxL[data_type], self.mean_or_mode)
         return loglik
 
     @staticmethod
     @njit(parallel=True, cache=True)
-    def _compute_log_likelihood(X, mu_star, gamma_star, N, pi_star, R, maxL, mean_or_mode):
+    def _compute_log_likelihood_helper(X, mu_star, gamma_star, N, pi_star, R, maxL, mean_or_mode):
         logl = 0
         # first add the likelihood of the methylation data
         # check which is the mode of Z and G
@@ -935,7 +954,7 @@ class BasicGeMM(object):
 
     ###############
 
-    def compute_log_P_Z(self):
+    def _compute_log_P_Z(self):
     # For every cell, I look at this cluster assignment and add the log prob for that pi_star
         logp = 0
         all_clusters = []
@@ -969,7 +988,7 @@ class BasicGeMM(object):
 
     ###############
 
-    def compute_log_P_G(self):
+    def _compute_log_P_G(self):
         logp = 0
         all_clusters = []
 
@@ -991,7 +1010,7 @@ class BasicGeMM(object):
             maxL = self.maxL[data_type]
             R = self.R[data_type]
 
-            logp += self._compute_log_P_G(
+            logp += self._compute_log_P_G_helper(
                 log_mu_star,
                 mu_star,
                 beta_star,
@@ -1006,7 +1025,7 @@ class BasicGeMM(object):
 
     @staticmethod
     @njit(parallel=True, cache=True)
-    def _compute_log_P_G(log_mu_star, mu_star, beta_star, maxL, R, mu_has_k, mean_or_mode, all_clusters):
+    def _compute_log_P_G_helper(log_mu_star, mu_star, beta_star, maxL, R, mu_has_k, mean_or_mode, all_clusters):
         logp = 0
     # We use beta_star, not mu_star
     # Here include only the k's that were found - No, that doesn't make sense
@@ -1203,17 +1222,16 @@ class BasicGeMM(object):
         for data_type in self.data_types:
             for cell in range(self.N):
                 # print("Cell ", cell)
-                cell_added = 0
-                unique = 0
+                cell_added = False
                 for r in different_regions:
                     # print("    Region ", r, "of length ", int(self.L[data_type][r]))
                     region = self.X[data_type][cell,r,0:int(self.L[data_type][r])]
-                    print(*region)
+                    # print(*region)
                     if (all(np.isnan(v) for v in region)):
                         empty_regions.append(str(cell)+"_"+str(r))
-                        if (cell_added == 0):
+                        if not cell_added:
                             candidate_cells.append(cell)
-                            cell_added = 1
+                            cell_added = True
                             # print("IS ALL NAN, adding cell ", cell, " with missing region ", r)
             # print("Cells with missing: ", candidate_cells)
             # print("Empty regions: ", empty_regions)
@@ -1285,7 +1303,7 @@ class BasicGeMM(object):
 
     ###############
 
-    def _get_predicted_percentages (self, labels_pred, epigenotype, different_regions):
+    def _get_predicted_percentages(self, labels_pred, epigenotype, different_regions):
     # NOTE: epigenotype is the one from the DIC selection criterion
     #   When I change the prediction
         # select the different regions from the bulk
@@ -1293,7 +1311,7 @@ class BasicGeMM(object):
         for data_type in self.data_types:
             for r in different_regions:
                 # print ("Region ", r, " from ", self.regions[data_type]['start'][r], " to ", self.regions[data_type]['end'][r])
-                for cpg in range (self.regions[data_type]['start'][r], self.regions[data_type]['end'][r]+1):
+                for cpg in range(self.regions[data_type]['start'][r], self.regions[data_type]['end'][r]+1):
                     # look through all the cells
                     num_meth = 0
                     for cell in range(self.N):
@@ -1309,7 +1327,7 @@ class BasicGeMM(object):
 
     ###############
 
-    def _get_bulk_score (self, labels_pred, epigenotype, different_regions, bulk_percentages):
+    def _get_bulk_score(self, labels_pred, epigenotype, different_regions, bulk_percentages):
         pred_percentages = self._get_predicted_percentages (labels_pred, epigenotype, different_regions)
         bulk_score = mean_absolute_error(bulk_percentages, pred_percentages)
         return bulk_score
