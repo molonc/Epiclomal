@@ -1289,15 +1289,15 @@ class BasicGeMM(object):
 
     def _get_relevant_bulk_percentages (self, different_regions):
         # select the different regions from the bulk
-        meth_percentages = []
+        meth_percentages = np.array([])
         for data_type in self.data_types:
             for r in different_regions:
                 # print ("Region ", r, " from ", self.regions[data_type]['start'][r], " to ", self.regions[data_type]['end'][r])
                 for cpg in range (self.regions[data_type]['start'][r], self.regions[data_type]['end'][r]+1):
                     # because in the bulk data it starts from 1
                     # print ("    Bulk in cpg ", cpg+1, " is meth ", self.slsbulk_data['meth_reads'][cpg+1], " and unmeth ", self.slsbulk_data['unmeth_reads'][cpg+1])
-                    meth_percentages.append(self.slsbulk_data['meth_reads'][cpg+1]/(self.slsbulk_data['unmeth_reads'][cpg+1]+self.slsbulk_data['meth_reads'][cpg+1]))
-        # print(*meth_percentages)
+                    meth_percentages = np.append(meth_percentages, self.slsbulk_data['meth_reads'][cpg+1]/(self.slsbulk_data['unmeth_reads'][cpg+1]+self.slsbulk_data['meth_reads'][cpg+1]))
+
         return meth_percentages
 
 
@@ -1307,28 +1307,40 @@ class BasicGeMM(object):
     # NOTE: epigenotype is the one from the DIC selection criterion
     #   When I change the prediction
         # select the different regions from the bulk
-        meth_percentages = []
+        meth_percentages = np.array([])
         for data_type in self.data_types:
             for r in different_regions:
-                # print ("Region ", r, " from ", self.regions[data_type]['start'][r], " to ", self.regions[data_type]['end'][r])
-                for cpg in range(self.regions[data_type]['start'][r], self.regions[data_type]['end'][r]+1):
-                    # look through all the cells
-                    num_meth = 0
-                    for cell in range(self.N):
-                        # print ("EPigenotype for  cell ", cell)
-                        # print (" with label ", labels_pred[cell])
-                        # print (" cpg ", cpg)
-                        # print (" is ", epigenotype[labels_pred[cell],cpg])
-                        num_meth = num_meth + epigenotype[labels_pred[cell],cpg]        # this is 0 for unmethylated and 1 for methylated
 
-                    meth_percentages.append(num_meth/self.N)
-        # print("Predicted percentages ", *meth_percentages)
+                region_meth_percentages = self._get_predicted_percentages_helper(
+                    self.regions[data_type]['start'][r],
+                    self.regions[data_type]['end'][r],
+                    self.N,
+                    epigenotype,
+                    np.array(labels_pred)
+                    )
+
+                meth_percentages = np.concatenate((meth_percentages, region_meth_percentages), axis=None)
+
+        return meth_percentages
+
+    @staticmethod
+    @njit(parallel=True, cache=True)
+    def _get_predicted_percentages_helper(start, end, N, epigenotype, labels_pred):
+        length = end - start + 1
+        meth_percentages = np.empty(length)
+        for cpg in prange(start, end + 1):
+            num_meth = 0
+            for cell in prange(N):
+                num_meth += epigenotype[labels_pred[cell], cpg]
+
+            meth_percentages[cpg - start] = num_meth/N
+
         return meth_percentages
 
     ###############
 
     def _get_bulk_score(self, labels_pred, epigenotype, different_regions, bulk_percentages):
-        pred_percentages = self._get_predicted_percentages (labels_pred, epigenotype, different_regions)
+        pred_percentages = self._get_predicted_percentages(labels_pred, epigenotype, different_regions)
         bulk_score = mean_absolute_error(bulk_percentages, pred_percentages)
         return bulk_score
 
@@ -1371,14 +1383,14 @@ class BasicGeMM(object):
                         continue
                     current_pred[key] = cc
                     # print ("        Changing cluster for cell ", key, " to ", cc)
-                    new_bulk_score = self._get_bulk_score (current_pred, epigenotype, different_regions, bulk_percentages)
+                    new_bulk_score = self._get_bulk_score(current_pred, epigenotype, different_regions, bulk_percentages)
                     if (new_bulk_score < best_bulk_score):
                         best_bulk_score = new_bulk_score
                         best_pred = np.copy(current_pred)
                         print ("     Changing cluster for cell ", key, " to ", cc, ", New bulk score ", new_bulk_score, " KEEPING IT")
                     elif  (random() >= 0.8):
-                        continue
                         # print ("             Best score ", best_bulk_score, ", Bulk score ", new_bulk_score, " staying with the current prediction anyway")
+                        continue
                     else:
                         current_pred = np.copy(best_pred)
                         # print ("             Best score ", best_bulk_score, ", New bulk score ", new_bulk_score, " THROWING IT")

@@ -66,7 +66,6 @@ class RegionGeMM(BasicGeMM):
 
     def _region_data_matrix(self, data_type, X):
     # Here in the regions class I will fill up to 0 the remaining values for each region
-    # TO DO: maybe this reshaping can be done more efficiently
         return self._region_data_matrix_helper(
             self.N, self.R[data_type],
             int(self.maxL[data_type]),

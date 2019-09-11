@@ -322,6 +322,7 @@ def run_model(mtype, args):
                     write_slsbulk_cluster_MAP(cell_ids, args.out_dir, new_pred)
 
                 if (args.check_uncertainty):
+                    true_positive_rate = 0
                     candidate_keys =  list(candidate_cells.keys())
                     for key in candidate_keys:
                         print ("Current prediction ", labels_prob[key])
