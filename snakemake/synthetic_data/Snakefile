@@ -1,0 +1,197 @@
+import os
+
+configfile: 'config.yaml'
+
+LOG_DIR = config['LOG_DIR']
+DATA_DIRECTORY = config['OUTPUT_DIRS']['DATA_DIRECTORY']
+NPM_DIRECTORY = config['OUTPUT_DIRS']['NPM_DIRECTORY']
+EPI_BASIC_DIR = config['OUTPUT_DIRS']['EPI_BASIC_DIR']
+EPI_REGION_DIR = config['OUTPUT_DIRS']['EPI_REGION_DIR']
+EVAL_BASIC_DIR = config['OUTPUT_DIRS']['EVAL_BASIC_DIR']
+EVAL_REGION_DIR = config['OUTPUT_DIRS']['EVAL_REGION_DIR']
+
+run=list(range(0,300))
+
+rule all:
+    input:
+        # expand(directory('../../examples/epiclomal_basic/{run}'), run=run),
+        # expand(directory('../../examples/epiclomal_region/{run}'), run=run)
+        '../../examples/results_basic',
+        '../../examples/results_region'
+
+rule generate_synthetic_data:
+    output:
+        os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
+        os.path.join(DATA_DIRECTORY, 'data/regions_file.tsv.gz'),
+        os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz'),
+        os.path.join(DATA_DIRECTORY, 'data/bulk_data_sample_1.tsv.gz'),
+        os.path.join(DATA_DIRECTORY, 'data/true_clone_epigenotypes.tsv.gz')
+    log:
+        os.path.join(LOG_DIR, 'generate_synthetic_data.log')
+    shell:
+        'Rscript {config[SOFTWARE][generate_synthetic_software]} '
+        '--saveall {config[PARAMS][GENERATE_SYNTHETIC][saveall]} '
+        '--verbose {config[PARAMS][GENERATE_SYNTHETIC][verbose]} '
+        '--clone_prevalence {config[PARAMS][ALL][prevalences]} '
+        '--read_size {config[PARAMS][GENERATE_SYNTHETIC][read_size]} '
+        '--region_size_type {config[PARAMS][GENERATE_SYNTHETIC][region_size_type]} '
+        '--genotype_prob {config[PARAMS][GENERATE_SYNTHETIC][genotype_prob]} '
+        '--num_regions {config[PARAMS][GENERATE_SYNTHETIC][num_regions]} '
+        '--num_clones {config[PARAMS][GENERATE_SYNTHETIC][num_clones]} '
+        '--num_cells {config[PARAMS][GENERATE_SYNTHETIC][num_cells]} '
+        '--plot_data {config[PARAMS][GENERATE_SYNTHETIC][plot_data]} '
+        '--seed {config[PARAMS][GENERATE_SYNTHETIC][seed]} '
+        '--prop_add_var {config[PARAMS][GENERATE_SYNTHETIC][prop_add_var]} '
+        '--num_samples {config[PARAMS][GENERATE_SYNTHETIC][num_samples]} '
+        '--missing_probability {config[PARAMS][GENERATE_SYNTHETIC][missing_probability]} '
+        '--error_probability {config[PARAMS][GENERATE_SYNTHETIC][error_probability]} '
+        '--num_loci {config[PARAMS][GENERATE_SYNTHETIC][num_loci]} '
+        '--given_dir_complete {config[PARAMS][GENERATE_SYNTHETIC][given_dir_complete]} '
+        '--phylogenetic_generation {config[PARAMS][GENERATE_SYNTHETIC][phylogenetic_generation]} '
+        '--percent_regions_dirichlet_param {config[PARAMS][GENERATE_SYNTHETIC][percent_regions_dirichlet_param]} '
+        '--dirichlet_param_genotype_prob {config[PARAMS][GENERATE_SYNTHETIC][dirichlet_param_genotype_prob]} '
+        '--output_dir {DATA_DIRECTORY} '
+        '--visualization_software {config[SOFTWARE][visualization_software]} '
+        '> {log}'
+
+rule run_non_probabilistic_methods:
+    input:
+        meth_file=os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
+        regions_file=os.path.join(DATA_DIRECTORY, 'data/regions_file.tsv.gz'),
+        true_clone_membership_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz')
+    output:
+        os.path.join(NPM_DIRECTORY, 'initial_inputs.tsv.gz')
+    log:
+        os.path.join(LOG_DIR, 'run_non_probabilistic_methods.log')
+    shell:
+        'Rscript {config[SOFTWARE][hclust_software]} '
+        '--evaluate_clustering_software {config[SOFTWARE][evaluate_clustering_software]} '
+        '--true_prevalences {config[PARAMS][ALL][prevalences]} '
+        '--index {config[PARAMS][NPM][index]} '
+        '--max_k {config[PARAMS][NPM][max_k]} '
+        '--output_directory {NPM_DIRECTORY} '
+        '--methylation_file {input.meth_file} '
+        '--regions_file {input.regions_file} '
+        '--true_clone_membership_file {input.true_clone_membership_file} '
+        '--impute {config[PARAMS][NPM][impute]} '
+        '> {log}'
+
+rule run_epiclomal_basic:
+    input:
+        true_clusters_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz'),
+        meth_file=os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
+        initial_clusters_file=os.path.join(NPM_DIRECTORY, 'initial_inputs.tsv.gz')
+    output:
+        directory(os.path.join(EPI_BASIC_DIR, '{run}'))
+    log:
+        os.path.join(config['LOG_DIR'], 'run_epiclomal_basic_{run}.log')
+    shell:
+        '(echo "==================================="; '
+        'echo "Running EpiclomalBasic RUN {wildcards.run}"; '
+        'echo "==================================="; '
+        'python ../../epiclomal/epiclomal.py Basic-GeMM '
+        '--out_dir {output} '
+        '--repeat_id {wildcards.run} '
+        '--K {config[PARAMS][EPICLOMAL][K]} '
+        '--mu_has_k {config[PARAMS][EPICLOMAL][mu_has_k]} '
+        '--true_prevalences {config[PARAMS][ALL][prevalences]} '
+        '--config_file {config[PARAMS][EPICLOMAL][config_file]} '
+        '--true_clusters_file {input.true_clusters_file} '
+        '--methylation_file {input.meth_file} '
+        '--initial_clusters_file {input.initial_clusters_file}) '
+        '> {log}'
+
+rule run_epiclomal_region:
+    input:
+        true_clusters_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz'),
+        meth_file=os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
+        initial_clusters_file=os.path.join(NPM_DIRECTORY, 'initial_inputs.tsv.gz'),
+        regions_file=os.path.join(DATA_DIRECTORY, 'data/regions_file.tsv.gz'),
+        slsbulk_file=os.path.join(DATA_DIRECTORY, 'data/bulk_data_sample_1.tsv.gz')
+    output:
+        directory(os.path.join(EPI_REGION_DIR, '{run}'))
+    log:
+        os.path.join(config['LOG_DIR'], 'run_epiclomal_region_{run}.log')
+    shell:
+        '(echo "==================================="; '
+        'echo "Running EpiclomalRegion RUN {wildcards.run}"; '
+        'echo "==================================="; '
+        'python ../../epiclomal/epiclomal.py Region-GeMM '
+        '--out_dir {output} '
+        '--repeat_id {wildcards.run} '
+        '--K {config[PARAMS][EPICLOMAL][K]} '
+        '--mu_has_k {config[PARAMS][EPICLOMAL][mu_has_k]} '
+        '--true_prevalences {config[PARAMS][ALL][prevalences]} '
+        '--config_file {config[PARAMS][EPICLOMAL][config_file]} '
+        '--true_clusters_file {input.true_clusters_file} '
+        '--methylation_file {input.meth_file} '
+        '--initial_clusters_file {input.initial_clusters_file} '
+        '--regions_file {input.regions_file} '
+        '--slsbulk_iterations {config[PARAMS][EPICLOMAL][slsbulk_iterations]} '
+        '--slsbulk_file {input.slsbulk_file} '
+        '--check_uncertainty {config[PARAMS][EPICLOMAL][check_uncertainty]}) '
+        '> {log}'
+
+rule prepare_eval_basic:
+    input:
+        expand(os.path.join(EPI_BASIC_DIR, '{run}'), run=run)
+    output:
+        temp(directory('temp_eval_basic'))
+    shell:
+        'mkdir -p {output}; cp -r {input} {output}'
+
+rule prepare_eval_region:
+    input:
+        expand(os.path.join(EPI_REGION_DIR, '{run}'), run=run)
+    output:
+        temp(directory('temp_eval_region'))
+    shell:
+        'mkdir -p {output}; cp -r {input} {output}'
+
+rule run_eval_basic:
+    input:
+        regions_file=os.path.join(DATA_DIRECTORY, 'data/regions_file.tsv.gz'),
+        true_clusters_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz'),
+        true_epigenotypes_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_epigenotypes.tsv.gz'),
+        meth_file=os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
+        dir='temp_eval_basic'
+    output:
+        directory(EVAL_BASIC_DIR)
+    log:
+        os.path.join(config['LOG_DIR'], 'run_eval_basic.log')
+    shell:
+        'Rscript ../../scripts/eval_epiclomal.R '
+        '--output_dir {output} '
+        '--input_dir {input.dir} '
+        '--true_clusters_file {input.true_clusters_file} '
+        '--true_epigenotypes_file {input.true_epigenotypes_file} '
+        '--methylation_file {input.meth_file} '
+        '--regions_file {input.regions_file} '
+        '--model_name basic '
+        '--hdist_software {config[SOFTWARE][hdist_software]} '
+        '--visualization_software {config[SOFTWARE][visualization_software]} '
+        '> {log}'
+
+rule run_eval_region:
+    input:
+        regions_file=os.path.join(DATA_DIRECTORY, 'data/regions_file.tsv.gz'),
+        true_clusters_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz'),
+        true_epigenotypes_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_epigenotypes.tsv.gz'),
+        meth_file=os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
+        dir='temp_eval_region'
+    output:
+        directory(EVAL_REGION_DIR)
+    log:
+        os.path.join(config['LOG_DIR'], 'run_eval_region.log')
+    shell:
+        'Rscript ../../scripts/eval_epiclomal.R '
+        '--output_dir {output} '
+        '--input_dir {input.dir} '
+        '--true_clusters_file {input.true_clusters_file} '
+        '--true_epigenotypes_file {input.true_epigenotypes_file} '
+        '--methylation_file {input.meth_file} '
+        '--regions_file {input.regions_file} '
+        '--model_name region '
+        '--hdist_software {config[SOFTWARE][hdist_software]} '
+        '--visualization_software {config[SOFTWARE][visualization_software]} '
+        '> {log}'
