@@ -10,6 +10,8 @@ EPI_REGION_DIR = config['OUTPUT_DIRS']['EPI_REGION_DIR']
 EVAL_BASIC_DIR = config['OUTPUT_DIRS']['EVAL_BASIC_DIR']
 EVAL_REGION_DIR = config['OUTPUT_DIRS']['EVAL_REGION_DIR']
 
+max_pc = min(config['PARAMS']['NPM']['max_k'], 20)
+
 run=list(range(0,300))
 
 rule all:
@@ -54,27 +56,183 @@ rule generate_synthetic_data:
         '--visualization_software {config[SOFTWARE][visualization_software]} '
         '> {log}'
 
-rule run_non_probabilistic_methods:
+rule run_euclidean_clust:
     input:
         meth_file=os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
-        regions_file=os.path.join(DATA_DIRECTORY, 'data/regions_file.tsv.gz'),
-        true_clone_membership_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz')
+        regions_file=os.path.join(DATA_DIRECTORY, 'data/regions_file.tsv.gz')
     output:
-        os.path.join(NPM_DIRECTORY, 'initial_inputs.tsv.gz')
+        os.path.join(NPM_DIRECTORY, 'EuclideanClust_clusters_region_based_maxk_{}.tsv'.format(config['PARAMS']['NPM']['max_k'])),
+        os.path.join(NPM_DIRECTORY, 'EuclideanClust_cell_order_region_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
     log:
-        os.path.join(LOG_DIR, 'run_non_probabilistic_methods.log')
+        os.path.join(LOG_DIR, 'run_euclidean_clust.log')
     shell:
-        'Rscript {config[SOFTWARE][hclust_software]} '
-        '--evaluate_clustering_software {config[SOFTWARE][evaluate_clustering_software]} '
-        '--true_prevalences {config[PARAMS][ALL][prevalences]} '
+        'Rscript {config[SOFTWARE][euclidean_clust_software]} '
         '--index {config[PARAMS][NPM][index]} '
         '--max_k {config[PARAMS][NPM][max_k]} '
         '--output_directory {NPM_DIRECTORY} '
         '--methylation_file {input.meth_file} '
         '--regions_file {input.regions_file} '
-        '--true_clone_membership_file {input.true_clone_membership_file} '
         '--impute {config[PARAMS][NPM][impute]} '
+        '--use_cache {config[PARAMS][NPM][use_cache]} '
         '> {log}'
+
+rule run_hamming_clust:
+    input:
+        meth_file=os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
+        regions_file=os.path.join(DATA_DIRECTORY, 'data/regions_file.tsv.gz')
+    output:
+        os.path.join(NPM_DIRECTORY, 'HammingClust_clusters_CpG_based_maxk_{}.tsv'.format(config['PARAMS']['NPM']['max_k'])),
+        os.path.join(NPM_DIRECTORY, 'HammingClust_cell_order_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
+    log:
+        os.path.join(LOG_DIR, 'run_hamming_clust.log')
+    shell:
+        'Rscript {config[SOFTWARE][hamming_clust_software]} '
+        '--index {config[PARAMS][NPM][index]} '
+        '--max_k {config[PARAMS][NPM][max_k]} '
+        '--output_directory {NPM_DIRECTORY} '
+        '--methylation_file {input.meth_file} '
+        '--regions_file {input.regions_file} '
+        '--impute {config[PARAMS][NPM][impute]} '
+        '--use_cache {config[PARAMS][NPM][use_cache]} '
+        '> {log}'
+
+rule run_pearson_clust:
+    input:
+        meth_file=os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
+        regions_file=os.path.join(DATA_DIRECTORY, 'data/regions_file.tsv.gz')
+    output:
+        os.path.join(NPM_DIRECTORY, 'PearsonClust_clusters_CpG_based_maxk_{}.tsv'.format(config['PARAMS']['NPM']['max_k'])),
+        os.path.join(NPM_DIRECTORY, 'PearsonClust_cell_order_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
+    log:
+        os.path.join(LOG_DIR, 'run_pearson_clust.log')
+    shell:
+        'Rscript {config[SOFTWARE][pearson_clust_software]} '
+        '--index {config[PARAMS][NPM][index]} '
+        '--max_k {config[PARAMS][NPM][max_k]} '
+        '--output_directory {NPM_DIRECTORY} '
+        '--methylation_file {input.meth_file} '
+        '--regions_file {input.regions_file} '
+        '--impute {config[PARAMS][NPM][impute]} '
+        '--use_cache {config[PARAMS][NPM][use_cache]} '
+        '> {log}'
+
+rule run_density_cut:
+    input:
+        meth_file=os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
+        regions_file=os.path.join(DATA_DIRECTORY, 'data/regions_file.tsv.gz')
+    output:
+        os.path.join(NPM_DIRECTORY, 'DensityCut_clusters_Region_based_maxPC_{}.tsv'.format(max_pc))
+    log:
+        os.path.join(LOG_DIR, 'run_density_cut.log')
+    shell:
+        'Rscript {config[SOFTWARE][density_cut_software]} '
+        '--max_PC {max_pc} '
+        '--output_directory {NPM_DIRECTORY} '
+        '--methylation_file {input.meth_file} '
+        '--regions_file {input.regions_file} '
+        '--impute {config[PARAMS][NPM][impute]} '
+        '--use_cache {config[PARAMS][NPM][use_cache]} '
+        '> {log}'
+
+rule process_npm_methods:
+    input:
+        hfile=os.path.join(NPM_DIRECTORY, 'EuclideanClust_clusters_region_based_maxk_{}.tsv'.format(config['PARAMS']['NPM']['max_k'])),
+        pfile=os.path.join(NPM_DIRECTORY, 'HammingClust_clusters_CpG_based_maxk_{}.tsv'.format(config['PARAMS']['NPM']['max_k'])),
+        peafile=os.path.join(NPM_DIRECTORY, 'PearsonClust_clusters_CpG_based_maxk_{}.tsv'.format(config['PARAMS']['NPM']['max_k'])),
+        dfile=os.path.join(NPM_DIRECTORY, 'DensityCut_clusters_Region_based_maxPC_{}.tsv'.format(max_pc))
+    output:
+        htempfile=temp('htempfile'),
+        ptempfile=temp('ptempfile'),
+        peatempfile=temp('peatempfile'),
+        dtempfile=temp('dtempfile'),
+        idtempfile=temp('idtempfile'),
+        hfile=os.path.join(NPM_DIRECTORY, 'EuclideanClust_clusters_region_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k'])),
+        pfile=os.path.join(NPM_DIRECTORY, 'HammingClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k'])),
+        peafile=os.path.join(NPM_DIRECTORY, 'PearsonClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k'])),
+        dfile=os.path.join(NPM_DIRECTORY, 'DensityCut_clusters_Region_based_maxPC_{}.tsv.gz'.format(max_pc))
+    params:
+        k_1=config['PARAMS']['NPM']['max_k']+1
+    shell:
+        'cut -f1 {input.hfile} > {output.idtempfile}; '
+        'cut -f2-{params.k_1} {input.hfile} > {output.htempfile}; '
+        'gzip --force -c {input.hfile} > {output.hfile}; rm {input.hfile}; '
+        'cut -f1 {input.pfile} > {output.idtempfile}; '
+        'cut -f2-{params.k_1} {input.pfile} > {output.ptempfile}; '
+        'gzip --force -c {input.pfile} > {output.pfile}; rm {input.pfile}; '
+        'cut -f1 {input.peafile} > {output.idtempfile}; '
+        'cut -f2-{params.k_1} {input.peafile} > {output.peatempfile}; '
+        'gzip --force -c {input.peafile} > {output.peafile}; rm {input.peafile}; '
+        'cut -f1 {input.dfile} > {output.idtempfile}; '
+        'cut -f2 {input.dfile} > {output.dtempfile}; '
+        'gzip --force -c {input.dfile} > {output.dfile}; rm {input.dfile}'
+
+rule join_npm_methods:
+    input:
+        htempfile='htempfile',
+        ptempfile='ptempfile',
+        peatempfile='peatempfile',
+        dtempfile='dtempfile',
+        idtempfile='idtempfile'
+    output:
+        os.path.join(NPM_DIRECTORY, 'initial_inputs.tsv.gz')
+    shell:
+        'paste {input.idtempfile} {input.htempfile} {input.ptempfile} {input.peatempfile} {input.dtempfile} | gzip -c - > {output}'
+
+rule run_euclidean_eval:
+    input:
+        true_clusters_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz'),
+        hfile=os.path.join(NPM_DIRECTORY, 'EuclideanClust_clusters_region_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
+    output:
+        os.path.join(NPM_DIRECTORY, "results_EuclideanClust.txt")
+    shell:
+        'python {config[SOFTWARE][evaluate_clustering_software]} '
+        '--true_clusters_file {input.true_clusters_file} '
+        '--true_prevalences {config[PARAMS][ALL][prevalences]} '
+        '--predicted_clusters_file {input.hfile} '
+        '--clusters_are_probabilities False '
+        '--results_file {output}'
+
+rule run_hamming_eval:
+    input:
+        true_clusters_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz'),
+        pfile=os.path.join(NPM_DIRECTORY, 'HammingClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
+    output:
+        os.path.join(NPM_DIRECTORY, "results_HammingClust.txt")
+    shell:
+        'python {config[SOFTWARE][evaluate_clustering_software]} '
+        '--true_clusters_file {input.true_clusters_file} '
+        '--true_prevalences {config[PARAMS][ALL][prevalences]} '
+        '--predicted_clusters_file {input.pfile} '
+        '--clusters_are_probabilities False '
+        '--results_file {output}'
+
+rule run_pearson_eval:
+    input:
+        true_clusters_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz'),
+        peafile=os.path.join(NPM_DIRECTORY, 'PearsonClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
+    output:
+        os.path.join(NPM_DIRECTORY, "results_PearsonClust.txt")
+    shell:
+        'python {config[SOFTWARE][evaluate_clustering_software]} '
+        '--true_clusters_file {input.true_clusters_file} '
+        '--true_prevalences {config[PARAMS][ALL][prevalences]} '
+        '--predicted_clusters_file {input.peafile} '
+        '--clusters_are_probabilities False '
+        '--results_file {output}'
+
+rule run_densitycut_eval:
+    input:
+        true_clusters_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz'),
+        dfile=os.path.join(NPM_DIRECTORY, 'DensityCut_clusters_Region_based_maxPC_{}.tsv.gz'.format(max_pc))
+    output:
+        os.path.join(NPM_DIRECTORY, "results_DensityCut.txt")
+    shell:
+        'python {config[SOFTWARE][evaluate_clustering_software]} '
+        '--true_clusters_file {input.true_clusters_file} '
+        '--true_prevalences {config[PARAMS][ALL][prevalences]} '
+        '--predicted_clusters_file {input.dfile} '
+        '--clusters_are_probabilities False '
+        '--results_file {output}'
 
 rule run_epiclomal_basic:
     input:

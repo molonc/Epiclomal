@@ -1,7 +1,8 @@
 
 suppressMessages(library("argparse"))
+suppressMessages(library("yaml"))
 
-RSCRIPT <- Sys.getenv("RSCRIPT")
+# RSCRIPT <- Sys.getenv("RSCRIPT")
 
 # create parser object
 parser <- ArgumentParser()
@@ -81,44 +82,48 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
     # input can be actually a list of directories. Then look through all of them and compute the measure
     directories <- Sys.glob(input)
     files <- NULL
-    # NOTE: This may be very slow for many files
-    for (dir in directories) {
-        files <- c(files, list.files(dir, recursive = TRUE, pattern = "params.yaml", full.names = TRUE))
-    }
-
-    lines <- lapply(files, readLines)
-
-    # print(lines)
-
     run <- NULL
     # NOTE: This may be very slow for many files
     for (dir in directories) {
+        files <- c(files, list.files(dir, recursive = TRUE, pattern = "params.yaml", full.names = TRUE))
         run <- c(run, list.files(dir, recursive = TRUE, pattern = "cluster_posteriors.tsv.gz", full.names = TRUE))
     }
+
+    lines <- lapply(files, yaml.load_file)
+
+    # print(lines)
     #print (run)
     # dir <- paste0(getwd(), "/", input, "/", run)
-    converged <- sapply(sapply(lines, grep, pattern = "converged: true", value = TRUE), length)
+    converged <- as.integer(as.logical(sapply(lines, '[[', "converged")))
     criterion <- paste0(criterion, ": ")
     if (criterion == "DIC_measure: " || criterion == "DIC_LINE_ELBOW: ")  {
-        measure <- "DIC_measure: "
+        measure <- "DIC_measure"
     } else {
         measure <- criterion
     }
 
-    score <- as.numeric(sub(measure, "", sapply(lines, grep, pattern = measure, value = TRUE)))
+    score <- as.numeric(sapply(lines, '[[', measure))
     # elbo <- as.numeric(sub(paste0(criterion,": "), "", sapply(lines, grep, pattern = criterion, value = TRUE)))
     # Now elbo variable can be the elbo (lower_bound) or the log_posterior (unnormalized)
-    cpu_time <- as.numeric(sub("CPU_time_seconds: ", "", sapply(lines, grep, pattern = "CPU_time_seconds", value = TRUE)))
-    memory <- as.numeric(sub("Max_memory_MB: ", "", sapply(lines, grep, pattern = "Max_memory_MB", value = TRUE)))
-    all_vmeasure <- as.numeric(sub("Vmeasure: ", "", sapply(lines, grep, pattern = "Vmeasure", value = TRUE)))
-    nclusters_pred <- as.numeric(sub("nclusters: ", "", sapply(lines, grep, pattern = "nclusters", value = TRUE)))
+    cpu_time <- as.numeric(sapply(lines, '[[', "CPU_time_seconds"))
+    memory <- as.numeric(sapply(lines, '[[', "Max_memory_MB"))
+    all_vmeasure <- as.numeric(sapply(lines, '[[', "Vmeasure"))
+    nclusters_pred <- as.numeric(sapply(lines, '[[', "nclusters"))
     # for clone_prev_MAE, I may also have slsbulk_clone_prev_MAE
-    clone_prev_MAE <- as.numeric(sub("clone_prev_MAE: ", "", sapply(lines, grep, pattern = "^clone_prev_MAE", value = TRUE)))
-    clone_prev_MSE <- as.numeric(sub("clone_prev_MSE: ", "", sapply(lines, grep, pattern = "^clone_prev_MSE", value = TRUE)))
-    slsbulk_vmeasure <- as.numeric(sub("slsbulk_vmeasure: ", "", sapply(lines, grep, pattern = "slsbulk_vmeasure", value = TRUE)))
-    slsbulk_clone_prev_MAE <- as.numeric(sub("slsbulk_clone_prev_MAE: ", "", sapply(lines, grep, pattern = "slsbulk_clone_prev_MAE", value = TRUE)))
-    slsbulk_clone_prev_MSE <- as.numeric(sub("slsbulk_clone_prev_MSE: ", "", sapply(lines, grep, pattern = "slsbulk_clone_prev_MSE", value = TRUE)))
-    uncertainty <- as.numeric(sub("uncertainty_true_positive_rate: ", "", sapply(lines, grep, pattern = "uncertainty_true_positive_rate", value = TRUE)))
+    clone_prev_MAE <- as.numeric(sapply(lines, '[[', "clone_prev_MAE"))
+    clone_prev_MSE <- as.numeric(sapply(lines, '[[', "clone_prev_MSE"))
+    slsbulk_vmeasure <- sapply(lines, '[[', "slsbulk_vmeasure")
+    slsbulk_vmeasure[sapply(slsbulk_vmeasure, is.null)] <- NA
+    slsbulk_vmeasure <- as.numeric(sapply(slsbulk_vmeasure, unlist))
+    slsbulk_clone_prev_MAE <- sapply(lines, '[[', "slsbulk_clone_prev_MAE")
+    slsbulk_clone_prev_MAE[sapply(slsbulk_clone_prev_MAE, is.null)] <- NA
+    slsbulk_clone_prev_MAE <- sapply(slsbulk_clone_prev_MAE, unlist)
+    slsbulk_clone_prev_MSE <- sapply(lines, '[[', "slsbulk_clone_prev_MSE")
+    slsbulk_clone_prev_MSE[sapply(slsbulk_clone_prev_MSE, is.null)] <- NA
+    slsbulk_clone_prev_MSE <- sapply(slsbulk_clone_prev_MSE, unlist)
+    uncertainty <- sapply(lines, '[[', "uncertainty_true_positive_rate")
+    uncertainty[sapply(uncertainty, is.null)] <- NA
+    uncertainty <- sapply(uncertainty, unlist)
 
     table_all <- data.frame(converged, score, run, cpu_time, memory, nclusters_pred, all_vmeasure, clone_prev_MAE, clone_prev_MSE, slsbulk_vmeasure, slsbulk_clone_prev_MAE, slsbulk_clone_prev_MSE, uncertainty)
 
@@ -139,12 +144,12 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
 
         table_per_cluster = data.frame()
         # find the unique number of clusters
-        for ( k in sort(unique(table_all[,6])))   {
+        for ( k in sort(unique(table_all$nclusters_pred)))   {
             # print (k)
-            rows <- table_all[which(table_all[,6]==k),]
+            rows <- table_all[which(table_all$nclusters_pred==k),]
             # print(rows)
-            minofk_score <- min(rows[,2])
-            minofk_row <- rows[which.min(rows[,2]),]
+            minofk_score <- min(rows$score)
+            minofk_row <- rows[which.min(rows$score),]
             # print(minofk_score)
             # print(minofk_row)
             table_per_cluster = rbind(table_per_cluster, minofk_row)
@@ -157,8 +162,8 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
 
         # also plot the v-measure versus the number of predicted clusters to see if we get better V-measure when we choose a different number of clusters
         pdf(paste0(output,"/Vmeasure_vs_nclusters.pdf"),height=7,width=9)
-        x <- table_per_cluster[,c("nclusters_pred")]
-        y <- table_per_cluster[,c("all_vmeasure")]
+        x <- table_per_cluster$nclusters_pred
+        y <- table_per_cluster$all_vmeasure
 
         # type='o' means it plots both points and lines overplotted
         matplot(x,y,lty=1,type='o',lwd=c(4),col=c(4), pch=19,
@@ -261,7 +266,7 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
             #xaxt="n",
             cex.axis=1.2,cex.lab=1.2)
         #points(x, cex = 1.5, col = "dark red")
-        bestcluster <- bestrow[,6]
+        bestcluster <- bestrow$ncluster_pred
         print(paste0('Best cluster is ', bestcluster))
         abline(v=bestcluster, col="red")
         if (criterion == "DIC_LINE_ELBOW: ") {
@@ -275,18 +280,18 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
 
     } else {
         print('Taking max')
-        best_score <- max(table_all[,2])
-        bestrow <- table_all[which.max(table_all[,2]),]
+        best_score <- max(table_all$score)
+        bestrow <- table_all[which.max(table_all$score),]
     }
-    cpu_total <- sum(table_all[,4])     # TOTAL CPU TIME
-    memory <- bestrow[,5]      # MEMORY ONLY OF THE BEST RUN
-    nclusters_pred <- bestrow[,6]
+    cpu_total <- sum(table_all$cpu_time)     # TOTAL CPU TIME
+    memory <- bestrow$memory      # MEMORY ONLY OF THE BEST RUN
+    nclusters_pred <- bestrow$nclusters_pred
 
     print (paste0('Selection criterion ', criterion))
     print (paste0('Total repeats ', ntotal))
     print (paste0('Number converged ', nconv))
     print (paste0('Best selection criterion ', best_score))
-    bestcluster <- bestrow[,3]
+    bestcluster <- bestrow$run
     print (paste0('Best cluster ', bestcluster))
 
     epiMAPfile <- gsub("cluster_posteriors.tsv.gz", "genotype_MAP.tsv.gz", bestcluster)
@@ -310,13 +315,13 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
         nclusters_true <- length(unique(true_clusters))
         print(paste0("Number of true clusters: ", nclusters_true))
 
-        best_vmeasure <- bestrow[,7]
-        clone_prev_MAE <- bestrow[,8]
-        clone_prev_MSE <- bestrow[,9]
-        slsbulk_vmeasure <- bestrow[,10]
-        slsbulk_clone_prev_MAE <- bestrow[,11]
-        slsbulk_clone_prev_MSE <- bestrow[,12]
-        uncertainty <- bestrow[,13]
+        best_vmeasure <- bestrow$all_vmeasure
+        clone_prev_MAE <- bestrow$clone_prev_MAE
+        clone_prev_MSE <- bestrow$clone_prev_MSE
+        slsbulk_vmeasure <- bestrow$slsbulk_vmeasure
+        slsbulk_clone_prev_MAE <- bestrow$slsbulk_clone_prev_MAE
+        slsbulk_clone_prev_MSE <- bestrow$slsbulk_clone_prev_MSE
+        uncertainty <- bestrow$uncertainty
 
         print(paste0('Vmeasure is ', best_vmeasure))
         table_best <- cbind (table_best, nclusters_true, best_vmeasure, clone_prev_MAE, clone_prev_MSE, slsbulk_vmeasure, slsbulk_clone_prev_MAE, slsbulk_clone_prev_MSE, uncertainty)
@@ -342,7 +347,7 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
                     " --estimated_membership_file=", clMAPfile, " --methylation_file=", meth_file,
                     " --regions_file=", regions_file)
             print ("Calling the hamming distance software")
-            command <- paste (RSCRIPT, hdist_software, hline)
+            command <- paste ('Rscript', hdist_software, hline)
             print(command)
             system(command)
             # source (hdist_software)
@@ -363,7 +368,7 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
 
     # Order will be by predicted
     print ("Calling the visualization software")
-    command <- paste0 (RSCRIPT, " ", visualization_software, " ", visline, " --order_by_true=0 --name=", flag, "_bestrun_order_pred")
+    command <- paste0 ('Rscript', " ", visualization_software, " ", visline, " --order_by_true=0 --name=", flag, "_bestrun_order_pred")
     print(command)
     system(command)
 
@@ -372,7 +377,7 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
     if (!is.null(true_clusters_file))
     {
         print ("Calling the visualization software the second time")
-        command <- paste0 (RSCRIPT, " ", visualization_software, " ", visline, " --order_by_true=1 --name=", flag, "_bestrun_order_true")
+        command <- paste0 ('Rscript', " ", visualization_software, " ", visline, " --order_by_true=1 --name=", flag, "_bestrun_order_true")
         #command <- paste0 ("Rscript ", visualization_software, " ", visline, " --order_by_true=1 --name=InHouse")
         print(command)
         system(command)

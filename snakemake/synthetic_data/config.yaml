@@ -36,6 +36,7 @@ PARAMS:
     index: 'ch'
     max_k: 10
     impute: 0
+    use_cache: 1
   EPICLOMAL:
     K: 10
     slsbulk_iterations: 10
@@ -49,7 +50,10 @@ PARAMS:
 SOFTWARE:
   generate_synthetic_software: '../../scripts/generate_synthetic.R'
   visualization_software: '../../scripts/visualization.R'
-  hclust_software: '../../scripts/hclust.R'
+  euclidean_clust_software: '../../scripts/non_probabilistic_methods/euclideanclust.R'
+  hamming_clust_software: '../../scripts/non_probabilistic_methods/hammingclust.R'
+  pearson_clust_software: '../../scripts/non_probabilistic_methods/pearsonclust.R'
+  density_cut_software: '../../scripts/non_probabilistic_methods/densitycut.R'
   evaluate_clustering_software: '../../epiclomal/evaluate_clustering.py'
   epiclomal_software: '../../epiclomal/epiclomal.py'
   eval_software: '../../scripts/eval_epiclomal.R'
