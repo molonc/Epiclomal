@@ -18,8 +18,13 @@ rule all:
     input:
         # expand(directory('../../examples/epiclomal_basic/{run}'), run=run),
         # expand(directory('../../examples/epiclomal_region/{run}'), run=run)
-        '../../examples/results_basic',
-        '../../examples/results_region'
+        EVAL_BASIC_DIR,
+        EVAL_REGION_DIR,
+        os.path.join(NPM_DIRECTORY, "results_EuclideanClust.txt"),
+        os.path.join(NPM_DIRECTORY, "results_HammingClust.txt"),
+        os.path.join(NPM_DIRECTORY, "results_PearsonClust.txt"),
+        os.path.join(NPM_DIRECTORY, "results_DensityCut.txt")
+
 
 rule generate_synthetic_data:
     output:
