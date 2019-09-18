@@ -58,6 +58,10 @@ python setup.py install
 ### Run with generated synthetic data
 
 A Snakemake workflow exists to generate synthetic data and run the clustering and cluster evaluation software against the generated data.
+This workflow follows this diagram, but with 300 iterations for run_epiclomal_basic and run_epiclomal_region
+![Alt text](./dag.svg)
+<img src="./dag.svg">
+
 To run the Snakemake workflow, first edit the config file found at Epiclomal/snakemake/synthetic_data/config.yaml with appropriate paths and parameters. Then run
 ```
 snakemake -s /path/to/Epiclomal/snakemake/synthetic_data/Snakefile
