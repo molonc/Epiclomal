@@ -6,5 +6,5 @@
 build
 dist
 files.txt
-.Rproj.user
+*.Rproj*
 *snakejob.*
