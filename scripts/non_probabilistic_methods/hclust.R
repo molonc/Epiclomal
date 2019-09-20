@@ -4,7 +4,6 @@
 #======================
 
 suppressMessages(library(argparse))
-suppressMessages(library(Rcpp))
 
 # Renaming the simple methods
 # hclust -> EuclideanClust
@@ -12,11 +11,7 @@ suppressMessages(library(Rcpp))
 # Pearsonclust -> Pearsonclust
 # densitycut -> DensityCut
 
-
-### libraries to find the best number of clusters
-#suppressMessages(library(factoextra))
-suppressMessages(library(NbClust))
-suppressMessages(library(pheatmap))
+suppressMessages(library(epiclomal.npm.cluster))
 
 RSCRIPT <- "Rscript"
 
@@ -52,21 +47,9 @@ input_CpG_data_file <- args$methylation_file
 input_regions_file <- args$regions_file
 true_clusters_file <- args$true_clone_membership_file
 eval_soft <- args$evaluate_clustering_software
+index_type <- args$index
 impute <- args$impute
 use_cache <- args$use_cache
-
-# get directory of current script
-initial.options <- commandArgs(trailingOnly = FALSE)
-file.arg.name <- "--file="
-script.name <- sub(file.arg.name, "", initial.options[grep(file.arg.name, initial.options)])
-script.basename <- dirname(script.name)
-
-source(paste(sep="/", script.basename, "helpers.R"))
-
-if(impute == 1){
-  sourceCpp(paste(sep="/", script.basename, "cpp_functions", "impute.cpp"))
-}
-
 
 ## TO TEST
 #input_CpG_data_file <- "/Users/camila/Documents/shahlab15/BS-seq/whole_genome_single_cell/synthetic_data_tests/data/data_incomplete.tsv.gz"
@@ -82,7 +65,7 @@ if(impute == 1){
 #======================
 
 # Methylation data
-data <- load_data(input_CpG_data_file, input_regions_file)
+data <- load_data(input_CpG_data_file, input_regions_file, use_cache)
 
 input_CpG_data <- data$input_CpG_data
 input_regions <- data$input_regions
@@ -95,10 +78,19 @@ M <- dim(input_CpG_data)[2] ## number of loci
 Max_K <- min((dim(input_CpG_data)[1]-1),args$max_k)
 print(Max_K)
 
-index_type <- args$index
-
 #print(R)
 #print(M)
+
+
+#################################
+## DensityCut
+#################################
+# Now call densitycut
+print("Calling DensityCut")
+
+max_PC <- min(20, R)
+maxit <- 100
+possible_clusters <- densitycut.clust(input_CpG_data, mean_meth_matrix, R, max_PC, maxit, impute, use_cache, outdir)
 
 #======================
 # EuclideanClust: hierarchical clustering considering Euclidean distances and complete linkage
@@ -107,24 +99,9 @@ index_type <- args$index
 # Now call EuclideanClust
 print("Calling EuclideanClust")
 
-### TO TEST
-#stop()
-
-# assume densitycut is in the same directory as this file
-# call densitycut.R
-euclidean.clust.name <- paste(sep="/", script.basename, "euclideanclust.R")
-print(paste("Sourcing",euclidean.clust.name,"from",script.name))
-
-command <- paste(RSCRIPT, euclidean.clust.name,
-    "--output_directory", outdir,
-    "--max_k", Max_K, "--methylation_file", input_CpG_data_file,
-    "--regions_file", input_regions_file,
-    "--index", index_type,
-    "--impute", impute,
-    "--use_cache", use_cache)
-
-print(command)
-system(command)
+euclidean_clusters <- euclidean.clust(input_CpG_data, mean_meth_matrix, R, Max_K, index_type, impute, use_cache, outdir)
+possible_clusters <- cbind(possible_clusters, euclidean_clusters[,1:Max_K+1])
+rm(euclidean_clusters)
 
 hclust_region_crash <- read.table(file=paste0(outdir,"/EuclideanClust_crash.tsv"))
 hclust_region_bestpartition_crash <- read.table(file=paste0(outdir,"/EuclideanClust_bestpartition_crash.tsv"))
@@ -136,24 +113,9 @@ hclust_region_bestpartition_crash <- read.table(file=paste0(outdir,"/EuclideanCl
 # Now call HammingClust
 print("Calling HammingClust")
 
-### TO TEST
-#stop()
-
-# assume densitycut is in the same directory as this file
-# call densitycut.R
-hamming.clust.name <- paste(sep="/", script.basename, "hammingclust.R")
-print(paste("Sourcing",hamming.clust.name,"from",script.name))
-
-command <- paste(RSCRIPT, hamming.clust.name,
-    "--output_directory", outdir,
-    "--max_k", Max_K, "--methylation_file", input_CpG_data_file,
-    "--regions_file", input_regions_file,
-    "--index", index_type,
-    "--impute", impute,
-    "--use_cache", use_cache)
-
-print(command)
-system(command)
+hamming_clusters <- hamming.clust(input_CpG_data, Max_K, index_type, impute, use_cache, outdir)
+possible_clusters <- cbind(possible_clusters, hamming_clusters[,1:Max_K+1])
+rm(hamming_clusters)
 
 PBAL_crash <- read.table(file=paste0(outdir,"/HammingClust_crash.tsv"))
 PBALclust_bestpartition_crash <- read.table(file=paste0(outdir,"/HammingClust_bestpartition_crash.tsv"))
@@ -165,53 +127,12 @@ PBALclust_bestpartition_crash <- read.table(file=paste0(outdir,"/HammingClust_be
 # Now call HammingClust
 print("Calling PearsonClust")
 
-### TO TEST
-#stop()
-
-# assume densitycut is in the same directory as this file
-# call densitycut.R
-pearson.clust.name <- paste(sep="/", script.basename, "pearsonclust.R")
-print(paste("Sourcing",pearson.clust.name,"from",script.name))
-
-command <- paste(RSCRIPT, pearson.clust.name,
-    "--output_directory", outdir,
-    "--max_k", Max_K, "--methylation_file", input_CpG_data_file,
-    "--regions_file", input_regions_file,
-    "--index", index_type,
-    "--impute", impute,
-    "--use_cache", use_cache)
-
-print(command)
-system(command)
+pearson_clusters <- pearson.clust(input_CpG_data, Max_K, index_type, impute, use_cache, outdir)
+possible_clusters <- cbind(possible_clusters, pearson_clusters[,1:Max_K+1])
+rm(pearson_clusters)
 
 Pearson_crash <- read.table(file=paste0(outdir,"/PearsonClust_crash.tsv"))
 Pearsonclust_bestpartition_crash <- read.table(file=paste0(outdir,"/PearsonClust_bestpartition_crash.tsv"))
-
-
-#################################
-## DensityCut
-#################################
-# Now call densitycut
-print("Calling DensityCut")
-
-### TO TEST
-#stop()
-
-# assume densitycut is in the same directory as this file
-# call densitycut.R
-densitycut.name <- paste(sep="/", script.basename, "densitycut.R")
-print(paste("Sourcing",densitycut.name,"from",script.name))
-
-maxpc <- min(20, R)
-command <- paste(RSCRIPT, densitycut.name,
-    "--output_directory", outdir,
-    "--max_PC", maxpc, "--methylation_file", input_CpG_data_file,
-    "--regions_file", input_regions_file,
-    "--impute", impute,
-    "--use_cache", use_cache)
-
-print(command)
-system(command)
 
 #################################
 ## Post Processing
@@ -226,73 +147,15 @@ if (R == 1) {
 }
 pfile <- paste0(outdir,"/HammingClust_clusters_CpG_based_maxk_",Max_K,".tsv")
 peafile <- paste0(outdir,"/PearsonClust_clusters_CpG_based_maxk_",Max_K,".tsv")
-dfile <- paste0(outdir,"/DensityCut_clusters_Region_based_maxPC_",maxpc,".tsv")
-#outfile <- paste0(outdir, "/all_hclust_maxk_",Max_K,"_DensityCut_PC", maxpc, ".tsv")
+dfile <- paste0(outdir,"/DensityCut_clusters_Region_based_maxPC_",max_PC,".tsv")
 outfile <- paste0(outdir, "/initial_inputs.tsv")
-print(paste("Hfile", hfile))
-print(paste("Pfile", pfile))
-print(paste("Peafile", peafile))
-print(paste("Dfile", dfile))
-print(paste("Outfile", outfile))
 
-# take the cell_ids from the input methylation file
-idtempfile <- paste0(outdir,"/cellid_temp_maxk_",Max_K,".tsv")
-htempfile <- ""
-ptempfile <- ""
-peatempfile <- ""
-dtempfile <- ""
-
-#hclust
-if(file.exists(hfile)) {
-    print(paste0("hclust result exists ", hfile))
-    htempfile <- paste0(outdir,"/EuclideanClust_temp_maxk_",Max_K,".tsv")
-    system (paste0("cut -f1 ", hfile, " > ", idtempfile))
-    system (paste0("cut -f2-", Max_K+1, " ", hfile, " > ", htempfile))
-    system (paste0("gzip --force ", hfile))
-
-}
-
-# pbal
-if(file.exists(pfile)) {
-    print(paste0("HammingClust result exists ", pfile))
-    ptempfile <- paste0(outdir,"/HammingClust_temp_maxk_",Max_K,".tsv")
-    system (paste0("cut -f1 ", pfile, " > ", idtempfile))
-    system (paste0("cut -f2-", Max_K+1, " ", pfile, " > ", ptempfile))
-    system (paste0("gzip --force ", pfile))
-}
-
-# 12 Apr 2018, adding the Pearsonclust results too
-# Pearsonclust
-if(file.exists(peafile)) {
-    print(paste0("PearsonClust result exists ", peafile))
-    peatempfile <- paste0(outdir,"/PearsonClust_temp_maxk_",Max_K,".tsv")
-    system (paste0("cut -f1 ", peafile, " > ", idtempfile))
-    system (paste0("cut -f2-", Max_K+1, " ", peafile, " > ", peatempfile))
-    system (paste0("gzip --force ", peafile))
-}
-
-# densitycut
-if(file.exists(dfile)) {
-    print(paste0("DensityCut result exists ", dfile))
-    dtempfile <- paste0(outdir,"/DensityCut_temp_maxpc_",maxpc,".tsv")
-    system (paste0("cut -f1 ", dfile, " > ", idtempfile))
-    system (paste0("cut -f2 ", dfile, " > ", dtempfile))
-    system (paste0("gzip --force ", dfile))
-}
-
- # I should add the name of PBAL or HCLUST - added
-# Write the file only when at least one of the files exists
-if(file.exists(paste0(hfile,".gz")) || file.exists(paste0(pfile,".gz")) || file.exists(paste0(peafile,".gz")) || file.exists(paste0(dfile,".gz")))  {
-    command <- paste0("paste ", idtempfile, " ", htempfile, " ", ptempfile,  " ", peatempfile, " ", dtempfile, " > ", outfile)
-    system(command)
-    system (paste0("gzip --force ", outfile))
-}
-
-if (ptempfile != "")  system (paste("rm", ptempfile))
-if (peatempfile != "")  system (paste("rm", peatempfile))
-if (htempfile != "")  system (paste("rm", htempfile))
-if (dtempfile != "")  system (paste("rm", dtempfile))
-if (idtempfile != "")  system (paste("rm", idtempfile))
+write.table(possible_clusters, file=outfile, col.names=TRUE, sep="\t", quote=FALSE, row.names=FALSE)
+system(paste("gzip --force", hfile))
+system(paste("gzip --force", pfile))
+system(paste("gzip --force", peafile))
+system(paste("gzip --force", dfile))
+system(paste("gzip --force", outfile))
 
 # PYTHON3 <- "/home/mandronescu/.local/centos6/anaconda3/bin/python3"
 

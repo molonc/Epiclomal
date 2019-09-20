@@ -1,6 +1,38 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
+// Average distance between methylation of two cells
+double dist_pair(NumericVector v1, NumericVector v2){
+    int len = v1.size();
+    double l = 0;
+    double diff_sum = 0;
+    for(int i = 0; i < len; i++){
+        int v1_i = v1[i];
+        int v2_i = v2[i];
+        if(IntegerVector::is_na(v1_i) || IntegerVector::is_na(v2_i)) continue;
+        diff_sum += std::abs(v1_i - v2_i);
+        l++;
+    }
+    return(diff_sum / l);
+}
+
+// create distance matrix with PBAL distance
+// [[Rcpp::export]]
+NumericMatrix dist_PBAL(NumericMatrix d){
+    int rows = d.nrow();
+    NumericMatrix dist_data(rows, rows);
+    rownames(dist_data) = rownames(d);
+    colnames(dist_data) = rownames(d);
+    for(int i = 0; i < rows; i++){
+        for(int j = i; j < rows; j++){
+            double dist = dist_pair(d.row(i), d.row(j));
+            dist_data(j,i) = dist;
+        }
+    }
+    return(dist_data);
+}
+
+// Fill in NA values with average (mean) for the loci or cell
 // [[Rcpp::export]]
 NumericMatrix impute_means(NumericMatrix input_data){
     NumericMatrix imputed_data(clone(input_data));
@@ -26,6 +58,7 @@ NumericMatrix impute_means(NumericMatrix input_data){
     return(imputed_data);
 }
 
+// Fill in NA values with average (median) for the loci or cell
 // [[Rcpp::export]]
 IntegerMatrix impute_medians(IntegerMatrix input_data){
     IntegerMatrix imputed_data(clone(input_data));

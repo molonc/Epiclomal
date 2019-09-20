@@ -8,3 +8,4 @@ dist
 files.txt
 *.Rproj*
 *snakejob.*
+.Rproj.user

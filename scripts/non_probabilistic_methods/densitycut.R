@@ -8,10 +8,7 @@
 # library(densitycut,lib.loc = "/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos6/3.3/" )
 
 suppressMessages(library(argparse))
-suppressMessages(library(Rcpp))
-suppressMessages(library(pcaMethods))
-suppressMessages(library(densitycut))
-suppressMessages(library(pheatmap))
+suppressMessages(library(epiclomal.npm.cluster))
 
 #======================
 # arguments
@@ -37,16 +34,10 @@ outdir <- args$output_directory
 dir.create(file.path(outdir), showWarnings = FALSE)
 input_CpG_data_file <- args$methylation_file
 input_regions_file <- args$regions_file
+max_PC <- args$max_PC
+maxit <- args$maxit
 impute <- args$impute
 use_cache <- args$use_cache
-
-# get directory of current script
-initial.options <- commandArgs(trailingOnly = FALSE)
-file.arg.name <- "--file="
-script.name <- sub(file.arg.name, "", initial.options[grep(file.arg.name, initial.options)])
-script.basename <- dirname(script.name)
-
-source(paste(sep="/", script.basename, "helpers.R"))
 
 # input_CpG_data_file <- "data_incomplete.tsv.gz"
 # input_regions_file <- "regions_file.tsv.gz"
@@ -82,7 +73,7 @@ source(paste(sep="/", script.basename, "helpers.R"))
 # loading the data
 #======================
 
-data <- load_data(input_CpG_data_file, input_regions_file)
+data <- load_data(input_CpG_data_file, input_regions_file, use_cache)
 
 input_CpG_data <- data$input_CpG_data
 input_regions <- data$input_regions
@@ -124,183 +115,7 @@ print(M)
 #======================
 # hiearchical clustering considering Euclidean distances and complete linkage
 #======================
-
-if (R == 1){
-
-  print("One region, cannot do Region-based densityCut")
-
-  # print("One region, CpG based densityCut")
-  #
-  # pc <- pca(input_CpG_data,method="nipals",nPcs=args$max_PC)
-  #
-  # pc_scores <- scores(pc)
-  #
-  # print(head(pc_scores))
-  #
-  # #plot(pc_scores[,1],pc_scores[,2],col=true_membership)
-  #
-  # cluster.out <-  DensityCut(pc_scores) # DensityCut clustering analysis
-  #
-  # #col <- AssignLabelColor(label=cluster.out$cluster, col=distinct.col) # Assign colour to clusters
-  # #NeatPlot(x=pc_scores, col=col) # Scatter plots
-  #
-  # print(cluster.out$cluster)
-  #
-  # possible_clusters <- cbind(as.numeric(rownames(input_CpG_data)),cluster.out$cluster)
-  # colnames(possible_clusters) <- c("cell_id","densitycut")
-  #
-  #
-  # ofile <- paste0(outdir,"/density_clusters_CpG_based_maxPC_",args$max_PC,".tsv")
-  # write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
-  # system(paste0("gzip --force ", ofile))
-
-}
-
-
-if (R > 1){
-
-  # print("More than one region, CpG based densityCut")
-  #
-  # pc <- pca(input_CpG_data,method="nipals",nPcs=args$max_PC)
-  #
-  # sum(apply(input_CpG_data,2,function(x){sum(is.na(x))}) == 50)
-  #
-  # pc_scores <- scores(pc)
-  #
-  # print(head(pc_scores))
-  #
-  # #plot(pc_scores[,1],pc_scores[,2],col=true_membership)
-  #
-  # cluster.out <-  DensityCut(pc_scores) # DensityCut clustering analysis
-  #
-  # #col <- AssignLabelColor(label=cluster.out$cluster, col=distinct.col) # Assign colour to clusters
-  # #NeatPlot(x=pc_scores, col=col) # Scatter plots
-  #
-  # print(cluster.out$cluster)
-  #
-  # possible_clusters <- cbind(as.numeric(rownames(input_CpG_data)),cluster.out$cluster)
-  # colnames(possible_clusters) <- c("cell_id","densitycut")
-  #
-  #
-  # ofile <- paste0(outdir,"/density_clusters_CpG_based_maxPC_",args$max_PC,".tsv")
-  # write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
-  # system(paste0("gzip --force ", ofile))
-  #
-  # rm(cluster.out)
-
-  print("More than one region, region based densitycut")
-
-  #======================
-  # extracting the mean methylation for each region in each cell
-  # this will result in matrix with N cells by R regions - regions are columns and cells the lines
-  #======================
-
-  # this code is redundant with the code in hclust.R, TO FIX
-  if (impute == 1) {
-    imputed_file <- paste0(outdir,"/region_based_imputed.RDa.gz")
-    if (file.exists(imputed_file) & use_cache) {
-      print ("Reading the imputed file")
-      load(imputed_file)
-      print (" ... done.")
-    } else {
-      # to remove
-      #input <- input[1:100,1:5]
-
-      # replace with average values, for each col
-      sourceCpp(paste(sep="/", script.basename, "cpp_functions","impute.cpp"))
-      print("Per region, replacing NAs with average values")
-      mean_meth_matrix <- impute_means(mean_meth_matrix)
-      print(" ... done.")
-
-      # eliminate the empty rows (features)
-      mean_meth_matrix <- mean_meth_matrix[ rowSums(mean_meth_matrix)!=0, ]
-      save(mean_meth_matrix, file = imputed_file, compress = "gzip")
-    }
-  }
-
-  max_comp <- min(args$max_PC,R)
-
-  print("number of PC components:")
-  print(max_comp)
-
-  t <- try(pca( mean_meth_matrix ,method="nipals",nPcs=max_comp))
-  if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
-    print("Stop! At least one cell has NO data across all regions, can't do PCA")
-    stop()
-    } else {
-    pc <- t }
-
-  pc_scores <- scores(pc)
-
-  #print(head(pc_scores))
-  #plot(pc_scores[,1],pc_scores[,2],col=true_membership)
-
-  cluster.out <- DensityCut(pc_scores,maxit=args$maxit) # DensityCut clustering analysis CS: increased max number of iterations from 50 to 100
-  checking_warning <- capture.output(cluster.out)
-
-  #print(checking_warning)
-
-  if(checking_warning[1] == "WARNING! not converged "){
-    print("densitycut didn't converge, not saving results!")
-    } else {
-
-    print("densitycut converged!")
-
-
-    #print(cluster.out$cluster)
-
-    #col <- AssignLabelColor(label=cluster.out$cluster, col=distinct.col) # Assign colour to clusters
-    #NeatPlot(x=pc_scores, col=col) # Scatter plots
-
-    # possible_clusters <- cbind(as.numeric(rownames(input_CpG_data)),cluster.out$cluster)
-    # MA: removing as.numeric, otherwise it replaces the cell ids with NAs whenever the cell ids are not numeric
-
-    possible_clusters <- cbind(rownames(input_CpG_data),cluster.out$cluster)
-    colnames(possible_clusters) <- c("cell_id","DensityCut")
-
-    #print(possible_clusters)
-
-    ### Plotting DensityCut clusters
-    print("Plotting DensityCut clusters")
-
-    inf_clusters_order <- order(as.integer(cluster.out$cluster))
-
-    #print(inf_clusters_order)
-
-    annotation_row <- as.data.frame(cluster.out$cluster)
-    colnames(annotation_row) <- "inferred clusters"
-    annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
-
-    rownames(annotation_row) <- rownames(mean_meth_matrix) ### CS: I added this and the bug regarding --> Error in check.length("fill") :
-                                                         ### 'gpar' element 'fill' must not be length 0
-                                                         ### Calls: pheatmap ... rectGrob -> grob -> gpar -> validGP -> check.length
-                                                         ### is now fixed
-
-    #print(annotation_row)
-    #print(str(annotation_row))
-
-    if(!file.exists(paste0(outdir,"/DensityCut_PLOT.pdf"))){
-      pheatmap(mean_meth_matrix[inf_clusters_order,],cluster_rows = FALSE,cluster_cols=FALSE,
-                cellwidth = 8,
-                annotation_row = annotation_row,
-                cellheight = 8,fontsize = 8,
-                #clustering_distance_rows = "euclidean",
-                #clustering_method = "ward.D2",
-                main = paste0("DensityCut"),
-                show_colnames=FALSE,
-                annotation_names_row = FALSE,
-                filename = paste0(outdir,"/DensityCut_PLOT.pdf"))
-    }
-
-  ### end of plotting
-
-  ofile <- paste0(outdir,"/DensityCut_clusters_Region_based_maxPC_",max_comp,".tsv")
-  write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE,row.names=FALSE)
-
-
-  }
-
-}
+possible_clusters <- densitycut.clust(input_CpG_data, mean_meth_matrix, R, max_PC, maxit, impute, use_cache, outdir)
 
 print("DONE!")
 
