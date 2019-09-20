@@ -1,12 +1,12 @@
-\name{epiclomal.npm.cluster-package}
-\alias{epiclomal.npm.cluster-package}
-\alias{epiclomal.npm.cluster}
+\name{REpiclomal-package}
+\alias{REpiclomal-package}
+\alias{REpiclomal}
 \docType{package}
 \title{
-  Non-probabilistic Methods for Epiclomal
+  R Package for Epiclomal
 }
 \description{
-  Non-probabilistic clustering methods to cluster methylation data. Used by the epiclomal workflow.
+  R Package for Epiclomal. Includes non-probabilistic clustering methods to cluster methylation data. Used by the epiclomal workflow.
 }
 \details{
   Clustering methods include EuclideanClust, HammingClust (PBAL), PearsonClust, DensityCut

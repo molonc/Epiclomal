@@ -1,6 +1,6 @@
-Package: epiclomal.npm.cluster
+Package: REpiclomal
 Type: Package
-Title: Non-probabilistic Methods for Epiclomal
+Title: R Package for Epiclomal
 Version: 1.0
 Date: 2019-09-19
 Author: Camila P.E. de Souza, Mirela Andronescu

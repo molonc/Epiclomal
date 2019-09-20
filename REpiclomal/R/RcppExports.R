@@ -1,5 +1,5 @@
 ##====================================================================
-# epiclomal.npm.cluster v1.0
+# REpiclomal v1.0
 #
 # Camila P.E. de Souza
 # Department of Statistical and Actuarial Sciences, University of Western Ontario
@@ -15,15 +15,15 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 dist_PBAL <- function(d) {
-  .Call('_epiclomal_npm_cluster_dist_PBAL', d, PACKAGE="epiclomal.npm.cluster")
+  .Call('_epiclomal_npm_cluster_dist_PBAL', d, PACKAGE="REpiclomal")
 }
 
 impute_means <- function(input_data) {
-  .Call('_epiclomal_npm_cluster_impute_means', input_data, PACKAGE="epiclomal.npm.cluster")
+  .Call('_epiclomal_npm_cluster_impute_means', input_data, PACKAGE="REpiclomal")
 }
 
 impute_medians <- function(input_data) {
-  .Call('_epiclomal_npm_cluster_impute_medians', input_data, PACKAGE="epiclomal.npm.cluster")
+  .Call('_epiclomal_npm_cluster_impute_medians', input_data, PACKAGE="REpiclomal")
 }
 
 extract_mean_meth_per_cell <- function(cell_data,region_coord) {
