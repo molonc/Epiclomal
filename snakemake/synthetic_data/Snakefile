@@ -117,7 +117,6 @@ rule run_pearson_clust:
         '--output_directory {NPM_DIRECTORY} '
         '--methylation_file {input.meth_file} '
         '--regions_file {input.regions_file} '
-        '--impute {config[PARAMS][NPM][impute]} '
         '--use_cache {config[PARAMS][NPM][use_cache]} '
         '> {log}'
 
@@ -161,13 +160,10 @@ rule process_npm_methods:
         'cut -f1 {input.hfile} > {output.idtempfile}; '
         'cut -f2-{params.k_1} {input.hfile} > {output.htempfile}; '
         'gzip --force -c {input.hfile} > {output.hfile}; rm {input.hfile}; '
-        'cut -f1 {input.pfile} > {output.idtempfile}; '
         'cut -f2-{params.k_1} {input.pfile} > {output.ptempfile}; '
         'gzip --force -c {input.pfile} > {output.pfile}; rm {input.pfile}; '
-        'cut -f1 {input.peafile} > {output.idtempfile}; '
         'cut -f2-{params.k_1} {input.peafile} > {output.peatempfile}; '
         'gzip --force -c {input.peafile} > {output.peafile}; rm {input.peafile}; '
-        'cut -f1 {input.dfile} > {output.idtempfile}; '
         'cut -f2 {input.dfile} > {output.dtempfile}; '
         'gzip --force -c {input.dfile} > {output.dfile}; rm {input.dfile}'
 
