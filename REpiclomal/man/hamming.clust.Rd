@@ -21,7 +21,7 @@ hamming.clust(input_CpG_data, Max_K, index_type = "ch", impute,
 \item{outdir}{file path to output directory}
 }
 \value{
-Predicted clusters from Euclidean clustering algorithm
+Predicted clusters from Hamming clustering algorithm
 }
 \description{
 Hamming Clustering
@@ -36,3 +36,7 @@ outdir <- args$outdir
 hamming.clust(input_CpG_data, Max_K, index_type="ch", impute=0, use_cache=1, outdir)
 
 }
+\seealso{
+\code{\link{REpiclomal}}
+}
+

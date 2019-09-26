@@ -11,7 +11,7 @@ suppressMessages(library(argparse))
 # Pearsonclust -> Pearsonclust
 # densitycut -> DensityCut
 
-suppressMessages(library(epiclomal.npm.cluster))
+suppressMessages(library(REpiclomal))
 
 #======================
 # arguments

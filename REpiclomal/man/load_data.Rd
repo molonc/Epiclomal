@@ -27,3 +27,7 @@ mean_meth_matrix <- data$mean_meth_matrix
 rm(data)
 
 }
+\seealso{
+\code{\link{REpiclomal}}
+}
+

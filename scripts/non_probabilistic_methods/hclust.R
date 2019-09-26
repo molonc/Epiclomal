@@ -11,7 +11,7 @@ suppressMessages(library(argparse))
 # Pearsonclust -> Pearsonclust
 # densitycut -> DensityCut
 
-suppressMessages(library(epiclomal.npm.cluster))
+suppressMessages(library(REpiclomal))
 
 RSCRIPT <- "Rscript"
 
@@ -140,21 +140,9 @@ Pearsonclust_bestpartition_crash <- read.table(file=paste0(outdir,"/PearsonClust
 # MA: added another file at the end with all the columns from hclust regions and pbal (except the first 2 columns of pbal cell_id and clusters_1
 # Note: I am unzipping so I zip again after, I should not zip earlier, TODO
 # TODO: skip the best column, this file will be used only for initialization, not for evaluation
-if (R == 1) {
-  hfile <- paste0(outdir,"/EuclideanClust_clusters_CpG_based_maxk_",Max_K,".tsv")
-} else {
-  hfile <- paste0(outdir,"/EuclideanClust_clusters_region_based_maxk_",Max_K,".tsv")
-}
-pfile <- paste0(outdir,"/HammingClust_clusters_CpG_based_maxk_",Max_K,".tsv")
-peafile <- paste0(outdir,"/PearsonClust_clusters_CpG_based_maxk_",Max_K,".tsv")
-dfile <- paste0(outdir,"/DensityCut_clusters_Region_based_maxPC_",max_PC,".tsv")
 outfile <- paste0(outdir, "/initial_inputs.tsv")
 
 write.table(possible_clusters, file=outfile, col.names=TRUE, sep="\t", quote=FALSE, row.names=FALSE)
-system(paste("gzip --force", hfile))
-system(paste("gzip --force", pfile))
-system(paste("gzip --force", peafile))
-system(paste("gzip --force", dfile))
 system(paste("gzip --force", outfile))
 
 # PYTHON3 <- "/home/mandronescu/.local/centos6/anaconda3/bin/python3"

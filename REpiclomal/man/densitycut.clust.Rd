@@ -43,3 +43,6 @@ outdir <- args$outdir
 densitycut.clust(input_CpG_data, mean_meth_matrix, R, max_PC, maxit=100, impute=0, use_cache=1, outdir)
 
 }
+\seealso{
+\code{\link{REpiclomal}}
+}

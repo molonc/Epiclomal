@@ -6,7 +6,7 @@
   R Package for Epiclomal
 }
 \description{
-  R Package for Epiclomal. Includes non-probabilistic clustering methods to cluster methylation data. Used by the epiclomal workflow.
+  R Package for Epiclomal. Includes non-probabilistic clustering methods to cluster methylation data, evaluation software for epiclomal clustering algorithm. Used by the epiclomal workflow.
 }
 \details{
   Clustering methods include EuclideanClust, HammingClust (PBAL), PearsonClust, DensityCut
@@ -19,13 +19,12 @@ Maintainer: Patricia Ye <pye@bccrc.ca>
 \references{
   de Souza CPE, Andronescu M, Masud T, Kabeer F, Biele J, Laks E, et al. Epiclomal: probabilistic clustering of sparse single-cell DNA methylation data. bioRxiv. 2018;414482.
 }
-% \keyword{ package }
-% \seealso{
-%   Optional links to other man pages
-% }
-% \examples{
-%   \dontrun{
-%      ## Optional simple examples of the most important functions
-%      ## These can be in \dontrun{} and \donttest{} blocks.
-%   }
-% }
+\seealso{
+\code{\link{load_data}}
+\code{\link{euclidean.clust}}
+\code{\link{hamming.clust}}
+\code{\link{pearson.clust}}
+\code{\link{densitycut.clust}}
+\code{\link{evaluate.epiclomal}}
+\code{\link{hamming.dist}}
+}

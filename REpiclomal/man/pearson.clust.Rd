@@ -36,3 +36,7 @@ outdir <- args$outdir
 pearson.clust(input_CpG_data, Max_K, index_type="ch", impute=0, use_cache=1, outdir)
 
 }
+\seealso{
+\code{\link{REpiclomal}}
+}
+

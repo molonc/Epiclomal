@@ -8,7 +8,7 @@
 # library(densitycut,lib.loc = "/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos6/3.3/" )
 
 suppressMessages(library(argparse))
-suppressMessages(library(epiclomal.npm.cluster))
+suppressMessages(library(REpiclomal))
 
 #======================
 # arguments

@@ -43,3 +43,6 @@ outdir <- args$outdir
 euclidean.clust(input_CpG_data, mean_meth_matrix, R, Max_K, index_type="ch", impute=0, use_cache=1, outdir)
 
 }
+\seealso{
+\code{\link{REpiclomal}}
+}
