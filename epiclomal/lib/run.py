@@ -144,8 +144,6 @@ def run_Bishop_model_selection(mtype, args):
 ##############################
 
 def run_model(mtype, args):
-    print("running model")
-
 
     np.set_printoptions()
 
