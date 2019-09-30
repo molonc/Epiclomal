@@ -3,8 +3,6 @@ suppressMessages(library("argparse"))
 suppressMessages(library("yaml"))
 suppressMessages(library("REpiclomal"))
 
-# RSCRIPT <- Sys.getenv("RSCRIPT")
-
 # create parser object
 parser <- ArgumentParser()
 
@@ -43,6 +41,8 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD) {
   clMAPfile  <- gsub("cluster_posteriors.tsv.gz", "cluster_MAP.tsv.gz", best_cluster)
   # We add best_vmeasure later, only if there is a true_clusters_file
 
+  output <- paste0(output, "/", criterion, "_gainthr", GAIN_THRESHOLD)
+  dir.create(output, showWarnings=FALSE, recursive=TRUE)
   if (!is.null(true_clusters_file))
   {
       # get the true number of clusters
@@ -88,6 +88,7 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD) {
 
   # Order will be by predicted
   print ("Calling the visualization software")
+  print(clMAPfile)
   visualization(out_dir=output,
     input_CpG_data_file=meth_file,
     input_regions=regions_file,

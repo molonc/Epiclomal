@@ -1,0 +1,36 @@
+OUTPUT_DIRS:
+  NPM_DIRECTORY: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/test_real_npm'
+  EPI_BASIC_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/real_epi_basic'
+  EPI_REGION_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/real_epi_region'
+  EVAL_BASIC_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/real_results_basic'
+  EVAL_REGION_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/real_results_region'
+
+LOG_DIR: 'log'
+
+METH_FILE: '/shahlab/mandronescu/EPI-112_inhouse_data/OUTPUT_process_INHOUSE/RUN/process_INHOUSE_process_real_data/outputs/epiclomal_input/0_0.95_10000/input_Epiclomal_process_INHOUSE.tsv.gz'
+REGION_FILE: '/shahlab/mandronescu/EPI-112_inhouse_data/OUTPUT_process_INHOUSE/RUN/process_INHOUSE_process_real_data/outputs/epiclomal_input/0_0.95_10000/regionIDs_input_Epiclomal_process_INHOUSE.tsv.gz'
+
+PARAMS:
+  NPM:
+    index: 'ch'
+    max_k: 10
+    impute: 0
+    use_cache: 1
+  EPICLOMAL:
+    K: 10
+    slsbulk_iterations: 10
+    mu_has_k: True
+    convergence_tolerange: 1e-4
+    max_num_iters: 1000
+    Bishop_model_selection: False
+    check_uncertainty: True
+    config_file: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/inputs/config1.yaml'
+
+SOFTWARE:
+  preprocessing_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/non_probabilistic_methods/preprocess.R'
+  euclidean_clust_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/non_probabilistic_methods/euclideanclust.R'
+  hamming_clust_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/non_probabilistic_methods/hammingclust.R'
+  pearson_clust_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/non_probabilistic_methods/pearsonclust.R'
+  density_cut_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/non_probabilistic_methods/densitycut.R'
+  epiclomal_software: '/shahlab/pye/projects/epiclomal/Epiclomal/epiclomal/run.py'
+  eval_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/eval_epiclomal.R'

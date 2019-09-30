@@ -35,6 +35,13 @@ elbow_finder <- function(x_values, y_values) {
   return(c(x_max_dist))
 }
 
+extract_yaml <- function(input_data, data_field) {
+  values <- sapply(input_data, '[[', data_field)
+  values[sapply(values, is.null)] <- NA
+  values <- as.numeric(sapply(values, unlist))
+  return(values)
+}
+
 ##====================================================================
 #' Evaluation function for epiclomal results
 #'
@@ -73,27 +80,18 @@ evaluate.epiclomal <- function (input, output, model, flag, criterion, GAIN_THRE
     measure <- criterion
   }
 
-  score <- as.numeric(sapply(lines, '[[', measure))
-  # Now elbo variable can be the elbo (lower_bound) or the log_posterior (unnormalized)
-  cpu_time <- as.numeric(sapply(lines, '[[', "CPU_time_seconds"))
-  memory <- as.numeric(sapply(lines, '[[', "Max_memory_MB"))
-  all_vmeasure <- as.numeric(sapply(lines, '[[', "Vmeasure"))
-  nclusters_pred <- as.numeric(sapply(lines, '[[', "nclusters"))
+  score <- extract_yaml(lines, measure)
+  cpu_time <- extract_yaml(lines, "CPU_time_seconds")
+  memory <- extract_yaml(lines, "Max_memory_MB")
+  all_vmeasure <- extract_yaml(lines, "Vmeasure")
+  nclusters_pred <- extract_yaml(lines, "nclusters")
   # for clone_prev_MAE, I may also have slsbulk_clone_prev_MAE
-  clone_prev_MAE <- as.numeric(sapply(lines, '[[', "clone_prev_MAE"))
-  clone_prev_MSE <- as.numeric(sapply(lines, '[[', "clone_prev_MSE"))
-  slsbulk_vmeasure <- sapply(lines, '[[', "slsbulk_vmeasure")
-  slsbulk_vmeasure[sapply(slsbulk_vmeasure, is.null)] <- NA
-  slsbulk_vmeasure <- as.numeric(sapply(slsbulk_vmeasure, unlist))
-  slsbulk_clone_prev_MAE <- sapply(lines, '[[', "slsbulk_clone_prev_MAE")
-  slsbulk_clone_prev_MAE[sapply(slsbulk_clone_prev_MAE, is.null)] <- NA
-  slsbulk_clone_prev_MAE <- sapply(slsbulk_clone_prev_MAE, unlist)
-  slsbulk_clone_prev_MSE <- sapply(lines, '[[', "slsbulk_clone_prev_MSE")
-  slsbulk_clone_prev_MSE[sapply(slsbulk_clone_prev_MSE, is.null)] <- NA
-  slsbulk_clone_prev_MSE <- sapply(slsbulk_clone_prev_MSE, unlist)
-  uncertainty <- sapply(lines, '[[', "uncertainty_true_positive_rate")
-  uncertainty[sapply(uncertainty, is.null)] <- NA
-  uncertainty <- sapply(uncertainty, unlist)
+  clone_prev_MAE <- extract_yaml(lines, "clone_prev_MAE")
+  clone_prev_MSE <- extract_yaml(lines, "clone_prev_MSE")
+  slsbulk_vmeasure <- extract_yaml(lines, "slsbulk_vmeasure")
+  slsbulk_clone_prev_MAE <- extract_yaml(lines, "slsbulk_clone_prev_MAE")
+  slsbulk_clone_prev_MSE <- extract_yaml(lines, "slsbulk_clone_prev_MSE")
+  uncertainty <- extract_yaml(lines, "uncertainty_true_positive_rate")
 
   table_all <- data.frame(converged, score, run, cpu_time, memory, nclusters_pred, all_vmeasure, clone_prev_MAE, clone_prev_MSE, slsbulk_clone_prev_MSE, slsbulk_vmeasure, slsbulk_clone_prev_MAE, uncertainty)
 
@@ -101,7 +99,7 @@ evaluate.epiclomal <- function (input, output, model, flag, criterion, GAIN_THRE
   write.table(table_all, file = dfile, quote = FALSE, sep = "\t", row.names = FALSE)
 
   ntotal <- nrow(table_all)
-  nconv <- sum(table_all[,1])
+  nconv <- sum(table_all$converged)
 
   if (criterion == "DIC_measure" || criterion == "DIC_LINE_ELBOW") {
     table_per_cluster = data.frame()
@@ -115,19 +113,21 @@ evaluate.epiclomal <- function (input, output, model, flag, criterion, GAIN_THRE
     print(table_per_cluster)
 
     dfile <- paste0(output, "/", flag, "_results_perclusterruns_", model, ".tsv")
-    write.table(table_per_cluster, file=dfile, quote=FALSE, sep="\t", row.names=FALSE)
+      write.table(table_per_cluster, file=dfile, quote=FALSE, sep="\t", row.names=FALSE)
 
-    # also plot the v-measure versus the number of predicted clusters to see if we get better V-measure when we choose a different number of clusters
-    pdf(paste0(output, "/Vmeasure_vs_nclusters.pdf"), height=7, width=9)
-    x <- table_per_cluster$nclusters_pred
-    y <- table_per_cluster$all_vmeasure
+      if (sum(!is.na(table_per_cluster$all_vmeasure))) {
+      # also plot the v-measure versus the number of predicted clusters to see if we get better V-measure when we choose a different number of clusters
+      pdf(paste0(output, "/Vmeasure_vs_nclusters.pdf"), height=7, width=9)
+      x <- table_per_cluster$nclusters_pred
+      y <- table_per_cluster$all_vmeasure
 
-    # type='o' means it plots both points and lines overplotted
-    matplot(x, y, lty=1, type="o", lwd=c(4), col=c(4), pch=19,
-      ylab="V-measure for run with best score",
-      xlab="Number of clusters",
-      cex.axis=1.2,cex.lab=1.2)
-    dev.off()
+      # type='o' means it plots both points and lines overplotted
+      matplot(x, y, lty=1, type="o", lwd=c(4), col=c(4), pch=19,
+        ylab="V-measure for run with best score",
+        xlab="Number of clusters",
+        cex.axis=1.2,cex.lab=1.2)
+      dev.off()
+    }
 
     print(paste("Number of rows in table per cluster is", nrow(table_per_cluster)))
 

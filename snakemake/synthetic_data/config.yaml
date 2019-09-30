@@ -1,8 +1,8 @@
 OUTPUT_DIRS:
   DATA_DIRECTORY: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/synthetic'
   NPM_DIRECTORY: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/simple_hclust'
-  EPI_BASIC_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/epiclomal_basic/'
-  EPI_REGION_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/epiclomal_region/'
+  EPI_BASIC_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/epiclomal_basic'
+  EPI_REGION_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/epiclomal_region'
   EVAL_BASIC_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/results_basic'
   EVAL_REGION_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/results_region'
 
@@ -36,7 +36,7 @@ PARAMS:
     index: 'ch'
     max_k: 10
     impute: 0
-    use_cache: 1
+    use_cache: 0
   EPICLOMAL:
     K: 10
     slsbulk_iterations: 10
@@ -49,11 +49,10 @@ PARAMS:
 
 SOFTWARE:
   generate_synthetic_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/generate_synthetic.R'
-  visualization_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/visualization.R'
   euclidean_clust_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/non_probabilistic_methods/euclideanclust.R'
   hamming_clust_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/non_probabilistic_methods/hammingclust.R'
   pearson_clust_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/non_probabilistic_methods/pearsonclust.R'
   density_cut_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/non_probabilistic_methods/densitycut.R'
   epiclomal_software: '/shahlab/pye/projects/epiclomal/Epiclomal/epiclomal/epiclomal.py'
+  cluster_eval_software: '/shahlab/pye/projects/epiclomal/Epiclomal/epiclomal/evalutate_clustering.py'
   eval_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/eval_epiclomal.R'
-  hdist_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/hamming_distance.R'

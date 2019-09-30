@@ -1,9 +1,9 @@
 import os
+import re
 
 configfile: 'config.yaml'
 
 LOG_DIR = config['LOG_DIR']
-DATA_DIRECTORY = config['OUTPUT_DIRS']['DATA_DIRECTORY']
 NPM_DIRECTORY = config['OUTPUT_DIRS']['NPM_DIRECTORY']
 EPI_BASIC_DIR = config['OUTPUT_DIRS']['EPI_BASIC_DIR']
 EPI_REGION_DIR = config['OUTPUT_DIRS']['EPI_REGION_DIR']
@@ -12,56 +12,31 @@ EVAL_REGION_DIR = config['OUTPUT_DIRS']['EVAL_REGION_DIR']
 
 max_pc = min(config['PARAMS']['NPM']['max_k'], 20)
 
-run=list(range(0,300))
+run=list(range(0,10))
 
 rule all:
     input:
         EVAL_BASIC_DIR,
-        EVAL_REGION_DIR,
-        os.path.join(NPM_DIRECTORY, "results_EuclideanClust.txt"),
-        os.path.join(NPM_DIRECTORY, "results_HammingClust.txt"),
-        os.path.join(NPM_DIRECTORY, "results_PearsonClust.txt"),
-        os.path.join(NPM_DIRECTORY, "results_DensityCut.txt")
+        EVAL_REGION_DIR
 
-
-rule generate_synthetic_data:
+rule run_preprocess:
+    input:
+        meth_file=config['METH_FILE'],
+        regions_file=config['REGION_FILE']
     output:
-        os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
-        os.path.join(DATA_DIRECTORY, 'data/regions_file.tsv.gz'),
-        os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz'),
-        os.path.join(DATA_DIRECTORY, 'data/bulk_data_sample_1.tsv.gz'),
-        os.path.join(DATA_DIRECTORY, 'data/true_clone_epigenotypes.tsv.gz')
-    log:
-        os.path.join(LOG_DIR, 'generate_synthetic_data.log')
+        os.path.join(NPM_DIRECTORY, re.sub('.tsv.gz', '.RDa.gz', os.path.basename(config['METH_FILE'])))
     shell:
-        'Rscript {config[SOFTWARE][generate_synthetic_software]} '
-        '--saveall {config[PARAMS][GENERATE_SYNTHETIC][saveall]} '
-        '--verbose {config[PARAMS][GENERATE_SYNTHETIC][verbose]} '
-        '--clone_prevalence {config[PARAMS][ALL][prevalences]} '
-        '--read_size {config[PARAMS][GENERATE_SYNTHETIC][read_size]} '
-        '--region_size_type {config[PARAMS][GENERATE_SYNTHETIC][region_size_type]} '
-        '--genotype_prob {config[PARAMS][GENERATE_SYNTHETIC][genotype_prob]} '
-        '--num_regions {config[PARAMS][GENERATE_SYNTHETIC][num_regions]} '
-        '--num_clones {config[PARAMS][GENERATE_SYNTHETIC][num_clones]} '
-        '--num_cells {config[PARAMS][GENERATE_SYNTHETIC][num_cells]} '
-        '--plot_data {config[PARAMS][GENERATE_SYNTHETIC][plot_data]} '
-        '--seed {config[PARAMS][GENERATE_SYNTHETIC][seed]} '
-        '--prop_add_var {config[PARAMS][GENERATE_SYNTHETIC][prop_add_var]} '
-        '--num_samples {config[PARAMS][GENERATE_SYNTHETIC][num_samples]} '
-        '--missing_probability {config[PARAMS][GENERATE_SYNTHETIC][missing_probability]} '
-        '--error_probability {config[PARAMS][GENERATE_SYNTHETIC][error_probability]} '
-        '--num_loci {config[PARAMS][GENERATE_SYNTHETIC][num_loci]} '
-        '--given_dir_complete {config[PARAMS][GENERATE_SYNTHETIC][given_dir_complete]} '
-        '--phylogenetic_generation {config[PARAMS][GENERATE_SYNTHETIC][phylogenetic_generation]} '
-        '--percent_regions_dirichlet_param {config[PARAMS][GENERATE_SYNTHETIC][percent_regions_dirichlet_param]} '
-        '--dirichlet_param_genotype_prob {config[PARAMS][GENERATE_SYNTHETIC][dirichlet_param_genotype_prob]} '
-        '--output_dir {DATA_DIRECTORY} '
-        '> {log}'
+        'Rscript {config[SOFTWARE][preprocessing_software]} '
+        '--output_directory {NPM_DIRECTORY} '
+        '--methylation_file {input.meth_file} '
+        '--regions_file {input.regions_file} '
+        '--use_cache {config[PARAMS][NPM][use_cache]} '
 
 rule run_euclidean_clust:
     input:
-        meth_file=os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
-        regions_file=os.path.join(DATA_DIRECTORY, 'data/regions_file.tsv.gz')
+        meth_file=config['METH_FILE'],
+        regions_file=config['REGION_FILE'],
+        cache_data=os.path.join(NPM_DIRECTORY, re.sub('.tsv.gz', '.RDa.gz', os.path.basename(config['METH_FILE'])))
     output:
         os.path.join(NPM_DIRECTORY, 'EuclideanClust_clusters_region_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k'])),
         os.path.join(NPM_DIRECTORY, 'EuclideanClust_cell_order_region_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
@@ -80,8 +55,9 @@ rule run_euclidean_clust:
 
 rule run_hamming_clust:
     input:
-        meth_file=os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
-        regions_file=os.path.join(DATA_DIRECTORY, 'data/regions_file.tsv.gz')
+        meth_file=config['METH_FILE'],
+        regions_file=config['REGION_FILE'],
+        cache_data=os.path.join(NPM_DIRECTORY, re.sub('.tsv.gz', '.RDa.gz', os.path.basename(config['METH_FILE'])))
     output:
         os.path.join(NPM_DIRECTORY, 'HammingClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k'])),
         os.path.join(NPM_DIRECTORY, 'HammingClust_cell_order_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
@@ -100,8 +76,9 @@ rule run_hamming_clust:
 
 rule run_pearson_clust:
     input:
-        meth_file=os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
-        regions_file=os.path.join(DATA_DIRECTORY, 'data/regions_file.tsv.gz')
+        meth_file=config['METH_FILE'],
+        regions_file=config['REGION_FILE'],
+        cache_data=os.path.join(NPM_DIRECTORY, re.sub('.tsv.gz', '.RDa.gz', os.path.basename(config['METH_FILE'])))
     output:
         os.path.join(NPM_DIRECTORY, 'PearsonClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k'])),
         os.path.join(NPM_DIRECTORY, 'PearsonClust_cell_order_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
@@ -119,8 +96,9 @@ rule run_pearson_clust:
 
 rule run_density_cut:
     input:
-        meth_file=os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
-        regions_file=os.path.join(DATA_DIRECTORY, 'data/regions_file.tsv.gz')
+        meth_file=config['METH_FILE'],
+        regions_file=config['REGION_FILE'],
+        cache_data=os.path.join(NPM_DIRECTORY, re.sub('.tsv.gz', '.RDa.gz', os.path.basename(config['METH_FILE'])))
     output:
         os.path.join(NPM_DIRECTORY, 'DensityCut_clusters_Region_based_maxPC_{}.tsv.gz'.format(max_pc))
     log:
@@ -168,66 +146,9 @@ rule join_npm_methods:
     shell:
         'paste {input.idtempfile} {input.htempfile} {input.ptempfile} {input.peatempfile} {input.dtempfile} | gzip -c - > {output}'
 
-rule run_euclidean_eval:
-    input:
-        true_clusters_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz'),
-        hfile=os.path.join(NPM_DIRECTORY, 'EuclideanClust_clusters_region_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
-    output:
-        os.path.join(NPM_DIRECTORY, "results_EuclideanClust.txt")
-    shell:
-        'python {config[SOFTWARE][cluster_eval_software]} '
-        '--true_clusters_file {input.true_clusters_file} '
-        '--true_prevalences {config[PARAMS][ALL][prevalences]} '
-        '--predicted_clusters_file {input.hfile} '
-        '--clusters_are_probabilities False '
-        '--results_file {output}'
-
-rule run_hamming_eval:
-    input:
-        true_clusters_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz'),
-        pfile=os.path.join(NPM_DIRECTORY, 'HammingClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
-    output:
-        os.path.join(NPM_DIRECTORY, "results_HammingClust.txt")
-    shell:
-        'python {config[SOFTWARE][cluster_eval_software]} '
-        '--true_clusters_file {input.true_clusters_file} '
-        '--true_prevalences {config[PARAMS][ALL][prevalences]} '
-        '--predicted_clusters_file {input.pfile} '
-        '--clusters_are_probabilities False '
-        '--results_file {output}'
-
-rule run_pearson_eval:
-    input:
-        true_clusters_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz'),
-        peafile=os.path.join(NPM_DIRECTORY, 'PearsonClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
-    output:
-        os.path.join(NPM_DIRECTORY, "results_PearsonClust.txt")
-    shell:
-        'python {config[SOFTWARE][cluster_eval_software]} '
-        '--true_clusters_file {input.true_clusters_file} '
-        '--true_prevalences {config[PARAMS][ALL][prevalences]} '
-        '--predicted_clusters_file {input.peafile} '
-        '--clusters_are_probabilities False '
-        '--results_file {output}'
-
-rule run_densitycut_eval:
-    input:
-        true_clusters_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz'),
-        dfile=os.path.join(NPM_DIRECTORY, 'DensityCut_clusters_Region_based_maxPC_{}.tsv.gz'.format(max_pc))
-    output:
-        os.path.join(NPM_DIRECTORY, "results_DensityCut.txt")
-    shell:
-        'python {config[SOFTWARE][cluster_eval_software]} '
-        '--true_clusters_file {input.true_clusters_file} '
-        '--true_prevalences {config[PARAMS][ALL][prevalences]} '
-        '--predicted_clusters_file {input.dfile} '
-        '--clusters_are_probabilities False '
-        '--results_file {output}'
-
 rule run_epiclomal_basic:
     input:
-        true_clusters_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz'),
-        meth_file=os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
+        meth_file=config['METH_FILE'],
         initial_clusters_file=os.path.join(NPM_DIRECTORY, 'initial_inputs.tsv.gz')
     output:
         directory(os.path.join(EPI_BASIC_DIR, '{run}'))
@@ -242,20 +163,16 @@ rule run_epiclomal_basic:
         '--repeat_id {wildcards.run} '
         '--K {config[PARAMS][EPICLOMAL][K]} '
         '--mu_has_k {config[PARAMS][EPICLOMAL][mu_has_k]} '
-        '--true_prevalences {config[PARAMS][ALL][prevalences]} '
         '--config_file {config[PARAMS][EPICLOMAL][config_file]} '
-        '--true_clusters_file {input.true_clusters_file} '
         '--methylation_file {input.meth_file} '
         '--initial_clusters_file {input.initial_clusters_file}) '
         '> {log}'
 
 rule run_epiclomal_region:
     input:
-        true_clusters_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz'),
-        meth_file=os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
+        meth_file=config['METH_FILE'],
         initial_clusters_file=os.path.join(NPM_DIRECTORY, 'initial_inputs.tsv.gz'),
-        regions_file=os.path.join(DATA_DIRECTORY, 'data/regions_file.tsv.gz'),
-        slsbulk_file=os.path.join(DATA_DIRECTORY, 'data/bulk_data_sample_1.tsv.gz')
+        regions_file=config['REGION_FILE'],
     output:
         directory(os.path.join(EPI_REGION_DIR, '{run}'))
     log:
@@ -269,14 +186,11 @@ rule run_epiclomal_region:
         '--repeat_id {wildcards.run} '
         '--K {config[PARAMS][EPICLOMAL][K]} '
         '--mu_has_k {config[PARAMS][EPICLOMAL][mu_has_k]} '
-        '--true_prevalences {config[PARAMS][ALL][prevalences]} '
         '--config_file {config[PARAMS][EPICLOMAL][config_file]} '
-        '--true_clusters_file {input.true_clusters_file} '
         '--methylation_file {input.meth_file} '
         '--initial_clusters_file {input.initial_clusters_file} '
         '--regions_file {input.regions_file} '
         '--slsbulk_iterations {config[PARAMS][EPICLOMAL][slsbulk_iterations]} '
-        '--slsbulk_file {input.slsbulk_file} '
         '--check_uncertainty {config[PARAMS][EPICLOMAL][check_uncertainty]}) '
         '> {log}'
 
@@ -298,10 +212,8 @@ rule prepare_eval_region:
 
 rule run_eval_basic:
     input:
-        regions_file=os.path.join(DATA_DIRECTORY, 'data/regions_file.tsv.gz'),
-        true_clusters_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz'),
-        true_epigenotypes_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_epigenotypes.tsv.gz'),
-        meth_file=os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
+        regions_file=config['REGION_FILE'],
+        meth_file=config['METH_FILE'],
         dir='temp_eval_basic'
     output:
         directory(EVAL_BASIC_DIR)
@@ -311,8 +223,6 @@ rule run_eval_basic:
         'Rscript {config[SOFTWARE][eval_software]} '
         '--output_dir {output} '
         '--input_dir {input.dir} '
-        '--true_clusters_file {input.true_clusters_file} '
-        '--true_epigenotypes_file {input.true_epigenotypes_file} '
         '--methylation_file {input.meth_file} '
         '--regions_file {input.regions_file} '
         '--model_name basic '
@@ -320,10 +230,8 @@ rule run_eval_basic:
 
 rule run_eval_region:
     input:
-        regions_file=os.path.join(DATA_DIRECTORY, 'data/regions_file.tsv.gz'),
-        true_clusters_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz'),
-        true_epigenotypes_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_epigenotypes.tsv.gz'),
-        meth_file=os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
+        regions_file=config['REGION_FILE'],
+        meth_file=config['METH_FILE'],
         dir='temp_eval_region'
     output:
         directory(EVAL_REGION_DIR)
@@ -333,8 +241,6 @@ rule run_eval_region:
         'Rscript {config[SOFTWARE][eval_software]} '
         '--output_dir {output} '
         '--input_dir {input.dir} '
-        '--true_clusters_file {input.true_clusters_file} '
-        '--true_epigenotypes_file {input.true_epigenotypes_file} '
         '--methylation_file {input.meth_file} '
         '--regions_file {input.regions_file} '
         '--model_name region '

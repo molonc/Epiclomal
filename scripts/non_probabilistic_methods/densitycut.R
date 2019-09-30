@@ -73,7 +73,7 @@ use_cache <- args$use_cache
 # loading the data
 #======================
 
-data <- load_data(input_CpG_data_file, input_regions_file, use_cache)
+data <- load_data(outdir, input_CpG_data_file, input_regions_file, use_cache)
 
 input_CpG_data <- data$input_CpG_data
 input_regions <- data$input_regions

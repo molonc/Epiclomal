@@ -48,14 +48,20 @@ Activate the environment:
 source activate Epiclomal
 ```
 
-Add the ctDNA pipeline into the current site packages:
+Add Epiclomal Python package into the current site packages:
 ```
 python setup.py install
 ```
 
+Add Epiclomal R package into current site packages:
+```
+R CMD build REpiclomal
+R CMD INSTALL REpiclomal_1.0.tar.gz
+```
+
 ## Usage
 
-### Run with generated synthetic data
+### Run entire pipeline with generated synthetic data
 
 A Snakemake workflow exists to generate synthetic data and run the clustering and cluster evaluation software against the generated data.
 
@@ -72,6 +78,10 @@ snakemake -s /path/to/Epiclomal/snakemake/synthetic_data/Snakefile --cluster 'qs
 ```
 
 To run each step of the synthetic data workflow individually, follow the steps outlined here: https://github.com/shahcompbio/Epiclomal/blob/master/examples/README.md
+
+### Using individual components
+### Epiclomal R package
+In R, run `library(REpiclomal)` to use Epiclomal R Package and `?REpiclomal` for documentation.
 
 ## Input
 ## Output

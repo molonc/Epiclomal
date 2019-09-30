@@ -21,6 +21,7 @@
 #'
 #' @export
 #'
+#' @param outdir output directory for cached data
 #' @param input_CpG_data_file A file containing methylation data
 #' @param input_regions_file A file containing regions for region based clustering
 #' @param use_cache if 1, use cached data when available, if 0, recompute data
@@ -36,17 +37,20 @@
 #' mean_meth_matrix <- data$mean_meth_matrix
 #' rm(data)
 #'
-load_data <- function(input_CpG_data_file, input_regions_file, use_cache) {
-  cached_data <- gsub(".tsv.gz", ".RDa.gz", input_CpG_data_file)
+load_data <- function(outdir, input_CpG_data_file, input_regions_file, use_cache) {
+  cached_data <- paste0(outdir, '/', gsub(".tsv.gz", ".RDa.gz", basename(input_CpG_data_file)))
+  print(cached_data)
   if (file.exists(cached_data) & use_cache) {
     print("loading cached data")
     load(cached_data)
   } else {
+    print("reading methylation data from TSV")
     tmp <- read.csv(input_CpG_data_file,sep="\t",header=TRUE,check.names=FALSE)
     input_CpG_data <- as.matrix(tmp[,-1])
     rownames(input_CpG_data) <- tmp$cell_id
     rm(tmp)
 
+    print("reading regions from TSV")
     # Region coordinates
     tmp <- read.csv(input_regions_file,sep="\t",header=TRUE,check.names=FALSE)
     input_regions <- as.matrix(tmp[,-1]) + 1 ## adding 1 to match R indexing - previously coordinates were for python starting on zero
@@ -54,9 +58,13 @@ load_data <- function(input_CpG_data_file, input_regions_file, use_cache) {
     rownames(input_regions) <- tmp$region_id
     rm(tmp)
 
+    print("calculating mean_meth_matrix")
     mean_meth_matrix <- t(apply(input_CpG_data,1, .extract_mean_meth_per_cell, region_coord=input_regions))
 
-    save(input_CpG_data, input_regions, mean_meth_matrix, file = cached_data, compress = "gzip")
+    if (use_cache) {
+      print("Saving data to Rda file")
+      save(input_CpG_data, input_regions, mean_meth_matrix, file = cached_data, compress = "gzip")
+    }
   }
   return(list("input_CpG_data" = input_CpG_data, "input_regions" = input_regions, "mean_meth_matrix" = mean_meth_matrix))
 }
@@ -117,7 +125,9 @@ densitycut.clust <- function(input_CpG_data, mean_meth_matrix, R, max_PC=20, max
 
         # eliminate the empty rows (features)
         mean_meth_matrix <- mean_meth_matrix[ rowSums(mean_meth_matrix)!=0, ]
-        save(mean_meth_matrix, file = imputed_file, compress = "gzip")
+        if (use_cache) {
+          save(mean_meth_matrix, file = imputed_file, compress = "gzip")
+        }
       }
     }
 
@@ -222,7 +232,9 @@ euclidean.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, index_ty
       print("... done.")
     } else {
       pairwisedist <- dist(input_CpG_data, method="euclidean")
-      save(pairwisedist, file=pairwisedist_file, compress="gzip")
+      if (use_cache) {
+        save(pairwisedist, file=pairwisedist_file, compress="gzip")
+      }
     }
 
     if (sum(is.na(pairwisedist)) == 0) {
@@ -276,7 +288,9 @@ euclidean.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, index_ty
         mean_meth_matrix <- .impute_means(mean_meth_matrix)
         print("... done.")
         mean_meth_matrix <- mean_meth_matrix[rowSums(mean_meth_matrix) != 0, ]
-        save(mean_meth_matrix, file=imputed_file, compress="gzip")
+        if (use_cache) {
+          save(mean_meth_matrix, file=imputed_file, compress="gzip")
+        }
       }
     }
     pairwisedist_region_file <- paste0(outdir, "/pairwisedist_region.RDa.gz")
@@ -288,7 +302,9 @@ euclidean.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, index_ty
       print("Doing hclust in (dis)similarity matrix")
       dist_region <- dist(mean_meth_matrix, method="euclidean")
       pairwisedist_region <- dist(dist_region, method="euclidean")
-      save(dist_region, pairwisedist_region, file=pairwisedist_region_file, compress="gzip")
+      if (use_cache) {
+        save(dist_region, pairwisedist_region, file=pairwisedist_region_file, compress="gzip")
+      }
       print("... done.")
     }
 
@@ -393,7 +409,9 @@ hamming.clust <- function(input_CpG_data, Max_K, index_type="ch", impute, use_ca
 
       # eliminate the empty rows (features)
       input_CpG_data <- input_CpG_data[rowSums(input_CpG_data) != 0, ]
-      save(input_CpG_data, file=imputed_file, compress = "gzip")
+      if (use_cache) {
+        save(input_CpG_data, file=imputed_file, compress = "gzip")
+      }
     }
   }
   dist_PBAL_file <- paste0(outdir, "/dist_PBAL.RDa.gz")
@@ -407,7 +425,9 @@ hamming.clust <- function(input_CpG_data, Max_K, index_type="ch", impute, use_ca
     print("Computing pairwise PBAL distance matrix")
     diss_matrix <- dist(dist_PBAL, method="euclidean")
     print("Done computing, saving to file")
-    save(dist_PBAL, diss_matrix, file=dist_PBAL_file, compress="gzip")
+    if (use_cache) {
+      save(dist_PBAL, diss_matrix, file=dist_PBAL_file, compress="gzip")
+    }
   }
 
   if (sum(is.na(diss_matrix)) == 0) {
@@ -506,7 +526,9 @@ pearson.clust <- function(input_CpG_data, Max_K, index_type="ch", impute, use_ca
       print("... done.")
 
       input_CpG_data <- input_CpG_data[rowSums(input_CpG_data) != 0, ]
-      save(input_CpG_data, file=imputed_file, compress="gzip")
+      if (use_cache) {
+        save(input_CpG_data, file=imputed_file, compress="gzip")
+      }
     }
   }
 
@@ -521,7 +543,9 @@ pearson.clust <- function(input_CpG_data, Max_K, index_type="ch", impute, use_ca
     print("scTrio's apprioach - CpG based clustering")
     diss_matrix <- 1 - cor(x=dist_Pearson, method="pearson", use="pairwise.complete.obs")
     print("done computing, saving to file")
-    save(dist_Pearson, diss_matrix, file=dist_Pearson_file, compress="gzip")
+    if (use_cache) {
+      save(dist_Pearson, diss_matrix, file=dist_Pearson_file, compress="gzip")
+    }
   }
 
   if (sum(is.na(diss_matrix)) == 0) {

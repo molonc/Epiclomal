@@ -83,7 +83,7 @@
       annotation_row$`true clusters` <- as.factor(annotation_row$`true clusters`)
     }
   } else {
-    annotation_row <- inferred_clusters
+    annotation_row <- inferred_cell_clusters
     colnames(annotation_row) <- "inferred clusters"
     annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
   }
@@ -142,7 +142,7 @@ visualization <- function(out_dir, input_CpG_data_file, input_regions_file, inpu
   #======================
   # loading the data
   #======================
-  data <- load_data(input_CpG_data_file, input_regions_file, use_cache=0)
+  data <- load_data(out_dir, input_CpG_data_file, input_regions_file, use_cache=0)
 
   input_CpG_data <- data$input_CpG_data
   input_regions <- data$input_regions
