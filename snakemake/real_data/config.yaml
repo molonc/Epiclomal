@@ -32,5 +32,5 @@ SOFTWARE:
   hamming_clust_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/non_probabilistic_methods/hammingclust.R'
   pearson_clust_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/non_probabilistic_methods/pearsonclust.R'
   density_cut_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/non_probabilistic_methods/densitycut.R'
-  epiclomal_software: '/shahlab/pye/projects/epiclomal/Epiclomal/epiclomal/epiclomal.py'
+  epiclomal_software: '/shahlab/pye/projects/epiclomal/Epiclomal/epiclomal/epiclomal_run.py'
   eval_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/eval_epiclomal.R'

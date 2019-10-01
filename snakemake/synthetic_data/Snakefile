@@ -12,7 +12,7 @@ EVAL_REGION_DIR = config['OUTPUT_DIRS']['EVAL_REGION_DIR']
 
 max_pc = min(config['PARAMS']['NPM']['max_k'], 20)
 
-run=list(range(0,10))
+run=list(range(0,300))
 
 rule all:
     input:
@@ -175,7 +175,7 @@ rule run_euclidean_eval:
     output:
         os.path.join(NPM_DIRECTORY, "results_EuclideanClust.txt")
     shell:
-        'python {config[SOFTWARE][cluster_eval_software]} '
+        'evaluate_clustering '
         '--true_clusters_file {input.true_clusters_file} '
         '--true_prevalences {config[PARAMS][ALL][prevalences]} '
         '--predicted_clusters_file {input.hfile} '
@@ -189,7 +189,7 @@ rule run_hamming_eval:
     output:
         os.path.join(NPM_DIRECTORY, "results_HammingClust.txt")
     shell:
-        'python {config[SOFTWARE][cluster_eval_software]} '
+        'evaluate_clustering '
         '--true_clusters_file {input.true_clusters_file} '
         '--true_prevalences {config[PARAMS][ALL][prevalences]} '
         '--predicted_clusters_file {input.pfile} '
@@ -203,7 +203,7 @@ rule run_pearson_eval:
     output:
         os.path.join(NPM_DIRECTORY, "results_PearsonClust.txt")
     shell:
-        'python {config[SOFTWARE][cluster_eval_software]} '
+        'evaluate_clustering '
         '--true_clusters_file {input.true_clusters_file} '
         '--true_prevalences {config[PARAMS][ALL][prevalences]} '
         '--predicted_clusters_file {input.peafile} '
@@ -217,7 +217,7 @@ rule run_densitycut_eval:
     output:
         os.path.join(NPM_DIRECTORY, "results_DensityCut.txt")
     shell:
-        'python {config[SOFTWARE][cluster_eval_software]} '
+        'evaluate_clustering '
         '--true_clusters_file {input.true_clusters_file} '
         '--true_prevalences {config[PARAMS][ALL][prevalences]} '
         '--predicted_clusters_file {input.dfile} '
@@ -237,7 +237,7 @@ rule run_epiclomal_basic:
         '(echo "==================================="; '
         'echo "Running EpiclomalBasic RUN {wildcards.run}"; '
         'echo "==================================="; '
-        'python {config[SOFTWARE][epiclomal_software]} Basic-GeMM '
+        'epiclomal Basic-GeMM '
         '--out_dir {output} '
         '--repeat_id {wildcards.run} '
         '--K {config[PARAMS][EPICLOMAL][K]} '
@@ -264,7 +264,7 @@ rule run_epiclomal_region:
         '(echo "==================================="; '
         'echo "Running EpiclomalRegion RUN {wildcards.run}"; '
         'echo "==================================="; '
-        'python {config[SOFTWARE][epiclomal_software]} Region-GeMM '
+        'epiclomal Region-GeMM '
         '--out_dir {output} '
         '--repeat_id {wildcards.run} '
         '--K {config[PARAMS][EPICLOMAL][K]} '

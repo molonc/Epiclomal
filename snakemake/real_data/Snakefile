@@ -12,7 +12,7 @@ EVAL_REGION_DIR = config['OUTPUT_DIRS']['EVAL_REGION_DIR']
 
 max_pc = min(config['PARAMS']['NPM']['max_k'], 20)
 
-run=list(range(0,10))
+run=list(range(0,300))
 
 rule all:
     input:
