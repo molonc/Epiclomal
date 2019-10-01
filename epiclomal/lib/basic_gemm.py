@@ -25,7 +25,6 @@ from random import random, shuffle
 from math import exp
 
 class BasicGeMM(object):
-    # @profile
     def __init__(self,
                  gamma_prior,
                  alpha_prior,
@@ -263,7 +262,6 @@ class BasicGeMM(object):
     def set_pi_star(self):
         return np.exp(self.log_pi_star)
 
-    # @profile
     def fit(self, convergence_tolerance=1e-4, debug=False, num_iters=100):
         print ("Iter  ELBO difference")
 
@@ -880,7 +878,6 @@ class BasicGeMM(object):
 
     ###############
 
-    # @profile
     def _compute_log_likelihood_times_priors(self):
         logl = self.log_likelihood
 
@@ -920,7 +917,6 @@ class BasicGeMM(object):
 
     ###############
 
-    # @profile
     def _compute_log_likelihood(self):
         loglik = 0
         for data_type in self.data_types:

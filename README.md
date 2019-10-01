@@ -59,6 +59,8 @@ R CMD build REpiclomal
 R CMD INSTALL REpiclomal_1.0.tar.gz
 ```
 
+Epiclomal R package has dependency on DensityCut, which must be manually installed according to instructions listed here: https://bitbucket.org/jerry00/densitycut_dev/
+
 ## Usage
 
 ### Run entire pipeline with generated synthetic data
