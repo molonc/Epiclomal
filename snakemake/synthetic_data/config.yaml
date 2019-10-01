@@ -49,8 +49,5 @@ PARAMS:
 
 SOFTWARE:
   generate_synthetic_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/generate_synthetic.R'
-  euclidean_clust_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/non_probabilistic_methods/euclideanclust.R'
-  hamming_clust_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/non_probabilistic_methods/hammingclust.R'
-  pearson_clust_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/non_probabilistic_methods/pearsonclust.R'
-  density_cut_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/non_probabilistic_methods/densitycut.R'
+  hclust_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/hclust.R'
   eval_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/eval_epiclomal.R'

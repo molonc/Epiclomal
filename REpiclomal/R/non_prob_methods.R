@@ -102,7 +102,7 @@ load_data <- function(outdir, input_CpG_data_file, input_regions_file, use_cache
 #'
 #' densitycut.clust(input_CpG_data, mean_meth_matrix, R, max_PC, maxit=100, impute=0, use_cache=1, outdir)
 #'
-densitycut.clust <- function(input_CpG_data, mean_meth_matrix, R, max_PC=20, maxit=100, impute, use_cache, outdir) {
+densitycut.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, max_PC=20, maxit=100, impute, use_cache, outdir) {
   if (R == 1) {
     stop("One region, cannot do Region-based densityCut")
   }
@@ -156,7 +156,7 @@ densitycut.clust <- function(input_CpG_data, mean_meth_matrix, R, max_PC=20, max
       possible_clusters <- as.data.frame(possible_clusters)
       colnames(possible_clusters) <- c("cell_id", "DensityCut")
 
-      ofile <- paste0(outdir, "/DensityCut_clusters_Region_based_maxPC_", max_comp, ".tsv")
+      ofile <- paste0(outdir, "/DensityCut_clusters_Region_based_maxPC_", Max_K, ".tsv")
       write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE, row.names=FALSE)
       system(paste("gzip --force", ofile))
 

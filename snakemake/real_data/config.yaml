@@ -7,8 +7,8 @@ OUTPUT_DIRS:
 
 LOG_DIR: 'log'
 
-METH_FILE: '/shahlab/mandronescu/EPI-112_inhouse_data/OUTPUT_process_INHOUSE/RUN/process_INHOUSE_process_real_data/outputs/epiclomal_input/0_0.95_10000/input_Epiclomal_process_INHOUSE.tsv.gz'
-REGION_FILE: '/shahlab/mandronescu/EPI-112_inhouse_data/OUTPUT_process_INHOUSE/RUN/process_INHOUSE_process_real_data/outputs/epiclomal_input/0_0.95_10000/regionIDs_input_Epiclomal_process_INHOUSE.tsv.gz'
+METH_FILE: '/shahlab/mandronescu/EPI-70_Smallwood2014/OUTPUT_process_Smallwood2014/RUN/process_Smallwood2014_process_real_data/outputs/epiclomal_input/0_0.95_10000/input_Epiclomal_process_Smallwood2014.tsv.gz'
+REGION_FILE: '/shahlab/mandronescu/EPI-70_Smallwood2014/OUTPUT_process_Smallwood2014/RUN/process_Smallwood2014_process_real_data/outputs/epiclomal_input/0_0.95_10000/regionIDs_input_Epiclomal_process_Smallwood2014.tsv.gz'
 
 PARAMS:
   NPM:
@@ -27,9 +27,5 @@ PARAMS:
     config_file: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/inputs/config1.yaml'
 
 SOFTWARE:
-  preprocessing_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/non_probabilistic_methods/preprocess.R'
-  euclidean_clust_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/non_probabilistic_methods/euclideanclust.R'
-  hamming_clust_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/non_probabilistic_methods/hammingclust.R'
-  pearson_clust_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/non_probabilistic_methods/pearsonclust.R'
-  density_cut_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/non_probabilistic_methods/densitycut.R'
+  hclust_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/hclust.R'
   eval_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/eval_epiclomal.R'

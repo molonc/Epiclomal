@@ -10,8 +10,6 @@ EPI_REGION_DIR = config['OUTPUT_DIRS']['EPI_REGION_DIR']
 EVAL_BASIC_DIR = config['OUTPUT_DIRS']['EVAL_BASIC_DIR']
 EVAL_REGION_DIR = config['OUTPUT_DIRS']['EVAL_REGION_DIR']
 
-max_pc = min(config['PARAMS']['NPM']['max_k'], 20)
-
 run=list(range(0,300))
 
 rule all:
@@ -26,7 +24,8 @@ rule run_preprocess:
     output:
         os.path.join(NPM_DIRECTORY, re.sub('.tsv.gz', '.RDa.gz', os.path.basename(config['METH_FILE'])))
     shell:
-        'Rscript {config[SOFTWARE][preprocessing_software]} '
+        'Rscript {config[SOFTWARE][hclust_software]} '
+        '--method None '
         '--output_directory {NPM_DIRECTORY} '
         '--methylation_file {input.meth_file} '
         '--regions_file {input.regions_file} '
@@ -43,7 +42,8 @@ rule run_euclidean_clust:
     log:
         os.path.join(LOG_DIR, 'run_euclidean_clust.log')
     shell:
-        'Rscript {config[SOFTWARE][euclidean_clust_software]} '
+        'Rscript {config[SOFTWARE][hclust_software]} '
+        '--method euclidean '
         '--index {config[PARAMS][NPM][index]} '
         '--max_k {config[PARAMS][NPM][max_k]} '
         '--output_directory {NPM_DIRECTORY} '
@@ -64,7 +64,8 @@ rule run_hamming_clust:
     log:
         os.path.join(LOG_DIR, 'run_hamming_clust.log')
     shell:
-        'Rscript {config[SOFTWARE][hamming_clust_software]} '
+        'Rscript {config[SOFTWARE][hclust_software]} '
+        '--method hamming '
         '--index {config[PARAMS][NPM][index]} '
         '--max_k {config[PARAMS][NPM][max_k]} '
         '--output_directory {NPM_DIRECTORY} '
@@ -85,12 +86,14 @@ rule run_pearson_clust:
     log:
         os.path.join(LOG_DIR, 'run_pearson_clust.log')
     shell:
-        'Rscript {config[SOFTWARE][pearson_clust_software]} '
+        'Rscript {config[SOFTWARE][hclust_software]} '
+        '--method pearson '
         '--index {config[PARAMS][NPM][index]} '
         '--max_k {config[PARAMS][NPM][max_k]} '
         '--output_directory {NPM_DIRECTORY} '
         '--methylation_file {input.meth_file} '
         '--regions_file {input.regions_file} '
+        '--impute {config[PARAMS][NPM][impute]} '
         '--use_cache {config[PARAMS][NPM][use_cache]} '
         '> {log}'
 
@@ -100,12 +103,13 @@ rule run_density_cut:
         regions_file=config['REGION_FILE'],
         cache_data=os.path.join(NPM_DIRECTORY, re.sub('.tsv.gz', '.RDa.gz', os.path.basename(config['METH_FILE'])))
     output:
-        os.path.join(NPM_DIRECTORY, 'DensityCut_clusters_Region_based_maxPC_{}.tsv.gz'.format(max_pc))
+        os.path.join(NPM_DIRECTORY, 'DensityCut_clusters_Region_based_maxPC_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
     log:
         os.path.join(LOG_DIR, 'run_density_cut.log')
     shell:
-        'Rscript {config[SOFTWARE][density_cut_software]} '
-        '--max_PC {max_pc} '
+        'Rscript {config[SOFTWARE][hclust_software]} '
+        '--method densitycut '
+        '--max_k {config[PARAMS][NPM][max_k]} '
         '--output_directory {NPM_DIRECTORY} '
         '--methylation_file {input.meth_file} '
         '--regions_file {input.regions_file} '
@@ -118,7 +122,7 @@ rule process_npm_methods:
         hfile=os.path.join(NPM_DIRECTORY, 'EuclideanClust_clusters_region_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k'])),
         pfile=os.path.join(NPM_DIRECTORY, 'HammingClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k'])),
         peafile=os.path.join(NPM_DIRECTORY, 'PearsonClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k'])),
-        dfile=os.path.join(NPM_DIRECTORY, 'DensityCut_clusters_Region_based_maxPC_{}.tsv.gz'.format(max_pc))
+        dfile=os.path.join(NPM_DIRECTORY, 'DensityCut_clusters_Region_based_maxPC_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
     output:
         htempfile=temp('htempfile'),
         ptempfile=temp('ptempfile'),
@@ -158,7 +162,7 @@ rule run_epiclomal_basic:
         '(echo "==================================="; '
         'echo "Running EpiclomalBasic RUN {wildcards.run}"; '
         'echo "==================================="; '
-        'python {config[SOFTWARE][epiclomal_software]} Basic-GeMM '
+        'epiclomal Basic-GeMM '
         '--out_dir {output} '
         '--repeat_id {wildcards.run} '
         '--K {config[PARAMS][EPICLOMAL][K]} '
@@ -181,7 +185,7 @@ rule run_epiclomal_region:
         '(echo "==================================="; '
         'echo "Running EpiclomalRegion RUN {wildcards.run}"; '
         'echo "==================================="; '
-        'python {config[SOFTWARE][epiclomal_software]} Region-GeMM '
+        'epiclomal Region-GeMM '
         '--out_dir {output} '
         '--repeat_id {wildcards.run} '
         '--K {config[PARAMS][EPICLOMAL][K]} '

@@ -30,7 +30,7 @@ $RSCRIPT ../scripts/eval_epiclomal.R \
 #                                 [--regions_file REGIONS_FILE]
 #                                 [--true_clusters_file TRUE_CLUSTERS_FILE]
 #                                 [--true_epigenotypes_file TRUE_EPIGENOTYPES_FILE]
-# 
+#
 # optional arguments:
 #   -h, --help            show this help message and exit
 #   --input_dir INPUT_DIR
