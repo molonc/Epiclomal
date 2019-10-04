@@ -88,4 +88,20 @@ In R, run `library(REpiclomal)` to use Epiclomal R Package and `?REpiclomal` for
 ## Input
 ## Output
 
+## Source code structure
+### epiclomal
+Contains the Epiclomal python package. Package includes software to run Epiclomal clustering as well as clustering evaluation script.
+
+### process_real_data
+Contains R scripts to process real data to be ingestable by REpiclomal in R and Epiclomal in Python.
+
+### REpiclomal
+Contains REpiclomal R package. Contains non-probabilistic clustering method calling functions, visualization functions, and epiclomal evaluation functions.
+
+### scripts
+Contains R scripts that are called by various parts of the epiclomal workflow. Scripts mainly call functions found in REpiclomal R package.
+
+### snakemake
+Contains Snakefiles and config files that run Epiclomal workflow for real and synthetic data.
+
 
