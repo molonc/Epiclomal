@@ -15,10 +15,10 @@ import numpy as np
 import pandas as pd
 import sys
 
-from lib.utils import compute_e_log_dirichlet, compute_e_log_q_dirichlet, compute_e_log_p_dirichlet, \
+from epiclomal.lib.utils import compute_e_log_dirichlet, compute_e_log_q_dirichlet, compute_e_log_p_dirichlet, \
                       compute_e_log_q_discrete, init_log_pi_star, log_space_normalise, safe_multiply
 
-from lib.basic_gemm import BasicGeMM
+from epiclomal.lib.basic_gemm import BasicGeMM
 
 class RegionGeMM(BasicGeMM):
     def __init__(self,
@@ -41,7 +41,7 @@ class RegionGeMM(BasicGeMM):
         for data_type in self.data_types:
             if self.M[data_type] > 500000:
                 print("Data set is too large for region, with ", self.M[data_type], " number of loci, EXITING")
-                sys.exit(0)
+        #         sys.exit(0)
 
     ######################
 

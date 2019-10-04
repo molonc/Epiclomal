@@ -38,7 +38,6 @@ rule run_euclidean_clust:
         cache_data=os.path.join(NPM_DIRECTORY, re.sub('.tsv.gz', '.RDa.gz', os.path.basename(config['METH_FILE'])))
     output:
         os.path.join(NPM_DIRECTORY, 'EuclideanClust_clusters_region_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k'])),
-        os.path.join(NPM_DIRECTORY, 'EuclideanClust_cell_order_region_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
     log:
         os.path.join(LOG_DIR, 'run_euclidean_clust.log')
     shell:
@@ -60,7 +59,6 @@ rule run_hamming_clust:
         cache_data=os.path.join(NPM_DIRECTORY, re.sub('.tsv.gz', '.RDa.gz', os.path.basename(config['METH_FILE'])))
     output:
         os.path.join(NPM_DIRECTORY, 'HammingClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k'])),
-        os.path.join(NPM_DIRECTORY, 'HammingClust_cell_order_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
     log:
         os.path.join(LOG_DIR, 'run_hamming_clust.log')
     shell:
@@ -82,7 +80,6 @@ rule run_pearson_clust:
         cache_data=os.path.join(NPM_DIRECTORY, re.sub('.tsv.gz', '.RDa.gz', os.path.basename(config['METH_FILE'])))
     output:
         os.path.join(NPM_DIRECTORY, 'PearsonClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k'])),
-        os.path.join(NPM_DIRECTORY, 'PearsonClust_cell_order_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
     log:
         os.path.join(LOG_DIR, 'run_pearson_clust.log')
     shell:

@@ -21,8 +21,8 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 from memory_profiler import memory_usage
 
-from lib.basic_gemm import BasicGeMM
-from lib.region_gemm import RegionGeMM
+from epiclomal.lib.basic_gemm import BasicGeMM
+from epiclomal.lib.region_gemm import RegionGeMM
 
 
 ##############################
@@ -166,7 +166,7 @@ def run_model(mtype, args):
         include_regions=True
         className = RegionGeMM
 
-    cell_ids, data, event_ids, priors, regions, initial_clusters, slsbulk = load_data (args, include_regions)
+    cell_ids, data, event_ids, priors, regions, initial_clusters, slsbulk = load_data(args, include_regions)
     # event_ids is "meth" etc.
     model = className(priors['gamma'],
                       priors['alpha'],
@@ -452,7 +452,7 @@ def load_data(args, include_regions=False):
 
 def _load_data_frame(file_name):
     print ('Loading data file {0}.'.format(file_name))
-    df = pd.read_csv(file_name, compression='gzip', index_col='cell_id', sep='\t')
+    df = pd.read_csv(file_name, compression='gzip', index_col='cell_id', sep='\t', low_memory=False)
     return df
 
 def _load_initial_clusters_frame(file_name, repeat_id):

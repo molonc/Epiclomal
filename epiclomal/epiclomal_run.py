@@ -4,7 +4,7 @@
 # Epiclomal, probabilistic model for clustering and imputing single-cell methylation data
 # Author : Mirela Andronescu
 #=======================================================================================================================
-from lib.run import run_basic_gemm_model, run_basic_bayespy_model, run_region_gemm_model
+from epiclomal.lib.run import run_basic_gemm_model, run_basic_bayespy_model, run_region_gemm_model
 
 import argparse
 

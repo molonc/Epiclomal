@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from numba import njit, prange
 
-from lib.utils import compute_e_log_dirichlet, compute_e_log_q_dirichlet, compute_e_log_p_dirichlet, \
+from epiclomal.lib.utils import compute_e_log_dirichlet, compute_e_log_q_dirichlet, compute_e_log_p_dirichlet, \
                       compute_e_log_q_discrete, init_log_pi_star, log_space_normalise, safe_multiply
 
 from scipy.stats import dirichlet
@@ -163,11 +163,11 @@ class BasicGeMM(object):
     def _get_indicator_X(self, data_type, X):
     # for every position that is not missing in X, return 0 if it has state s or 1 otherwise
     # all the missing positions are replaced with 0
-        Y = np.zeros((self.S[data_type], self.N, self.R[data_type], int(self.maxL[data_type])))   # size SxNxM, now SxNxRxmaxL
+        Y = np.zeros((self.S[data_type], self.N, self.R[data_type], int(self.maxL[data_type])), dtype=np.uint8)   # size SxNxM, now SxNxRxmaxL
         # Y = np.zeros((self.S[data_type], self.N, self.M[data_type]))
         total = 0
         for i, s in enumerate(range(self.S[data_type])):
-            Y[i, :, :, :] = (X == s).astype(int)
+            Y[i, :, :, :] = (X == s).astype(np.uint8)
             ti = np.sum(Y[i,:,:,:])
             print("Number of observed ", i, "'s: ", ti)
             total = total + ti
