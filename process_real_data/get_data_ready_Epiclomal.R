@@ -24,7 +24,7 @@ parser$add_argument("--LuoDiamond", type="double",default="0",help="0 = usual st
 args <- parser$parse_args()
 
 if (!is.null(args$output_directory)) {
-    dir.create(args$output_directory)
+  dir.create(args$output_directory)
 }
 
 print(args)
@@ -51,131 +51,130 @@ binary_function <- function(x){ ### x is a vector with the methylation fraction 
 
 if(args$LuoDiamond == 1){
 
-#ptm <- proc.time()
+  #ptm <- proc.time()
 
-print("getting input ready for Luo diamonds")
+  print("getting input ready for Luo diamonds")
 
-final_regions <- read.csv(file=args$file_final_regions,sep="\t",header=FALSE)
+  final_regions <- read.csv(file=args$file_final_regions,sep="\t",header=FALSE)
 
-print(head(final_regions))
+  print(head(final_regions))
 
-colnames(final_regions) <- "region_id"
+  colnames(final_regions) <- "region_id"
 
-final_regions$region_id <- as.character(final_regions$region_id)
+  final_regions$region_id <- as.character(final_regions$region_id)
 
-#system.time(tmp <- read.csv(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[1]),sep="\t",header=TRUE))
+  #system.time(tmp <- read.csv(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[1]),sep="\t",header=TRUE))
 
-suppressMessages(library(data.table))
+  suppressMessages(library(data.table))
 
-system.time(tmp <- fread(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[1]),showProgress=FALSE,sep="\t",header=TRUE))
+  system.time(tmp <- fread(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[1]),showProgress=FALSE,sep="\t",header=TRUE))
 
-sub_tmp <- tmp[tmp$region_id %in% final_regions$region_id,]
+  sub_tmp <- tmp[tmp$region_id %in% final_regions$region_id,]
 
-id <- with(sub_tmp, paste0(chr, ":", CpG_start))
+  id <- with(sub_tmp, paste0(chr, ":", CpG_start))
 
-if(args$filter_CpG_no_data == 1){
+  if(args$filter_CpG_no_data == 1){
 
-  col_num_id <- 1:dim(sub_tmp)[1]
-  num_regions <- sum(!duplicated(sub_tmp$region_id))
+    col_num_id <- 1:dim(sub_tmp)[1]
+    num_regions <- sum(!duplicated(sub_tmp$region_id))
 
-  region_sizes <- diff(col_num_id[!duplicated(sub_tmp$region_id)]) ### does not include the size of last region
-  region_sizes <- c(region_sizes, (dim(sub_tmp)[1] - sum(region_sizes)))
+    region_sizes <- diff(col_num_id[!duplicated(sub_tmp$region_id)]) ### does not include the size of last region
+    region_sizes <- c(region_sizes, (dim(sub_tmp)[1] - sum(region_sizes)))
 
-  reg_coord <- NULL
-  for(r in 1:sum(!duplicated(sub_tmp$region_id))){
-    if(r==1){
-      reg_coord <- rbind(reg_coord,c(1, region_sizes[r]))} else{
-        reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) ) }
+    reg_coord <- NULL
+    for(r in 1:sum(!duplicated(sub_tmp$region_id))){
+      if(r==1){
+        reg_coord <- rbind(reg_coord,c(1, region_sizes[r]))} else{
+        reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) )
+      }
+    }
+
+    reg_coord <- cbind((1:num_regions),reg_coord)
+    colnames(reg_coord) <- c("region_id","start","end")
+
+    write.table(as.matrix(reg_coord-1 ), file = paste0(outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t")
+    system(paste0("gzip --force ", outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"))
+
   }
 
-  reg_coord <- cbind((1:num_regions),reg_coord)
-  colnames(reg_coord) <- c("region_id","start","end")
+  print(dim(sub_tmp))
 
-  write.table(as.matrix(reg_coord-1 ), file = paste0(outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t")
-  system(paste0("gzip --force ", outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"))
+  cat(sapply(c("cell_id",id), toString), file= paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"), sep="\t")
+  cat("\n", file=paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"), append=TRUE)
 
-}
+  rm(tmp)
+  rm(sub_tmp)
 
-print(dim(sub_tmp))
+  CpG_with_data <- rep(0,length(id))
 
-cat(sapply(c("cell_id",id), toString), file= paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"), sep="\t")
-cat("\n", file=paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"), append=TRUE)
+  for (c in 1:length(all_CpG_cell_files)){
+    print(c)
 
-rm(tmp)
-rm(sub_tmp)
+    ##if(c==3) break
 
-CpG_with_data <- rep(0,length(id))
+    ### saving a file with regions for Epiclomal
 
-for (c in 1:length(all_CpG_cell_files)){
-  print(c)
+    #tmp <- read.csv(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[c]),sep="\t",header=TRUE)
+    tmp <- fread(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[c]),showProgress=FALSE,sep="\t",header=TRUE)
+    print("  ...read")
 
-  ##if(c==3) break
+    sub_tmp <- tmp[tmp$region_id %in% final_regions$region_id,]  # fast
+    print("  ...got sub_tmp")
 
-  ### saving a file with regions for Epiclomal
+    cell_id <- as.character(sub_tmp$cell_id[1])   # fast
+    print("  ...got cell_id")
 
-  #tmp <- read.csv(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[c]),sep="\t",header=TRUE)
-  tmp <- fread(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[c]),showProgress=FALSE,sep="\t",header=TRUE)
-  print("  ...read")
+    CpG_data <- as.vector(binary_function(x=as.matrix((sub_tmp$meth_frac))))
+    print("  ...got CpG_data")
 
-  sub_tmp <- tmp[tmp$region_id %in% final_regions$region_id,]  # fast
-  print("  ...got sub_tmp")
+    CpG_with_data[!is.na(CpG_data)] <- 1
+    print("  ...got CpG_with_data")
 
-  cell_id <- as.character(sub_tmp$cell_id[1])   # fast
-  print("  ...got cell_id")
-
-  CpG_data <- as.vector(binary_function(x=as.matrix((sub_tmp$meth_frac))))
-  print("  ...got CpG_data")
-
-  CpG_with_data[!is.na(CpG_data)] <- 1
-  print("  ...got CpG_with_data")
-
-   #print(head(CpG_data))
-
-   #print(head(t(as.matrix(c(cell_id,CpG_data)))))
-
-   write.table(t(as.matrix(c(cell_id,CpG_data))), file = paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t", na = "",append=TRUE)
-   print("  ...wrote in table")
+    #print(head(CpG_data))
+    #print(head(t(as.matrix(c(cell_id,CpG_data)))))
+    write.table(t(as.matrix(c(cell_id,CpG_data))), file = paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t", na = "",append=TRUE)
+    print("  ...wrote in table")
   }
 
- if(args$filter_CpG_no_data == 1){
-   system(paste0("gzip --force ", outdir,"/input_Epiclomal_",args$data_ID,".tsv"))
-   print("End of getting input ready for Luo diamonds")
- }
+  if(args$filter_CpG_no_data == 1){
+    system(paste0("gzip --force ", outdir,"/input_Epiclomal_",args$data_ID,".tsv"))
+    print("End of getting input ready for Luo diamonds")
+  }
 
-if(args$filter_CpG_no_data == 0){
+  if(args$filter_CpG_no_data == 0){
 
-print("getting rid of CpGs with no data across all cells")
+    print("getting rid of CpGs with no data across all cells")
 
-print("total number of CpGs")
-print(length(CpG_with_data))
-print("number of CpGs with data across all cells:")
-print(sum(CpG_with_data == 1))
+    print("total number of CpGs")
+    print(length(CpG_with_data))
+    print("number of CpGs with data across all cells:")
+    print(sum(CpG_with_data == 1))
 
-#print(head(which(CpG_with_data == 1)))
-#print(head((which(CpG_with_data == 1)+1)))
+    #print(head(which(CpG_with_data == 1)))
+    #print(head((which(CpG_with_data == 1)+1)))
 
-print("loading only the data with columns with some data, that is, excluding the CpGs with no data")
+    print("loading only the data with columns with some data, that is, excluding the CpGs with no data")
 
-tmp4 <- fread(paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"),showProgress=FALSE,select=c(1,(which(CpG_with_data == 1)+1)),sep="\t",header=TRUE)
+    tmp4 <- fread(paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"),showProgress=FALSE,select=c(1,(which(CpG_with_data == 1)+1)),sep="\t",header=TRUE)
 
-print(dim(tmp4))
-print(tmp4[1:2,1:15])
-#print(sum(CpG_data_filter == tmp4))
+    print(dim(tmp4))
+    print(tmp4[1:2,1:15])
+    #print(sum(CpG_data_filter == tmp4))
 
-print("saving the final data without CpGs with no data")
+    print("saving the final data without CpGs with no data")
 
-file.rename(from=paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"), to=paste0(outdir,"/input_Epiclomal_",args$data_ID,"_temp_file.tsv"))
-## file.remove(paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"))
+    file.rename(from=paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"), to=paste0(outdir,"/input_Epiclomal_",args$data_ID,"_temp_file.tsv"))
+    ## file.remove(paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"))
 
-#tmp4 <- as.data.frame(tmp4)
-print(class(tmp4))
+    #tmp4 <- as.data.frame(tmp4)
+    print(class(tmp4))
 
-fwrite(tmp4, file = paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t", na = "",showProgress=FALSE)
-system(paste0("gzip --force ", outdir,"/input_Epiclomal_",args$data_ID,".tsv"))
+    fwrite(tmp4, file = paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t", na = "",showProgress=FALSE)
+    system(paste0("gzip --force ", outdir,"/input_Epiclomal_",args$data_ID,".tsv"))
 
-print("adjusting for right set of regions")
+    print("adjusting for right set of regions")
 
-### Getting the right set of regions now that we eliminated some of the CpGs
+    ### Getting the right set of regions now that we eliminated some of the CpGs
 
     print(dim(sub_tmp))
 
@@ -192,28 +191,28 @@ print("adjusting for right set of regions")
 
     region_sizes <- c(region_sizes, (dim(sub_tmp)[1] - sum(region_sizes)))
 
-       reg_coord <- NULL
-       for(r in 1:sum(!duplicated(sub_tmp$region_id))){
-         if(r==1){
-           reg_coord <- rbind(reg_coord,c(1, region_sizes[r]))} else{
-             reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) ) }
-       }
+    reg_coord <- NULL
+    for(r in 1:sum(!duplicated(sub_tmp$region_id))){
+      if(r==1){
+        reg_coord <- rbind(reg_coord,c(1, region_sizes[r]))
+      } else {
+        reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) )
+      }
+    }
 
-       reg_coord <- cbind((1:num_regions),reg_coord)
-       colnames(reg_coord) <- c("region_id","start","end")
+    reg_coord <- cbind((1:num_regions),reg_coord)
+    colnames(reg_coord) <- c("region_id","start","end")
 
-       write.table(as.matrix(reg_coord-1 ), file = paste0(outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t")
-       system(paste0("gzip --force ", outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"))
+    write.table(as.matrix(reg_coord-1 ), file = paste0(outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t")
+    system(paste0("gzip --force ", outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"))
 
 
   }
 
-print("End of getting input ready for Luo diamonds")
+  print("End of getting input ready for Luo diamonds")
 
-#finaltime <- proc.time() - ptm
-
+  #finaltime <- proc.time() - ptm
 }
-
 
 if(args$LuoDiamond == 0){
 
@@ -221,11 +220,11 @@ if(args$LuoDiamond == 0){
 
   final_regions <- read.csv(file=args$file_final_regions,sep="\t",header=FALSE)
 
-  print(head(final_regions))
-
   colnames(final_regions) <- "region_id"
 
   final_regions$region_id <- as.character(final_regions$region_id)
+
+  print(head(final_regions))
 
   #print(str(final_regions))
 
@@ -261,8 +260,10 @@ if(args$LuoDiamond == 0){
       reg_coord <- NULL
       for(r in 1:sum(!duplicated(sub_tmp$region_id))){
         if(r==1){
-          reg_coord <- rbind(reg_coord,c(1, region_sizes[r]))} else{
-            reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) ) }
+          reg_coord <- rbind(reg_coord,c(1, region_sizes[r]))
+        } else {
+          reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) )
+        }
       }
 
       reg_coord <- cbind((1:num_regions),reg_coord)
@@ -357,8 +358,10 @@ if(args$LuoDiamond == 0){
     reg_coord <- NULL
     for(r in 1:sum(!duplicated(sub_tmp$region_id))){
       if(r==1){
-        reg_coord <- rbind(reg_coord,c(1, region_sizes[r]))} else{
-          reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) ) }
+        reg_coord <- rbind(reg_coord,c(1, region_sizes[r]))
+      } else {
+        reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) )
+      }
     }
 
     reg_coord <- cbind((1:num_regions),reg_coord)
@@ -386,24 +389,24 @@ if(args$LuoDiamond == 0){
 
   if( (dim(CpG_data)[2]) > 250){
     pheatmap(CpG_data[,1:250],cluster_rows = FALSE,cluster_cols=FALSE, cellwidth = 5,
-             cellheight = 5,fontsize = 8,
-             #main = paste0("CpG-based methylation data for ", args$name),
-             #gaps_row = index_gaps,fontsize_row=6,fontsize_col=4,
-             #annotation_names_row = FALSE, annotation_names_col= FALSE,
-             #gaps_col=(input_regions[,2][1:(R-1)] + 1),
-             show_colnames=FALSE,
-             #annotation_col=annotation_col,
-             filename = paste0(outdir,"/final_sample_CpG_based_PLOT_",args$data_ID,".pdf"))
-  }else{
+      cellheight = 5,fontsize = 8,
+      #main = paste0("CpG-based methylation data for ", args$name),
+      #gaps_row = index_gaps,fontsize_row=6,fontsize_col=4,
+      #annotation_names_row = FALSE, annotation_names_col= FALSE,
+      #gaps_col=(input_regions[,2][1:(R-1)] + 1),
+      show_colnames=FALSE,
+      #annotation_col=annotation_col,
+      filename = paste0(outdir,"/final_sample_CpG_based_PLOT_",args$data_ID,".pdf"))
+  } else {
     pheatmap(CpG_data,cluster_rows = FALSE,cluster_cols=FALSE, cellwidth = 5,
-             cellheight = 5,fontsize = 8,
-             #main = paste0("CpG-based methylation data for ", args$name),
-             #gaps_row = index_gaps,fontsize_row=6,fontsize_col=4,
-             #annotation_names_row = FALSE, annotation_names_col= FALSE,
-             #gaps_col=(input_regions[,2][1:(R-1)] + 1),
-             show_colnames=FALSE,
-             #annotation_col=annotation_col,
-             filename = paste0(outdir,"/final_sample_CpG_based_PLOT_",args$data_ID,".pdf"))
+    cellheight = 5,fontsize = 8,
+    #main = paste0("CpG-based methylation data for ", args$name),
+    #gaps_row = index_gaps,fontsize_row=6,fontsize_col=4,
+    #annotation_names_row = FALSE, annotation_names_col= FALSE,
+    #gaps_col=(input_regions[,2][1:(R-1)] + 1),
+    show_colnames=FALSE,
+    #annotation_col=annotation_col,
+    filename = paste0(outdir,"/final_sample_CpG_based_PLOT_",args$data_ID,".pdf"))
 
   }
 

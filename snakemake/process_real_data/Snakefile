@@ -1,0 +1,113 @@
+import os
+import re
+
+configfile: 'config.yaml'
+
+name_regions = config['CPG_COORDS']['NAME_REGIONS']
+cells = config['cells']
+data_ID = config['DATA_ID']
+
+CHR = list(range(1, 23))
+CHR += ['X', 'Y']
+
+if config['CPG_COORDS']['GENOME_LIBRARY'] == "BSgenome.Hsapiens.UCSC.hg19" or config['CPG_COORDS']['GENOME_LIBRARY'] == "BSgenome.Mmusculus.UCSC.mm10":
+    CHR = list('chr' + str(x) for x in CHR)
+
+rule all:
+    input:
+        regions=os.path.join(config['READY_EPICLOMAL']['OUTDIR'], 'regionIDs_input_Epiclomal_{}.tsv.gz'.format(data_ID)),
+        meth_file=os.path.join(config['READY_EPICLOMAL']['OUTDIR'], 'input_Epiclomal_{}.tsv.gz'.format(data_ID))
+
+rule get_cpgs_in_regions:
+    input:
+        regions_file=config['REGION_FILE']
+    output:
+        # os.path.join(config['CPG_COORDS']['OUTDIR'], "CpGs_coordinates_" + name_regions + "_{CHR}.tsv.gz"),
+        touch(temp('.get_cpgs_in_regions_{CHR}'))
+    shell:
+        'Rscript {config[PROCESS_REAL_DATA_DIR]}/CpG_coordinates_across_regions.R '
+        '--output_directory {config[CPG_COORDS][OUTDIR]} '
+        '--regions_file {input.regions_file} '
+        '--name_regions {config[CPG_COORDS][NAME_REGIONS]} '
+        '--genome_library {config[CPG_COORDS][GENOME_LIBRARY]} '
+        '--type_of_C {config[CPG_COORDS][TYPE_OF_C]} '
+        '--chr {wildcards.CHR}'
+
+# rule prep_cell_based_meth:
+#     input:
+#         expand(os.path.join(config['CPG_COORDS']['OUTDIR'], "CpGs_coordinates_" + name_regions + "_{CHR}.tsv.gz"), CHR=CHR)
+#     output:
+#         touch('.get_cpgs_in_regions')
+
+rule cell_based_methylation_extraction:
+    input:
+        path_cell_data = lambda wildcards: config['cells'][wildcards.cells],
+        get_cpgs_in_regions = expand('.get_cpgs_in_regions_{CHR}', CHR=CHR)
+    output:
+        os.path.join(config['CELL_BASED_METH']['OUTDIR'], "CpG_meth_data_long_" + data_ID + "_{cells}.tsv")
+    shell:
+        'Rscript {config[PROCESS_REAL_DATA_DIR]}/cell_based_methylation_extraction.R '
+        '--output_directory {config[CELL_BASED_METH][OUTDIR]} '
+        '--data_ID {data_ID} '
+        '--path_CpG_coordinates {config[CPG_COORDS][OUTDIR]} '
+        '--path_cell_data {input.path_cell_data} '
+        '--cell_ID {wildcards.cells} '
+        '--data_type {config[CELL_BASED_METH][DATA_TYPE]} '
+        '--genome {config[CELL_BASED_METH][GENOME]} '
+        '--include_chrY {config[CELL_BASED_METH][INCLUDE_CHRY]}'
+
+rule cell_based_stats_methylation:
+    input:
+        os.path.join(config['CELL_BASED_METH']['OUTDIR'], "CpG_meth_data_long_" + data_ID + "_{cells}.tsv")
+    output:
+        os.path.join(config['CELL_BASED_STAT']['OUTDIR'], "stats_region_" + data_ID + "_{cells}.tsv")
+    shell:
+        'Rscript {config[PROCESS_REAL_DATA_DIR]}/cell_based_stats_methylation.R '
+        '--output_directory {config[CELL_BASED_STAT][OUTDIR]} '
+        '--data_ID {data_ID} '
+        '--path_post_processed_CpG_data {config[CELL_BASED_METH][OUTDIR]} '
+        '--cell_ID {wildcards.cells}'
+
+rule prep_stats_methylation:
+    input:
+        expand(os.path.join(config['CELL_BASED_STAT']['OUTDIR'], "stats_region_" + data_ID + "_{cells}.tsv"), cells=cells)
+    output:
+        touch(temp('.cell_based_stats'))
+
+rule stats_methylation:
+    input:
+        dependency1='.cell_based_stats',
+        get_cpgs_in_regions = expand('.get_cpgs_in_regions_{CHR}', CHR=CHR)
+    output:
+        os.path.join(config['STATS_METHYLATION']['OUTDIR'], "final_regions_" + data_ID + ".tsv")
+    shell:
+        'Rscript {config[PROCESS_REAL_DATA_DIR]}/stats_methylation.R '
+        '--output_directory {config[STATS_METHYLATION][OUTDIR]} '
+        '--data_ID {data_ID} '
+        '--path_post_processed_CpG_data {config[CELL_BASED_METH][OUTDIR]} '
+        '--path_stats_region_data {config[CELL_BASED_STAT][OUTDIR]} '
+        '--num_cells_cutoff {config[STATS_METHYLATION][NUM_CELLS_CUTOFF]} '
+        '--miss_prop_cutoff {config[STATS_METHYLATION][MISS_PROP_CUTOFF]} '
+        '--nloci_cutoff {config[STATS_METHYLATION][NLOCI_CUTOFF]} '
+        '--all_cutoffs {config[STATS_METHYLATION][ALL_CUTOFFS]} '
+        '--filter_regions_same_meth {config[STATS_METHYLATION][FILTER_REGIONS_SAME_METH]} '
+        '--plot_heatmap_unfiltered {config[STATS_METHYLATION][PLOT_HEATMAP_UNFILTERED]} '
+        '--plot_heatmap_filtered {config[STATS_METHYLATION][PLOT_HEATMAP_UNFILTERED]} '
+
+rule get_data_ready_Epiclomal:
+    input:
+        dependency1='.cell_based_stats',
+        file_final_regions=os.path.join(config['STATS_METHYLATION']['OUTDIR'], "final_regions_" + data_ID + ".tsv")
+    output:
+        regions=os.path.join(config['READY_EPICLOMAL']['OUTDIR'], 'regionIDs_input_Epiclomal_' + data_ID + '.tsv.gz'),
+        meth_file=os.path.join(config['READY_EPICLOMAL']['OUTDIR'], 'input_Epiclomal_' + data_ID + '.tsv.gz')
+    shell:
+        'Rscript {config[PROCESS_REAL_DATA_DIR]}/get_data_ready_Epiclomal.R '
+        '--output_directory {config[READY_EPICLOMAL][OUTDIR]} '
+        '--data_ID {data_ID} '
+        '--path_post_processed_CpG_data {config[CELL_BASED_METH][OUTDIR]} '
+        '--file_final_regions {input.file_final_regions} '
+        '--filter_CpG_no_data {config[READY_EPICLOMAL][FILTER_CPG_NO_DATA]} '
+        '--LuoDiamond {config[READY_EPICLOMAL][LUODIAMOND]}'
+
+

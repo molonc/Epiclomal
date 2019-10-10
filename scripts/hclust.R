@@ -43,8 +43,14 @@ args <- parser$parse_args()
 print(args)
 
 method <- args$method
+methods <- c('densitycut', 'euclidean', 'hamming', 'pearson', 'all', 'None')
+if (!is.element(method, methods)) {
+  stop("method must be one of densitycut, euclidean, hamming, pearson, all, None")
+}
+
 outdir <- args$output_directory
 dir.create(file.path(outdir), showWarnings = FALSE)
+
 input_CpG_data_file <- args$methylation_file
 input_regions_file <- args$regions_file
 true_clusters_file <- args$true_clone_membership_file

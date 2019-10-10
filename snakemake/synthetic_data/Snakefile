@@ -282,29 +282,13 @@ rule run_epiclomal_region:
         '--check_uncertainty {config[PARAMS][EPICLOMAL][check_uncertainty]}) '
         '> {log}'
 
-rule prepare_eval_basic:
-    input:
-        expand(os.path.join(EPI_BASIC_DIR, '{run}'), run=run)
-    output:
-        temp(directory('temp_eval_basic'))
-    shell:
-        'mkdir -p {output}; cp -r {input} {output}'
-
-rule prepare_eval_region:
-    input:
-        expand(os.path.join(EPI_REGION_DIR, '{run}'), run=run)
-    output:
-        temp(directory('temp_eval_region'))
-    shell:
-        'mkdir -p {output}; cp -r {input} {output}'
-
 rule run_eval_basic:
     input:
         regions_file=os.path.join(DATA_DIRECTORY, 'data/regions_file.tsv.gz'),
         true_clusters_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz'),
         true_epigenotypes_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_epigenotypes.tsv.gz'),
         meth_file=os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
-        dir='temp_eval_basic'
+        dependency=expand(os.path.join(EPI_BASIC_DIR, '{run}'), run=run)
     output:
         directory(EVAL_BASIC_DIR)
     log:
@@ -312,7 +296,7 @@ rule run_eval_basic:
     shell:
         'Rscript {config[SOFTWARE][eval_software]} '
         '--output_dir {output} '
-        '--input_dir {input.dir} '
+        '--input_dir {EPI_BASIC_DIR} '
         '--true_clusters_file {input.true_clusters_file} '
         '--true_epigenotypes_file {input.true_epigenotypes_file} '
         '--methylation_file {input.meth_file} '
@@ -326,7 +310,7 @@ rule run_eval_region:
         true_clusters_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_membership.tsv.gz'),
         true_epigenotypes_file=os.path.join(DATA_DIRECTORY, 'data/true_clone_epigenotypes.tsv.gz'),
         meth_file=os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
-        dir='temp_eval_region'
+        dependency=expand(os.path.join(EPI_REGION_DIR, '{run}'), run=run)
     output:
         directory(EVAL_REGION_DIR)
     log:
@@ -334,7 +318,7 @@ rule run_eval_region:
     shell:
         'Rscript {config[SOFTWARE][eval_software]} '
         '--output_dir {output} '
-        '--input_dir {input.dir} '
+        '--input_dir {EPI_REGION_DIR} '
         '--true_clusters_file {input.true_clusters_file} '
         '--true_epigenotypes_file {input.true_epigenotypes_file} '
         '--methylation_file {input.meth_file} '

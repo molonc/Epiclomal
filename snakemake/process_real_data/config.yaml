@@ -1,0 +1,68 @@
+PROCESS_REAL_DATA_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/process_real_data'
+
+DATA_ID: 'test_pye_1'
+
+cells:
+  GSM1370535_2i_1: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370536_2i_2: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370537_2i_3: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370538_2i_4: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370539_2i_5: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370540_2i_6: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370541_2i_7: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370542_2i_8: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370543_2i_9: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370544_2i_10: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370545_2i_11: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370546_2i_12: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370555_Ser1: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370556_Ser2: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370557_Ser3: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370558_Ser4: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370559_Ser5: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370560_Ser6: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370561_Ser7: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370562_Ser8: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370563_Ser9: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370564_Ser10: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370565_Ser11: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370566_Ser12: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370567_Ser13: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370568_Ser14: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370569_Ser15: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370570_Ser16: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370571_Ser17: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370572_Ser18: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370573_Ser19: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+  GSM1370574_Ser20: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+
+REGION_FILE: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/CGI_mm10_regions.txt'
+CPG_COORDS:
+  OUTDIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/CpG_coordinates_in_regions'
+  NAME_REGIONS: 'regions'
+  GENOME_LIBRARY: 'BSgenome.Mmusculus.UCSC.mm10'
+  TYPE_OF_C: 'CpG'
+
+CELL_BASED_METH:
+  INCLUDE_CHRY: 1
+  OUTDIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/cell_based_CpGs'
+  DATA_TYPE: 'bismark'
+  GENOME: 'mouse'
+
+CELL_BASED_STAT:
+  OUTDIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/cell_based_stats'
+
+STATS_METHYLATION:
+  OUTDIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/final_stats'
+  NUM_CELLS_CUTOFF: 5
+  MISS_PROP_CUTOFF: 0.95
+  NLOCI_CUTOFF: 0.0
+  ALL_CUTOFFS: "0_1_0.01"
+  FILTER_REGIONS_SAME_METH: Null
+  PLOT_HEATMAP_UNFILTERED: 1
+  PLOT_HEATMAP_UNFILTERED: 1
+
+READY_EPICLOMAL:
+  OUTDIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/epiclomal_input'
+  FILTER_CPG_NO_DATA: 0
+  LUODIAMOND: 0
