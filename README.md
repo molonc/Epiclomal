@@ -68,22 +68,40 @@ Epiclomal R package has dependency on DensityCut, which must be manually install
 A Snakemake workflow exists to generate synthetic data and run the clustering and cluster evaluation software against the generated data.
 
 This workflow follows this diagram, but with 300 iterations for run_epiclomal_basic and run_epiclomal_region
-![Alt text](./dag.svg)
+![Alt text](./synthetic_data.svg)
 
 To run the Snakemake workflow, first edit the config file found at Epiclomal/snakemake/synthetic_data/config.yaml with appropriate paths and parameters. Then run
 ```
-snakemake -s /path/to/Epiclomal/snakemake/synthetic_data/Snakefile
+snakemake -s /path/to/Epiclomal/snakemake/synthetic_data/Snakefile --configfile /path/to/Epiclomal/snakemake/synthetic_data/config.yaml
 ```
 To run the workflow locally. To submit the jobs on the shahlab cluster and with parallelization, run
 ```
-snakemake -s /path/to/Epiclomal/snakemake/synthetic_data/Snakefile --cluster 'qsub -V -hard -q shahlab.q -l h_vmem=8G -P shahlab_high -S /bin/bash' -j 32
+snakemake -s /path/to/Epiclomal/snakemake/synthetic_data/Snakefile --cluster 'qsub -V -hard -q shahlab.q -l h_vmem=8G -P shahlab_high -S /bin/bash' -j 32 --configfile /path/to/Epiclomal/snakemake/synthetic_data/config.yaml
 ```
 
 To run each step of the synthetic data workflow individually, follow the steps outlined here: https://github.com/shahcompbio/Epiclomal/blob/master/examples/README.md
 
+### Run pipeline with real data
+
+The real data pipeline requires two steps which are separated into two workflows.
+First, the real data must be preprocessed into a methylation and region file to be consumed by the clustering software.
+To run the preprocessing workflow, first edit the config file found at Epiclomal/snakemake/process_real_data/config.yaml with appropriate paths and parameters. Ensure all cells to cluster are accounted for. Then run
+
+```
+snakemake -s /path/to/Epiclomal/snakemake/process_real_data/Snakefile --cluster 'qsub -V -hard -q shahlab.q -l h_vmem=32G -P shahlab_high -S /bin/bash' -j 32 --configfile /path/to/Epiclomal/snakemake/process_real_data/config.yaml
+```
+
+Then, to run the real data through the clustering software, edit the config file found at Epiclomal/snakemake/real_data/config.yaml with the paths to the newly generated methylation and region files. Include a true clusters file if available.
+The real data workflow does 1000 iterations of Epiclomal by default, to change this, edit line 13 of the Snakefile.
+```
+snakemake -s /path/to/Epiclomal/snakemake/real_data/Snakefile --cluster 'qsub -V -hard -q shahlab.q -l h_vmem=32G -P shahlab_high -S /bin/bash' -j 32 --configfile /path/to/Epiclomal/snakemake/real_data/config.yaml
+```
+
+Depending on the size of the data (number of cells and number of loci), more memory may be needed for each job, to do so, change the snakemake command to have `h_vmem={memory_required}`
+
 ### Using individual components
 ### Epiclomal R package
-In R, run `library(REpiclomal)` to use Epiclomal R Package and `?REpiclomal` for documentation.
+In R, run `library(REpiclomal)` to use Epiclomal R Package and `?REpiclomal` in R for documentation.
 
 ## Input
 ## Output

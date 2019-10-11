@@ -1,7 +1,7 @@
 import os
 import re
 
-configfile: 'config.yaml'
+# configfile: 'config.yaml'
 
 LOG_DIR = config['LOG_DIR']
 NPM_DIRECTORY = config['OUTPUT_DIRS']['NPM_DIRECTORY']
@@ -10,12 +10,16 @@ EPI_REGION_DIR = config['OUTPUT_DIRS']['EPI_REGION_DIR']
 EVAL_BASIC_DIR = config['OUTPUT_DIRS']['EVAL_BASIC_DIR']
 EVAL_REGION_DIR = config['OUTPUT_DIRS']['EVAL_REGION_DIR']
 
-run=list(range(0,300))
+run=list(range(0,1000))
 
 rule all:
     input:
         EVAL_BASIC_DIR,
-        EVAL_REGION_DIR
+        EVAL_REGION_DIR,
+        '.euclidean_eval',
+        '.hamming_eval',
+        '.pearson_eval',
+        '.densitycut_eval'
 
 rule run_preprocess:
     input:
@@ -147,6 +151,71 @@ rule join_npm_methods:
     shell:
         'paste {input.idtempfile} {input.htempfile} {input.ptempfile} {input.peatempfile} {input.dtempfile} | gzip -c - > {output}'
 
+if (config['TRUE_FILE'] and config['TRUE_PREVALENCES']):
+    rule run_euclidean_eval:
+        input:
+            hfile=os.path.join(NPM_DIRECTORY, 'EuclideanClust_clusters_region_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
+        output:
+            os.path.join(NPM_DIRECTORY, "results_EuclideanClust.txt"),
+            touch(temp('.euclidean_eval'))
+        shell:
+            'evaluate_clustering '
+            '--true_clusters_file {config[TRUE_FILE]} '
+            '--predicted_clusters_file {input.hfile} '
+            '--clusters_are_probabilities False '
+            '--results_file {output}'
+
+    rule run_hamming_eval:
+        input:
+            pfile=os.path.join(NPM_DIRECTORY, 'HammingClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
+        output:
+            os.path.join(NPM_DIRECTORY, "results_HammingClust.txt"),
+            touch(temp('.hamming_eval'))
+        shell:
+            'evaluate_clustering '
+            '--true_clusters_file {config[TRUE_FILE]} '
+            '--predicted_clusters_file {input.pfile} '
+            '--clusters_are_probabilities False '
+            '--results_file {output}'
+
+    rule run_pearson_eval:
+        input:
+            peafile=os.path.join(NPM_DIRECTORY, 'PearsonClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
+        output:
+            os.path.join(NPM_DIRECTORY, "results_PearsonClust.txt"),
+            touch(temp('.pearson_eval'))
+        shell:
+            'evaluate_clustering '
+            '--true_clusters_file {config[TRUE_FILE]} '
+            '--predicted_clusters_file {input.peafile} '
+            '--clusters_are_probabilities False '
+            '--results_file {output}'
+
+    rule run_densitycut_eval:
+        input:
+            dfile=os.path.join(NPM_DIRECTORY, 'DensityCut_clusters_Region_based_maxPC_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
+        output:
+            os.path.join(NPM_DIRECTORY, "results_DensityCut.txt"),
+            touch(temp('.densitycut_eval'))
+        shell:
+            'evaluate_clustering '
+            '--true_clusters_file {config[TRUE_FILE]} '
+            '--predicted_clusters_file {input.dfile} '
+            '--clusters_are_probabilities False '
+            '--results_file {output}'
+else:
+    rule eval_no_true_clusters:
+        input:
+            hfile=os.path.join(NPM_DIRECTORY, 'EuclideanClust_clusters_region_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k'])),
+            pfile=os.path.join(NPM_DIRECTORY, 'HammingClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k'])),
+            peafile=os.path.join(NPM_DIRECTORY, 'PearsonClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k'])),
+            dfile=os.path.join(NPM_DIRECTORY, 'DensityCut_clusters_Region_based_maxPC_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
+        output:
+            touch(temp('.euclidean_eval')),
+            touch(temp('.hamming_eval')),
+            touch(temp('.pearson_eval')),
+            touch(temp('.densitycut_eval'))
+
 rule run_epiclomal_basic:
     input:
         meth_file=config['METH_FILE'],
@@ -155,19 +224,34 @@ rule run_epiclomal_basic:
         directory(os.path.join(EPI_BASIC_DIR, '{run}'))
     log:
         os.path.join(config['LOG_DIR'], 'run_epiclomal_basic_{run}.log')
-    shell:
-        '(echo "==================================="; '
-        'echo "Running EpiclomalBasic RUN {wildcards.run}"; '
-        'echo "==================================="; '
-        'epiclomal Basic-GeMM '
-        '--out_dir {output} '
-        '--repeat_id {wildcards.run} '
-        '--K {config[PARAMS][EPICLOMAL][K]} '
-        '--mu_has_k {config[PARAMS][EPICLOMAL][mu_has_k]} '
-        '--config_file {config[PARAMS][EPICLOMAL][config_file]} '
-        '--methylation_file {input.meth_file} '
-        '--initial_clusters_file {input.initial_clusters_file}) '
-        '> {log}'
+    run:
+        if (config['TRUE_FILE']):
+            shell( '(echo "==================================="; '
+                'echo "Running EpiclomalBasic RUN {wildcards.run}"; '
+                'echo "==================================="; '
+                'epiclomal Basic-GeMM '
+                '--out_dir {output} '
+                '--repeat_id {wildcards.run} '
+                '--K {config[PARAMS][EPICLOMAL][K]} '
+                '--mu_has_k {config[PARAMS][EPICLOMAL][mu_has_k]} '
+                '--config_file {config[PARAMS][EPICLOMAL][config_file]} '
+                '--methylation_file {input.meth_file} '
+                '--initial_clusters_file {input.initial_clusters_file} '
+                '--true_clusters_file {config[TRUE_FILE]}) '
+                '> {log}')
+        else:
+            shell('(echo "==================================="; '
+                'echo "Running EpiclomalBasic RUN {wildcards.run}"; '
+                'echo "==================================="; '
+                'epiclomal Basic-GeMM '
+                '--out_dir {output} '
+                '--repeat_id {wildcards.run} '
+                '--K {config[PARAMS][EPICLOMAL][K]} '
+                '--mu_has_k {config[PARAMS][EPICLOMAL][mu_has_k]} '
+                '--config_file {config[PARAMS][EPICLOMAL][config_file]} '
+                '--methylation_file {input.meth_file} '
+                '--initial_clusters_file {input.initial_clusters_file}) '
+                '> {log}')
 
 rule run_epiclomal_region:
     input:
@@ -178,22 +262,40 @@ rule run_epiclomal_region:
         directory(os.path.join(EPI_REGION_DIR, '{run}'))
     log:
         os.path.join(config['LOG_DIR'], 'run_epiclomal_region_{run}.log')
-    shell:
-        '(echo "==================================="; '
-        'echo "Running EpiclomalRegion RUN {wildcards.run}"; '
-        'echo "==================================="; '
-        'epiclomal Region-GeMM '
-        '--out_dir {output} '
-        '--repeat_id {wildcards.run} '
-        '--K {config[PARAMS][EPICLOMAL][K]} '
-        '--mu_has_k {config[PARAMS][EPICLOMAL][mu_has_k]} '
-        '--config_file {config[PARAMS][EPICLOMAL][config_file]} '
-        '--methylation_file {input.meth_file} '
-        '--initial_clusters_file {input.initial_clusters_file} '
-        '--regions_file {input.regions_file} '
-        '--slsbulk_iterations {config[PARAMS][EPICLOMAL][slsbulk_iterations]} '
-        '--check_uncertainty {config[PARAMS][EPICLOMAL][check_uncertainty]}) '
-        '> {log}'
+    run:
+        if (config['TRUE_FILE']):
+            shell('(echo "==================================="; '
+                'echo "Running EpiclomalRegion RUN {wildcards.run}"; '
+                'echo "==================================="; '
+                'epiclomal Region-GeMM '
+                '--out_dir {output} '
+                '--repeat_id {wildcards.run} '
+                '--K {config[PARAMS][EPICLOMAL][K]} '
+                '--mu_has_k {config[PARAMS][EPICLOMAL][mu_has_k]} '
+                '--config_file {config[PARAMS][EPICLOMAL][config_file]} '
+                '--methylation_file {input.meth_file} '
+                '--initial_clusters_file {input.initial_clusters_file} '
+                '--regions_file {input.regions_file} '
+                '--slsbulk_iterations {config[PARAMS][EPICLOMAL][slsbulk_iterations]} '
+                '--check_uncertainty {config[PARAMS][EPICLOMAL][check_uncertainty]} '
+                '--true_clusters_file {config[TRUE_FILE]}) '
+                '> {log}')
+        else:
+            shell('(echo "==================================="; '
+                'echo "Running EpiclomalRegion RUN {wildcards.run}"; '
+                'echo "==================================="; '
+                'epiclomal Region-GeMM '
+                '--out_dir {output} '
+                '--repeat_id {wildcards.run} '
+                '--K {config[PARAMS][EPICLOMAL][K]} '
+                '--mu_has_k {config[PARAMS][EPICLOMAL][mu_has_k]} '
+                '--config_file {config[PARAMS][EPICLOMAL][config_file]} '
+                '--methylation_file {input.meth_file} '
+                '--initial_clusters_file {input.initial_clusters_file} '
+                '--regions_file {input.regions_file} '
+                '--slsbulk_iterations {config[PARAMS][EPICLOMAL][slsbulk_iterations]} '
+                '--check_uncertainty {config[PARAMS][EPICLOMAL][check_uncertainty]}) '
+                '> {log}')
 
 rule run_eval_basic:
     input:
@@ -204,14 +306,24 @@ rule run_eval_basic:
         directory(EVAL_BASIC_DIR)
     log:
         os.path.join(config['LOG_DIR'], 'run_eval_basic.log')
-    shell:
-        'Rscript {config[SOFTWARE][eval_software]} '
-        '--output_dir {output} '
-        '--input_dir {EPI_BASIC_DIR} '
-        '--methylation_file {input.meth_file} '
-        '--regions_file {input.regions_file} '
-        '--model_name basic '
-        '> {log}'
+    run:
+        if (config['TRUE_FILE']):
+            shell('Rscript {config[SOFTWARE][eval_software]} '
+                '--output_dir {output} '
+                '--input_dir {EPI_BASIC_DIR} '
+                '--methylation_file {input.meth_file} '
+                '--regions_file {input.regions_file} '
+                '--model_name basic '
+                '--true_clusters_file {config[TRUE_FILE]} '
+                '> {log}')
+        else:
+            shell('Rscript {config[SOFTWARE][eval_software]} '
+                '--output_dir {output} '
+                '--input_dir {EPI_BASIC_DIR} '
+                '--methylation_file {input.meth_file} '
+                '--regions_file {input.regions_file} '
+                '--model_name basic '
+                '> {log}')
 
 rule run_eval_region:
     input:
@@ -222,11 +334,23 @@ rule run_eval_region:
         directory(EVAL_REGION_DIR)
     log:
         os.path.join(config['LOG_DIR'], 'run_eval_region.log')
-    shell:
-        'Rscript {config[SOFTWARE][eval_software]} '
-        '--output_dir {output} '
-        '--input_dir {EPI_REGION_DIR} '
-        '--methylation_file {input.meth_file} '
-        '--regions_file {input.regions_file} '
-        '--model_name region '
-        '> {log}'
+    run:
+        if (config['TRUE_FILE']):
+            shell('Rscript {config[SOFTWARE][eval_software]} '
+                '--output_dir {output} '
+                '--input_dir {EPI_REGION_DIR} '
+                '--methylation_file {input.meth_file} '
+                '--regions_file {input.regions_file} '
+                '--model_name region '
+                '--true_clusters_file {config[TRUE_FILE]} '
+                '> {log}')
+        else:
+            shell('Rscript {config[SOFTWARE][eval_software]} '
+                '--output_dir {output} '
+                '--input_dir {EPI_REGION_DIR} '
+                '--methylation_file {input.meth_file} '
+                '--regions_file {input.regions_file} '
+                '--model_name region '
+                '> {log}')
+
+

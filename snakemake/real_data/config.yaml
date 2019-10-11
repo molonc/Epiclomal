@@ -1,14 +1,16 @@
 OUTPUT_DIRS:
-  NPM_DIRECTORY: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/test_real_npm'
-  EPI_BASIC_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/real_epi_basic'
-  EPI_REGION_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/real_epi_region'
-  EVAL_BASIC_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/real_results_basic'
-  EVAL_REGION_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/real_results_region'
+  NPM_DIRECTORY: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/test_npm'
+  EPI_BASIC_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/test_epi_basic'
+  EPI_REGION_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/test_epi_region'
+  EVAL_BASIC_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/test_results_basic'
+  EVAL_REGION_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/test_results_region'
 
 LOG_DIR: 'log'
 
-METH_FILE: '/shahlab/mandronescu/EPI-70_Smallwood2014/OUTPUT_process_Smallwood2014/RUN/process_Smallwood2014_process_real_data/outputs/epiclomal_input/0_0.95_10000/input_Epiclomal_process_Smallwood2014.tsv.gz'
-REGION_FILE: '/shahlab/mandronescu/EPI-70_Smallwood2014/OUTPUT_process_Smallwood2014/RUN/process_Smallwood2014_process_real_data/outputs/epiclomal_input/0_0.95_10000/regionIDs_input_Epiclomal_process_Smallwood2014.tsv.gz'
+METH_FILE: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/epiclomal_input/input_Epiclomal_test_pye_1.tsv.gz'
+REGION_FILE: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/epiclomal_input/regionIDs_input_Epiclomal_test_pye_1.tsv.gz'
+TRUE_FILE: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/true_clone_membership.txt.gz'
+TRUE_PREVALENCES: ''
 
 PARAMS:
   NPM:
