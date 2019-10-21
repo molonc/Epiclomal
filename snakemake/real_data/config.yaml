@@ -10,7 +10,9 @@ LOG_DIR: 'log'
 METH_FILE: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/epiclomal_input/input_Epiclomal_test_pye_1.tsv.gz'
 REGION_FILE: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/epiclomal_input/regionIDs_input_Epiclomal_test_pye_1.tsv.gz'
 TRUE_FILE: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/true_clone_membership.txt.gz'
-TRUE_PREVALENCES: ''
+TRUE_PREVALENCES: 'None'
+
+NUM_EPI_ITERS: 1000
 
 PARAMS:
   NPM:

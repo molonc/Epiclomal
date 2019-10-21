@@ -8,6 +8,8 @@ OUTPUT_DIRS:
 
 LOG_DIR: 'log'
 
+NUM_EPI_ITERS: 300
+
 PARAMS:
   ALL:
     prevalences: '0.20_0.20_0.15_0.15_0.10'

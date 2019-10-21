@@ -390,7 +390,7 @@ euclidean.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, index_ty
 #' @param outdir file path to output directory
 #'
 #'
-#' @return Predicted clusters from Euclidean clustering algorithm
+#' @return Predicted clusters from Hamming clustering algorithm
 #'
 #' @importFrom NbClust NbClust
 #' @importFrom pheatmap pheatmap
@@ -514,7 +514,7 @@ hamming.clust <- function(input_CpG_data, Max_K, index_type="ch", impute, use_ca
 #' @param outdir file path to output directory
 #'
 #'
-#' @return Predicted clusters from Euclidean clustering algorithm
+#' @return Predicted clusters from Pearson clustering algorithm
 #'
 #' @importFrom NbClust NbClust
 #' @importFrom pheatmap pheatmap

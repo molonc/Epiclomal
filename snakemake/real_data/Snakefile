@@ -10,7 +10,7 @@ EPI_REGION_DIR = config['OUTPUT_DIRS']['EPI_REGION_DIR']
 EVAL_BASIC_DIR = config['OUTPUT_DIRS']['EVAL_BASIC_DIR']
 EVAL_REGION_DIR = config['OUTPUT_DIRS']['EVAL_REGION_DIR']
 
-run=list(range(0,1000))
+run=list(range(0,config["NUM_EPI_ITERS"]))
 
 rule all:
     input:
@@ -151,7 +151,7 @@ rule join_npm_methods:
     shell:
         'paste {input.idtempfile} {input.htempfile} {input.ptempfile} {input.peatempfile} {input.dtempfile} | gzip -c - > {output}'
 
-if (config['TRUE_FILE'] and config['TRUE_PREVALENCES']):
+if (config['TRUE_FILE']):
     rule run_euclidean_eval:
         input:
             hfile=os.path.join(NPM_DIRECTORY, 'EuclideanClust_clusters_region_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
@@ -161,6 +161,7 @@ if (config['TRUE_FILE'] and config['TRUE_PREVALENCES']):
         shell:
             'evaluate_clustering '
             '--true_clusters_file {config[TRUE_FILE]} '
+            '--true_prevalences {config[TRUE_PREVALENCES]} '
             '--predicted_clusters_file {input.hfile} '
             '--clusters_are_probabilities False '
             '--results_file {output}'
@@ -174,6 +175,7 @@ if (config['TRUE_FILE'] and config['TRUE_PREVALENCES']):
         shell:
             'evaluate_clustering '
             '--true_clusters_file {config[TRUE_FILE]} '
+            '--true_prevalences {config[TRUE_PREVALENCES]} '
             '--predicted_clusters_file {input.pfile} '
             '--clusters_are_probabilities False '
             '--results_file {output}'
@@ -187,6 +189,7 @@ if (config['TRUE_FILE'] and config['TRUE_PREVALENCES']):
         shell:
             'evaluate_clustering '
             '--true_clusters_file {config[TRUE_FILE]} '
+            '--true_prevalences {config[TRUE_PREVALENCES]} '
             '--predicted_clusters_file {input.peafile} '
             '--clusters_are_probabilities False '
             '--results_file {output}'
@@ -200,6 +203,7 @@ if (config['TRUE_FILE'] and config['TRUE_PREVALENCES']):
         shell:
             'evaluate_clustering '
             '--true_clusters_file {config[TRUE_FILE]} '
+            '--true_prevalences {config[TRUE_PREVALENCES]} '
             '--predicted_clusters_file {input.dfile} '
             '--clusters_are_probabilities False '
             '--results_file {output}'
@@ -352,5 +356,3 @@ rule run_eval_region:
                 '--regions_file {input.regions_file} '
                 '--model_name region '
                 '> {log}')
-
-

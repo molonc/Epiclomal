@@ -10,7 +10,7 @@ EPI_REGION_DIR = config['OUTPUT_DIRS']['EPI_REGION_DIR']
 EVAL_BASIC_DIR = config['OUTPUT_DIRS']['EVAL_BASIC_DIR']
 EVAL_REGION_DIR = config['OUTPUT_DIRS']['EVAL_REGION_DIR']
 
-run=list(range(0,300))
+run=list(range(0,config["NUM_EPI_ITERS"]))
 
 rule all:
     input:
