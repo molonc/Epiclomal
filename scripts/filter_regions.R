@@ -60,7 +60,7 @@ find_correlated_regions <- function(pearson_corr, coef_t) {
     return(correlated_regions)
 }
 
-find_low_v_regions <- function(data, true_clusters) {
+find_cluster_means <- function(data, true_clusters) {
     data <- t(data)
     epi_means <- NULL
     for (epi in unique(true_clusters$epigenotype_id)) {
@@ -69,9 +69,7 @@ find_low_v_regions <- function(data, true_clusters) {
     epi_means <- as.data.frame(epi_means)
     epi_means$max_diff <- apply(epi_means, 1, function(x) diff(range(x, na.rm = TRUE)))
 
-    low_variance_regions <- rownames(epi_means[epi_means$max_diff < 0.05,])
-
-    return(low_variance_regions)
+    return(epi_means)
 }
 
 main <- function(mean_meth_file, true_file, output_directory, coef_threshold) {
@@ -84,7 +82,7 @@ main <- function(mean_meth_file, true_file, output_directory, coef_threshold) {
     print("Finding and removing highly correlated regions")
     correlated_regions <- find_correlated_regions(pearson_corr, coef_t)
 
-    redundant_matrix <- mean_meth_matrix[, correlated_regions]
+    redundant_matrix <- mean_meth_matrix[, colnames(mean_meth_matrix) %in% correlated_regions]
     non_redundant_matrix <- mean_meth_matrix[, !(colnames(mean_meth_matrix) %in% correlated_regions)]
 
     print(paste("Number of highly correlated regions", dim(redundant_matrix)[2]))
@@ -96,11 +94,17 @@ main <- function(mean_meth_file, true_file, output_directory, coef_threshold) {
         index_gaps <- set_index_gaps(true_clone_membership)
 
         print("Finding and removing regions with low variance between clusters")
-        low_variance_regions <- find_low_v_regions(non_redundant_matrix, true_clone_membership)
+        cluster_means <- find_cluster_means(mean_meth_matrix, true_clone_membership)
+        low_variance_regions <- rownames(cluster_means[cluster_means$max_diff < 0.05,])
 
         print(paste("Number of low variance regions", length(low_variance_regions)))
-        redundant_matrix <- cbind(redundant_matrix, non_redundant_matrix[, low_variance_regions])
+        redundant_matrix <- cbind(redundant_matrix, non_redundant_matrix[, colnames(non_redundant_matrix) %in% low_variance_regions])
         non_redundant_matrix <- non_redundant_matrix[, !(colnames(non_redundant_matrix) %in% low_variance_regions)]
+
+        print("Plotting histogram of max difference in methylation between clusters by region")
+        png(paste0(outdir, "/mean_diff_hist.png"))
+        hist(cluster_means$max_diff, breaks = 100)
+        dev.off()
 
         redundant_matrix <- redundant_matrix[order(as.integer(true_clone_membership$epigenotype_id)),]
         non_redundant_matrix <- non_redundant_matrix[order(as.integer(true_clone_membership$epigenotype_id)),]
@@ -116,7 +120,7 @@ main <- function(mean_meth_file, true_file, output_directory, coef_threshold) {
     redundant_plot <- paste0(outdir, "/redundant_regions_plot.png")
     pheatmap(redundant_matrix, cluster_cols = FALSE, cluster_rows = FALSE,
         annotation_row = annotation_row, fontsize = 8,
-        main = paste("Mean methylation of redundant regions with threshold", coef_threshold),
+        main = "Mean methylation of redundant regions",
         gap_row = index_gaps, fontsize_row = 4, fontsize_col = 6,
         annotation_names_row = FALSE, border_color = NA, show_colnames = TRUE, labels_col = NULL,
         filename = redundant_plot)
@@ -128,7 +132,7 @@ main <- function(mean_meth_file, true_file, output_directory, coef_threshold) {
     non_redundant_plot <- paste0(outdir, "/regions_to_keep_plot.png")
     pheatmap(non_redundant_matrix, cluster_cols = FALSE, cluster_rows = FALSE,
         annotation_row = annotation_row, fontsize = 8,
-        main = paste("Mean methylation of regions to keep with threshold", coef_threshold),
+        main = "Mean methylation of regions to keep",
         gap_row = index_gaps, fontsize_row = 4, fontsize_col = 6,
         annotation_names_row = FALSE, border_color = NA, show_colnames = TRUE, labels_col = NULL,
         filename = non_redundant_plot)
