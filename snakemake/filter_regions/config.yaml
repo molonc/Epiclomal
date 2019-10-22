@@ -1,0 +1,24 @@
+samples:
+  # INHOUSE_10000:
+  #   meth_file: '/shahlab/mandronescu/EPI-112_inhouse_data/OUTPUT_process_INHOUSE/RUN/process_INHOUSE_process_real_data/outputs/final_stats/0_0.95_10000/final_mean_meth_region_process_INHOUSE.tsv'
+  #   true_file: '/shahlab/mandronescu/EPI-112_inhouse_data/data_process_INHOUSE/true_clone_membership.txt.gz'
+  Smallwood_0_1_0:
+    meth_file: '/shahlab/mandronescu/EPI-70_Smallwood2014/OUTPUT_process_Smallwood2014/RUN/process_Smallwood2014_process_real_data/outputs/final_stats/0_1_0/final_mean_meth_region_process_Smallwood2014.tsv'
+    true_file: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/true_clone_membership.txt.gz'
+  # Hou_0_1_0:
+  #   meth_file: '/shahlab/mandronescu/EPI-105_scTrio/OUTPUT_process_scTrio/RUN/process_scTrio_process_real_data/outputs/final_stats/0_1_0/final_mean_meth_region_process_scTrio.tsv'
+  #   true_file: '/shahlab/mandronescu/EPI-105_scTrio/data_process_scTrio/true_clone_membership.txt.gz'
+  # Farlik_0_1_0:
+  #   meth_file: '/shahlab/mandronescu/EPI-89_Farlik2016/OUTPUT_process_Farlik2016/RUN/process_Farlik2016_process_real_data/outputs/final_stats/0_1_0/final_mean_meth_region_process_Farlik2016.tsv'
+  #   true_file: '/shahlab/mandronescu/EPI-89_Farlik2016/data_process_Farlik2016/true_clone_membership_6clusters.txt.gz'
+  # Luo_0_1_0.1:
+  #   meth_file: '/shahlab/mandronescu/EPI-106_Luo2017/OUTPUT_process_Luo2017_genebodies_all_clean_cells/RUN/process_Luo2017_genebodies_all_clean_cells_process_real_data/outputs/final_stats/0_1_0.01/final_mean_meth_region_process_Luo2017_genebodies_all_clean_cells.tsv'
+  #   true_file: '/shahlab/mandronescu/EPI-106_Luo2017/data_process_Luo2017_genebodies_all_clean_cells/true_clone_membership_all_clean_human_cells_21clusters.txt.gz'
+  # Mulqueen_0_1_0:
+  #   meth_file: '/shahlab/mandronescu/EPI-111_Mulqueen2018/OUTPUT_process_Mulqueen2018/RUN/process_Mulqueen2018_process_real_data/outputs/final_stats/0_1_0/final_mean_meth_region_process_Mulqueen2018.tsv'
+  #   true_file: '/shahlab/mandronescu/EPI-111_Mulqueen2018/data_process_Mulqueen2018/true_clone_membership.txt.gz'
+
+output_dir: '/shahlab/pye/projects/epiclomal/examples/filter_region_again'
+
+coef_threshold: 0.95
+mean_diff_threshold: 0.05

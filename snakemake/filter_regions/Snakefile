@@ -1,0 +1,26 @@
+import os
+
+samples = config["samples"]
+
+rule all:
+    input:
+        # expand("/shahlab/pye/project/epiclomal/examples/{samples}", samples=samples)
+        expand('.{samples}', samples=samples)
+
+rule filter:
+    input:
+        meth_file=lambda wildcards: config["samples"][wildcards.samples]['meth_file'],
+        true_cluster_file=lambda wildcards: config["samples"][wildcards.samples]['true_file']
+    output:
+        dir=directory(os.path.join(config['output_dir'], "{samples}")),
+        flag=touch(temp('.{samples}'))
+    log:
+        os.path.join(config['output_dir'], "{samples}/log.txt")
+    shell:
+        'Rscript /shahlab/pye/projects/epiclomal/Epiclomal/process_real_data/filter_regions.R '
+        '--mean_methylation_file {input.meth_file} '
+        '--data_ID {wildcards.samples} '
+        '--true_file {input.true_cluster_file} '
+        '--coef_threshold {config[coef_threshold]} '
+        '--mean_diff_threshold {config[mean_diff_threshold]} '
+        '--output_directory {output.dir} > {log}'

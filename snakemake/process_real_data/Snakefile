@@ -79,7 +79,7 @@ rule stats_methylation:
         dependency1='.cell_based_stats',
         get_cpgs_in_regions = expand('.get_cpgs_in_regions_{CHR}', CHR=CHR)
     output:
-        os.path.join(config['STATS_METHYLATION']['OUTDIR'], "final_regions_" + data_ID + ".tsv")
+        os.path.join(config['STATS_METHYLATION']['OUTDIR'], "final_mean_meth_region_" + data_ID + ".tsv")
     shell:
         'Rscript {config[PROCESS_REAL_DATA_DIR]}/stats_methylation.R '
         '--output_directory {config[STATS_METHYLATION][OUTDIR]} '
@@ -94,10 +94,33 @@ rule stats_methylation:
         '--plot_heatmap_unfiltered {config[STATS_METHYLATION][PLOT_HEATMAP_UNFILTERED]} '
         '--plot_heatmap_filtered {config[STATS_METHYLATION][PLOT_HEATMAP_UNFILTERED]} '
 
+rule filter_regions:
+    input:
+        meth_file=os.path.join(config['STATS_METHYLATION']['OUTDIR'], "final_mean_meth_region_" + data_ID + ".tsv"),
+        regions_file=os.path.join(config['STATS_METHYLATION']['OUTDIR'], "final_regions_" + data_ID + ".tsv")
+    output:
+        os.path.join(config['FILTER_REGIONS']['OUTDIR'], "final_regions_" + data_ID + ".tsv")
+    log:
+        os.path.join(config['FILTER_REGIONS']['OUTDIR'], "log.txt")
+    run:
+        if (config['FILTER_REGIONS']['FILTER']) {
+            shell('Rscript {config[PROCESS_REAL_DATA_DIR]}/filter_regions.R '
+                '--output_directory {config[FILTER_REGIONS][OUTDIR]} '
+                '--data_ID {data_ID} '
+                '--mean_methylation_file {input.meth_file} '
+                '--true_file {config[TRUE_FILE]} '
+                '--coef_threshold {config[FILTER_REGIONS][COEF_THRESHOLD]} '
+                '--mean_diff_threshold {config[FILTER_REGIONS][MEAN_DIFF_THRESHOLD]} > {log}'
+            )
+        }
+        else {
+            shell('cp {input.regions_file} {output}')
+        }
+
 rule get_data_ready_Epiclomal:
     input:
         dependency1='.cell_based_stats',
-        file_final_regions=os.path.join(config['STATS_METHYLATION']['OUTDIR'], "final_regions_" + data_ID + ".tsv")
+        file_final_regions=os.path.join(config['FILTER_REGIONS']['OUTDIR'], "final_regions_" + data_ID + ".tsv")
     output:
         regions=os.path.join(config['READY_EPICLOMAL']['OUTDIR'], 'regionIDs_input_Epiclomal_' + data_ID + '.tsv.gz'),
         meth_file=os.path.join(config['READY_EPICLOMAL']['OUTDIR'], 'input_Epiclomal_' + data_ID + '.tsv.gz')

@@ -68,6 +68,7 @@ Epiclomal R package has dependency on DensityCut, which must be manually install
 A Snakemake workflow exists to generate synthetic data and run the clustering and cluster evaluation software against the generated data.
 
 This workflow follows this diagram, but with 300 iterations for run_epiclomal_basic and run_epiclomal_region
+
 ![Alt text](./snakemake/diagrams/synthetic_data.svg)
 
 To run the Snakemake workflow, first edit the config file found at Epiclomal/snakemake/synthetic_data/config.yaml with appropriate paths and parameters. Then run
@@ -85,7 +86,9 @@ To run each step of the synthetic data workflow individually, follow the steps o
 
 The real data pipeline requires two steps which are separated into two workflows.
 First, the real data must be preprocessed into a methylation and region file to be consumed by the clustering software.
+
 ![Alt text](./snakemake/diagrams/process_real_data.svg)
+
 To run the preprocessing workflow, first edit the config file found at Epiclomal/snakemake/process_real_data/config.yaml with appropriate paths and parameters. Ensure all cells to cluster are accounted for. Then run
 
 ```
@@ -94,6 +97,7 @@ snakemake -s /path/to/Epiclomal/snakemake/process_real_data/Snakefile --cluster 
 
 Then, to run the real data through the clustering software, edit the config file found at Epiclomal/snakemake/real_data/config.yaml with the paths to the newly generated methylation and region files. Include a true clusters file if available.
 The real data workflow does 1000 iterations of Epiclomal by default, to change this, edit line 13 of the Snakefile.
+
 ![Alt text](./snakemake/diagrams/real_data.svg)
 
 ```
@@ -105,6 +109,17 @@ Depending on the size of the data (number of cells and number of loci), more mem
 ### Using individual components
 ### Epiclomal R package
 In R, run `library(REpiclomal)` to use Epiclomal R Package and `?REpiclomal` in R for documentation.
+
+### Epiclomal Python package
+The Epiclomal Python package includes two scripts. One is the Epiclomal clustering algorithm and can be run using:
+```
+epiclomal {Basic-GeMM,Basic-BayesPy,Region-GeMM} --K {K} --config_file {config_file} --methylation_file {methylation_file} --copynumber_file {copynumber_file} --regions_file {regions_file} --initial_clusters_file {initial_clusters_file} --true_clusters_file {true_clusters_file} --true_prevalences {true_prevalences} --repeat_id {repeat_id} --bulk_file {bulk_file} --slsbulk_file {slsbulk_file} --slsbulk_iterations {slsbulk_iterations} --out_dir {out_dir} --mu_has_k {mu_has_k} --convergence_tolerance {convergence_tolerance} --max_num_iters {max_num_iters} --seed {seed} --labels_file {labels_file} --Bishop_model_selection {Bishop_model_selection} --check_uncertainty {check_uncertainty}
+```
+
+The other script is an clustering evaluation script that can be run using:
+```
+evaluate_clustering --true_clusters_file {true_clusters_file} --true_prevalences {true_prevalences} --predicted_clusters_file {predicted_clusters_file} --clusters_are_probabilities {clusters_are_probabilities} --results_file {results_file}
+```
 
 ## Input
 ## Output
