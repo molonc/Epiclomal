@@ -35,7 +35,7 @@ print(args)
 # auxiliary functions
 #========================
 
-extract_cov_data <- function(coverage_file,data_type,CpGs_per_region,cell_id,plot_hist,outdir){
+get_cov_data <- function(coverage_file, data_type) {
 
   cov_data <- read.table(coverage_file)
 
@@ -119,6 +119,12 @@ extract_cov_data <- function(coverage_file,data_type,CpGs_per_region,cell_id,plo
   #print(head(cov_data))
 
   cov_data$chr <- as.character(cov_data$chr)
+
+  return(cov_data)
+
+}
+
+extract_cov_data <- function(coverage_data,data_type,CpGs_per_region,cell_id,plot_hist,outdir){
 
   ### Bismark returns the coverage for both reverse and positive strands, sometimes there is coverage just for the reverse, sometimes just for the positive
   ### that's way it is important to add +1 in the end of CpG_end in our CpGs_per_region
@@ -217,6 +223,7 @@ print(cov_file)
 if (file.exists(cov_file) && !dir.exists(cov_file))
 {
   print("cov_file is a file")
+  cov_data <- get_cov_data(coverage_file=cov_file, data_type=args$data_type)
 }
 
 if (file.exists(cov_file) && dir.exists(cov_file))
@@ -228,7 +235,7 @@ if (file.exists(cov_file) && dir.exists(cov_file))
 
 for(c in 1:length(chrs)){
 
-  print(chrs[c])
+  # print(chrs[c])
 
   print(paste0("Chromosome ", chrs[c]))
 
@@ -256,7 +263,7 @@ for(c in 1:length(chrs)){
     {
       print("cov_file is a file")
 
-      CpGs_per_region_cov_data_per_sample <- extract_cov_data(coverage_file=cov_file,
+      CpGs_per_region_cov_data_per_sample <- extract_cov_data(coverage_data=cov_data,
                                                               data_type=args$data_type,CpGs_per_region=CpGs_per_region,cell_id=args$cell_ID,
                                                               plot_hist=FALSE,outdir=args$output_directory)
 
@@ -274,7 +281,9 @@ for(c in 1:length(chrs)){
 
       print(paste0(cov_file,"/",new_list[grepl(pattern=paste0("_",chrs[c],".tsv.gz"),x=new_list)]))
 
-      CpGs_per_region_cov_data_per_sample <- extract_cov_data(coverage_file=paste0(cov_file,"/",new_list[grepl(pattern=paste0("_",chrs[c],".tsv.gz"),x=new_list)]),
+      cov_data <- get_cov_data(coverage_file=paste0(cov_file,"/",new_list[grepl(pattern=paste0("_",chrs[c],".tsv.gz"),x=new_list)]), data_type=args$data_type)
+
+      CpGs_per_region_cov_data_per_sample <- extract_cov_data(coverage_data=cov_data,
                                                                   data_type=args$data_type,CpGs_per_region=CpGs_per_region,cell_id=args$cell_ID,
                                                                   plot_hist=FALSE,outdir=args$output_directory)
 

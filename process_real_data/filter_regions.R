@@ -109,10 +109,10 @@ main <- function(mean_meth_file, true_file, output_directory, coef_threshold) {
     }
 
     redundant_file <- gzfile(paste0(outdir, "/redundant_regions_meth_", data_id, ".tsv.gz"))
-    write.csv(redundant_matrix, file = redundant_file, sep = "\t", row.names = TRUE, col.names = TRUE)
+    write.csv(redundant_matrix, file = redundant_file, sep = "\t", quote=FALSE, row.names = TRUE, col.names = TRUE)
 
     non_redundant_file <- gzfile(paste0(outdir, "/to_keep_meth_", data_id, ".tsv.gz"))
-    write.csv(non_redundant_matrix, file = non_redundant_file, sep = "\t", row.names = TRUE, col.names = TRUE)
+    write.csv(non_redundant_matrix, file = non_redundant_file, sep = "\t", quote=FALSE, row.names = TRUE, col.names = TRUE)
 
     regions_file <- paste0(outdir, "/filtered_regions_", data_id, ".tsv")
     write.table(colnames(non_redundant_matrix), file = regions_file, sep = "\t", quote=FALSE, row.names = FALSE, col.names = FALSE)

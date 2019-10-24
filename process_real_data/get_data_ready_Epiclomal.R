@@ -31,7 +31,7 @@ print(args)
 
 outdir <- args$output_directory
 
-all_CpG_cell_files <- list.files(args$path_post_processed_CpG_data)
+all_CpG_cell_files <- list.files(args$path_post_processed_CpG_data, pattern = "*.tsv")
 
 #print(all_CpG_cell_files)
 
@@ -431,7 +431,7 @@ if(args$LuoDiamond == 0){
   }
 
 
-  print(CpG_data)
+  print(head(CpG_data)[,head(colnames(CpG_data))])
 
   write.table(CpG_data, file = paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t", na = "")
   system(paste0("gzip --force ", outdir,"/input_Epiclomal_",args$data_ID,".tsv"))

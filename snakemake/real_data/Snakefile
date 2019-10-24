@@ -1,7 +1,7 @@
 import os
 import re
 
-# configfile: 'config.yaml'
+configfile: 'config.yaml'
 
 LOG_DIR = config['LOG_DIR']
 NPM_DIRECTORY = config['OUTPUT_DIRS']['NPM_DIRECTORY']
@@ -156,57 +156,57 @@ if (config['TRUE_FILE']):
         input:
             hfile=os.path.join(NPM_DIRECTORY, 'EuclideanClust_clusters_region_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
         output:
-            os.path.join(NPM_DIRECTORY, "results_EuclideanClust.txt"),
-            touch(temp('.euclidean_eval'))
+            results=os.path.join(NPM_DIRECTORY, "results_EuclideanClust.txt"),
+            flag=touch(temp('.euclidean_eval'))
         shell:
             'evaluate_clustering '
             '--true_clusters_file {config[TRUE_FILE]} '
             '--true_prevalences {config[TRUE_PREVALENCES]} '
             '--predicted_clusters_file {input.hfile} '
             '--clusters_are_probabilities False '
-            '--results_file {output}'
+            '--results_file {output.results}'
 
     rule run_hamming_eval:
         input:
             pfile=os.path.join(NPM_DIRECTORY, 'HammingClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
         output:
-            os.path.join(NPM_DIRECTORY, "results_HammingClust.txt"),
-            touch(temp('.hamming_eval'))
+            results=os.path.join(NPM_DIRECTORY, "results_HammingClust.txt"),
+            flag=touch(temp('.hamming_eval'))
         shell:
             'evaluate_clustering '
             '--true_clusters_file {config[TRUE_FILE]} '
             '--true_prevalences {config[TRUE_PREVALENCES]} '
             '--predicted_clusters_file {input.pfile} '
             '--clusters_are_probabilities False '
-            '--results_file {output}'
+            '--results_file {output.results}'
 
     rule run_pearson_eval:
         input:
             peafile=os.path.join(NPM_DIRECTORY, 'PearsonClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
         output:
-            os.path.join(NPM_DIRECTORY, "results_PearsonClust.txt"),
-            touch(temp('.pearson_eval'))
+            results=os.path.join(NPM_DIRECTORY, "results_PearsonClust.txt"),
+            flag=touch(temp('.pearson_eval'))
         shell:
             'evaluate_clustering '
             '--true_clusters_file {config[TRUE_FILE]} '
             '--true_prevalences {config[TRUE_PREVALENCES]} '
             '--predicted_clusters_file {input.peafile} '
             '--clusters_are_probabilities False '
-            '--results_file {output}'
+            '--results_file {output.results}'
 
     rule run_densitycut_eval:
         input:
             dfile=os.path.join(NPM_DIRECTORY, 'DensityCut_clusters_Region_based_maxPC_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
         output:
-            os.path.join(NPM_DIRECTORY, "results_DensityCut.txt"),
-            touch(temp('.densitycut_eval'))
+            results=os.path.join(NPM_DIRECTORY, "results_DensityCut.txt"),
+            flag=touch(temp('.densitycut_eval'))
         shell:
             'evaluate_clustering '
             '--true_clusters_file {config[TRUE_FILE]} '
             '--true_prevalences {config[TRUE_PREVALENCES]} '
             '--predicted_clusters_file {input.dfile} '
             '--clusters_are_probabilities False '
-            '--results_file {output}'
+            '--results_file {output.results}'
 else:
     rule eval_no_true_clusters:
         input:

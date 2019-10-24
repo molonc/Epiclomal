@@ -151,8 +151,8 @@ region_distance_CpGs_f <- function(CpG_based_data,type){ ### CpG_based_data is t
   bigdf = as.data.frame(cbind(x1,x2))
 
   p = ggplot(bigdf,aes(x=x1,y=x2))  +
-    xlab("x1") +
-    ylab("x2")
+    xlab("Number of CpG sites in regions") +
+    ylab("Mean distance between CpGs across regions")
   p2 = p + geom_point(alpha = 0.01, colour="blue") +
     theme_bw()
 
@@ -202,13 +202,13 @@ same.meth.f <- function(x,same_cutoff){
 
 outdir <- args$output_directory
 
-all_CpG_cell_files <- list.files(args$path_post_processed_CpG_data)
+all_CpG_cell_files <- list.files(path=args$path_post_processed_CpG_data, pattern="*.tsv")
 
 number_cells <- length(all_CpG_cell_files) ## this will be used to construct a table with the info about the data set
 
 print(number_cells)
 
-all_stats_cell_files <- list.files(args$path_stats_region_data)
+all_stats_cell_files <- list.files(args$path_stats_region_data, pattern="*.tsv")
 
 
 ################################################################################################################################
@@ -277,7 +277,7 @@ if(doThis == TRUE){
     if(c == 1){
       num_loci_unfiltered <- dim(tmp)[1]
 
-      CpG_nodata <- as.vector(matrix(0,num_loci_unfiltered,1))
+      # CpG_nodata <- as.vector(matrix(0,num_loci_unfiltered,1))
 
       CpG_nodata_df <- as.data.frame(as.character(tmp$region_id))
 
@@ -299,7 +299,7 @@ if(doThis == TRUE){
 
   }
 
-  print("Number of loci with no data acrros all cells = ")
+  print("Number of loci with no data across all cells = ")
   print(sum(CpG_nodata_df$CpG_nodata == 0))
 
   ave_miss_prop <- mean(miss_prop_per_cell)
@@ -341,7 +341,7 @@ cell_ID <- NULL
 
 for(f in 1:length(all_stats_cell_files)){
 
-  print(f)
+  # print(f)
 
   cell_stats <- read.csv(paste0(args$path_stats_region_data,"/",all_stats_cell_files[f]),sep="\t",header=TRUE)
 
@@ -364,30 +364,25 @@ rownames(region_miss_prop) <- as.character(cell_stats$region_id)
 colnames(region_IQR_meth) <- cell_ID
 rownames(region_IQR_meth) <- as.character(cell_stats$region_id)
 
-doThis <- TRUE
-if(doThis == TRUE){
+no_data_function <- function(x){
+  if(sum(x == 1) == length(x)){
+    a <- TRUE
+  }else{
+    a <- FALSE}
+  return(a)}
 
-  no_data_function <- function(x){
-    if(sum(x == 1) == length(x)){
-      a <- TRUE
-    }else{
-      a <- FALSE}
-    return(a)}
+### regions with no data across all cells
+regions_no_data_index <- apply(region_miss_prop,1,no_data_function)
+print("Number of regions with no data across all cells:")
+total_regions_no_data <- sum(regions_no_data_index == TRUE)
+print(total_regions_no_data)
 
-  ### regions with no data across all cells
-  regions_no_data_index <- apply(region_miss_prop,1,no_data_function)
-  print("Number of regions with no data across all cells:")
-  print(sum(regions_no_data_index == TRUE))
+more_info_unfiltered <- as.matrix(c(total_regions_no_data))
 
-  total_regions_no_data <- sum(regions_no_data_index == TRUE)
+rownames(more_info_unfiltered) <- c("number of regions with no data")
 
-  more_info_unfiltered <- as.matrix(c(total_regions_no_data))
+write.table(more_info_unfiltered,paste0(outdir,"/unfiltered_data_info_",args$data_ID,".tsv"),sep="\t",quote=FALSE,col.names=FALSE,append=TRUE)
 
-  rownames(more_info_unfiltered) <- c("number of regions with no data")
-
-  write.table(more_info_unfiltered,paste0(outdir,"/unfiltered_data_info_",args$data_ID,".tsv"),sep="\t",quote=FALSE,col.names=FALSE,append=TRUE)
-
-}
 
 #############################################################################################
 ### Region based heatmaps for missing proportion, methylation IQR and mean methylation  #####
@@ -421,7 +416,7 @@ print("End of creating matrices")
 
 print("Finding IQR of region mean methylation across cells")
 
-if (!is.null(args$filter_regions_same_meth)){
+if (args$filter_regions_same_meth == 1){
 
   print("applying new filter") ## Applying the new filter so that regions with same methylation across all regions are eliminated
 
@@ -561,7 +556,7 @@ if (args$nloci_cutoff > 1 ){
   print(dim(regions_passed_miss_cutoff))
   print(dim(CpG_nodata_df))
 
-  if ( (!is.null(args$filter_regions_same_meth)) ) {
+  if ( (args$filter_regions_same_meth == 1) ) {
 
     print("Applying new filter")
 
@@ -873,7 +868,7 @@ if (args$nloci_cutoff <= 1 ) {
 
   print("FILTERING BY IQR")
 
-  if ( (!is.null(args$filter_regions_same_meth)) ) {
+  if ( (args$filter_regions_same_meth == 1) ) {
 
     print("Applying new filter")
 

@@ -1,6 +1,7 @@
 PROCESS_REAL_DATA_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/process_real_data'
 
 DATA_ID: 'test_pye_1'
+OUTDIR: '/shahlab/pye/projects/epiclomal/examples/test_process_real_data'
 
 cells:
   GSM1370535_2i_1: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
@@ -37,23 +38,19 @@ cells:
   GSM1370574_Ser20: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
 
 REGION_FILE: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/CGI_mm10_regions.txt'
+TRUE_FILE: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/true_clone_membership.txt.gz'
+
 CPG_COORDS:
-  OUTDIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/CpG_coordinates_in_regions'
   NAME_REGIONS: 'regions'
   GENOME_LIBRARY: 'BSgenome.Mmusculus.UCSC.mm10'
   TYPE_OF_C: 'CpG'
 
 CELL_BASED_METH:
   INCLUDE_CHRY: 1
-  OUTDIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/cell_based_CpGs'
   DATA_TYPE: 'bismark'
   GENOME: 'mouse'
 
-CELL_BASED_STAT:
-  OUTDIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/cell_based_stats'
-
 STATS_METHYLATION:
-  OUTDIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/final_stats'
   NUM_CELLS_CUTOFF: 5
   MISS_PROP_CUTOFF: 0.95
   NLOCI_CUTOFF: 0.0
@@ -62,7 +59,11 @@ STATS_METHYLATION:
   PLOT_HEATMAP_UNFILTERED: 1
   PLOT_HEATMAP_UNFILTERED: 1
 
+FILTER_REGIONS:
+  FILTER: True
+  COEF_THRESHOLD: 0.95
+  MEAN_DIFF_THRESHOLD: 0.05
+
 READY_EPICLOMAL:
-  OUTDIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/epiclomal_input'
   FILTER_CPG_NO_DATA: 0
   LUODIAMOND: 0
