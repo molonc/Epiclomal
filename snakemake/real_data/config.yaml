@@ -1,9 +1,4 @@
-OUTPUT_DIRS:
-  NPM_DIRECTORY: '/shahlab/pye/projects/epiclomal/examples/test_process_real_data/epiclomal/test_npm'
-  EPI_BASIC_DIR: '/shahlab/pye/projects/epiclomal/examples/test_process_real_data/epiclomal/test_epi_basic'
-  EPI_REGION_DIR: '/shahlab/pye/projects/epiclomal/examples/test_process_real_data/epiclomal/test_epi_region'
-  EVAL_BASIC_DIR: '/shahlab/pye/projects/epiclomal/examples/test_process_real_data/epiclomal/test_results_basic'
-  EVAL_REGION_DIR: '/shahlab/pye/projects/epiclomal/examples/test_process_real_data/epiclomal/test_results_region'
+OUTPUT_DIR: '/shahlab/pye/projects/epiclomal/examples/test_process_real_data/epiclomal'
 
 LOG_DIR: 'log'
 

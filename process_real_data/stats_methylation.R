@@ -57,7 +57,7 @@ if (!is.null(args$all_cutoffs)) {
 }
 
 if (!is.null(args$output_directory)) {
-  dir.create(args$output_directory)
+  dir.create(args$output_directory, showWarnings = FALSE, recursive=TRUE)
 }
 
 

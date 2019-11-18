@@ -1,11 +1,11 @@
 import os
 
-configfile: 'config.yaml'
-
 samples = config["samples"]
 
 FILTER_REGIONS_OUTDIR = os.path.join(config['output_dir'], 'filter_regions')
 READY_EPICLOMAL_OUTDIR = os.path.join(config['output_dir'], 'epiclomal_input')
+
+default_mem=240
 
 rule all:
     input:
@@ -14,11 +14,15 @@ rule all:
         meth_file=expand(os.path.join(READY_EPICLOMAL_OUTDIR, '{samples}/input_Epiclomal_{samples}.tsv.gz'), samples = samples)
 
 rule filter:
+    params:
+        n_to_keep=lambda wildcards: config["samples"][wildcards.samples]['N_to_keep']
     input:
         meth_file=lambda wildcards: config["samples"][wildcards.samples]['meth_file'],
-        true_cluster_file=lambda wildcards: config["samples"][wildcards.samples]['true_file']
+        true_cluster_file=lambda wildcards: config["samples"][wildcards.samples]['true_file'],
     output:
         os.path.join(FILTER_REGIONS_OUTDIR, "{samples}/filtered_regions_{samples}.tsv")
+    resources:
+        h_vmem=default_mem
     log:
         os.path.join(FILTER_REGIONS_OUTDIR, "{samples}/filter_regions_log.txt")
     shell:
@@ -28,6 +32,7 @@ rule filter:
         '--true_file {input.true_cluster_file} '
         '--coef_threshold {config[coef_threshold]} '
         '--mean_diff_threshold {config[mean_diff_threshold]} '
+        '--n_to_keep {params.n_to_keep} '
         '--output_directory {FILTER_REGIONS_OUTDIR}/{wildcards.samples} > {log}'
 
 rule prepare_epiclomal:
@@ -37,6 +42,8 @@ rule prepare_epiclomal:
     output:
         regions=os.path.join(READY_EPICLOMAL_OUTDIR, '{samples}/regionIDs_input_Epiclomal_{samples}.tsv.gz'),
         meth_file=os.path.join(READY_EPICLOMAL_OUTDIR, '{samples}/input_Epiclomal_{samples}.tsv.gz')
+    resources:
+        h_vmem=default_mem
     log:
         os.path.join(READY_EPICLOMAL_OUTDIR, "{samples}/prepare_epiclomal_log.txt")
     shell:

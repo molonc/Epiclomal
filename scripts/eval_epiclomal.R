@@ -33,6 +33,7 @@ true_epigenotypes_file <- args$true_epigenotypes_file  # NULL if it is not known
 ######################################
 
 run_eval <- function (input, flag, criterion, GAIN_THRESHOLD) {
+  print(paste("criterion:", criterion, "GAIN_THRESHOLD:", GAIN_THRESHOLD))
   evaluation <- evaluate.epiclomal (input, output, model, flag, criterion, GAIN_THRESHOLD)  # essentially means the elbow curve can go all the way to the end
   best_row <- evaluation$best_row
   table_best <- evaluation$table_best

@@ -1,10 +1,5 @@
-OUTPUT_DIRS:
-  DATA_DIRECTORY: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/synthetic'
-  NPM_DIRECTORY: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/simple_hclust'
-  EPI_BASIC_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/epiclomal_basic'
-  EPI_REGION_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/epiclomal_region'
-  EVAL_BASIC_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/results_basic'
-  EVAL_REGION_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/results_region'
+OUTPUT_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/synthetic_data_epiclomal'
+DATA_DIRECTORY: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/synthetic'
 
 LOG_DIR: 'log'
 

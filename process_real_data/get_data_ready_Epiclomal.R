@@ -5,6 +5,8 @@
 
 suppressMessages(library(argparse))
 suppressMessages(library(pheatmap))
+suppressMessages(library(doParallel))
+suppressMessages(library(bigstatsr))
 
 #======================
 # arguments
@@ -24,7 +26,7 @@ parser$add_argument("--LuoDiamond", type="double",default="0",help="0 = usual st
 args <- parser$parse_args()
 
 if (!is.null(args$output_directory)) {
-  dir.create(args$output_directory)
+  dir.create(args$output_directory, showWarnings = FALSE, recursive=TRUE)
 }
 
 print(args)
@@ -228,19 +230,57 @@ if(args$LuoDiamond == 0){
 
   #print(str(final_regions))
 
+  # some setup with first cell
+
+  tmp <- read.csv(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[1]),sep="\t",header=TRUE)
+  sub_tmp <- tmp[tmp$region_id %in% final_regions$region_id,]
+
+  ### saving a file with regions for Epiclomal
+  col_num_id <- 1:dim(sub_tmp)[1]
+  num_regions <- sum(!duplicated(sub_tmp$region_id))
+
+  region_sizes <- diff(col_num_id[!duplicated(sub_tmp$region_id)]) ### does not include the size of last region
+
+  region_sizes <- c(region_sizes, (dim(sub_tmp)[1] - sum(region_sizes)))
+
+  reg_coord <- NULL
+  for(r in 1:sum(!duplicated(sub_tmp$region_id))){
+    if(r==1){
+      reg_coord <- rbind(reg_coord,c(1, region_sizes[r]))
+    } else {
+      reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) )
+    }
+  }
+
+  reg_coord <- cbind((1:num_regions),reg_coord)
+  colnames(reg_coord) <- c("region_id","start","end")
+
+  if(args$filter_CpG_no_data == 1){
+
+    write.table(as.matrix(reg_coord-1 ), file = paste0(outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t")
+    system(paste0("gzip --force ", outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"))
+
+  }
+
+  id <- with(sub_tmp, paste0(chr, ":", CpG_start))
+
+  num_loci_filtered <- dim(sub_tmp)[1]
+  number_cells <- length(all_CpG_cell_files)
+  total_number_regions_filtered <- num_regions
+  number_regions_single_CpG <- sum(region_sizes == 1)
+
   cell_id <- NULL
 
-  CpG_data <- NULL
+  CpG_data <- FBM(length(id), length(all_CpG_cell_files), init = NA, type='integer')
 
-  mono_meth_prop <- NULL
+  mono_meth_prop <- FBM(1, length(all_CpG_cell_files))
 
-  for (c in 1:length(all_CpG_cell_files)){
+  numCores <- ceiling(detectCores()/5)
+  print(paste("number of cores available", numCores))
+  cl <- makeCluster(numCores)
+  registerDoParallel(cl)
 
-    print(c)
-
-    ##if(c==3) break
-
-    ### saving a file with regions for Epiclomal
+  cell_id <- foreach (c = 1:length(all_CpG_cell_files), .combine=c) %dopar% {
 
     tmp <- read.csv(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[c]),sep="\t",header=TRUE)
 
@@ -248,58 +288,25 @@ if(args$LuoDiamond == 0){
 
     #print(unique(sub_tmp$region_id) == final_regions$region_id) ### it is working!
 
-    if (c==1){
-
-      col_num_id <- 1:dim(sub_tmp)[1]
-      num_regions <- sum(!duplicated(sub_tmp$region_id))
-
-      region_sizes <- diff(col_num_id[!duplicated(sub_tmp$region_id)]) ### does not include the size of last region
-
-      region_sizes <- c(region_sizes, (dim(sub_tmp)[1] - sum(region_sizes)))
-
-      reg_coord <- NULL
-      for(r in 1:sum(!duplicated(sub_tmp$region_id))){
-        if(r==1){
-          reg_coord <- rbind(reg_coord,c(1, region_sizes[r]))
-        } else {
-          reg_coord <- rbind(reg_coord,c(sum(region_sizes[1:(r-1)]) + 1 , sum(region_sizes[1:r]) ) )
-        }
-      }
-
-      reg_coord <- cbind((1:num_regions),reg_coord)
-      colnames(reg_coord) <- c("region_id","start","end")
-
-      if(args$filter_CpG_no_data == 1){
-
-        write.table(as.matrix(reg_coord-1 ), file = paste0(outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t")
-        system(paste0("gzip --force ", outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"))
-
-      }
-
-      id <- with(sub_tmp, paste0(chr, ":", CpG_start))
-
-      num_loci_filtered <- dim(sub_tmp)[1]
-      number_cells <- length(all_CpG_cell_files)
-      total_number_regions_filtered <- num_regions
-      number_regions_single_CpG <- sum(region_sizes == 1)
-
-    }
-
-    cell_id <- c(cell_id,as.character(sub_tmp$cell_id[1]))
+    print(as.character(sub_tmp$cell_id[1]))
 
     mono_meth <- sum( (sub_tmp$meth_frac[!is.na(sub_tmp$meth_frac)] != 0) & (sub_tmp$meth_frac[!is.na(sub_tmp$meth_frac)] != 1) )
 
-    mono_meth_prop <- c(mono_meth_prop,mono_meth/length(sub_tmp$meth_frac[!is.na(sub_tmp$meth_frac)]))
+    mono_meth_prop[1,c] <- mono_meth/length(sub_tmp$meth_frac[!is.na(sub_tmp$meth_frac)])
 
-    CpG_data <- cbind(CpG_data,binary_function(x=as.matrix((sub_tmp$meth_frac))))
+    CpG_data[,c] <- binary_function(x=as.matrix((sub_tmp$meth_frac)))
 
+    as.character(sub_tmp$cell_id[1])
   }
+  stopCluster(cl)
 
-  CpG_data <- t(CpG_data)
+  mono_meth_prop <- mono_meth_prop[1,]
+
+  CpG_data <- t(as.matrix(CpG_data[]))
+  print(dim(CpG_data))
+  print(length(id))
 
   colnames(CpG_data) <- id
-
-  print(dim(CpG_data))
 
   miss_prop_per_cell <- apply(CpG_data,1,function(x){sum(is.na(x))})/(dim(CpG_data)[2])
   ave_miss_prop <- mean(miss_prop_per_cell)

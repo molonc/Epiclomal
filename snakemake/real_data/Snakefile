@@ -1,16 +1,17 @@
 import os
 import re
 
-configfile: 'config.yaml'
-
 LOG_DIR = config['LOG_DIR']
-NPM_DIRECTORY = config['OUTPUT_DIRS']['NPM_DIRECTORY']
-EPI_BASIC_DIR = config['OUTPUT_DIRS']['EPI_BASIC_DIR']
-EPI_REGION_DIR = config['OUTPUT_DIRS']['EPI_REGION_DIR']
-EVAL_BASIC_DIR = config['OUTPUT_DIRS']['EVAL_BASIC_DIR']
-EVAL_REGION_DIR = config['OUTPUT_DIRS']['EVAL_REGION_DIR']
+OUTDIR = config['OUTPUT_DIR']
+NPM_DIRECTORY = os.path.join(OUTDIR, 'simple_hclust')
+EPI_BASIC_DIR = os.path.join(OUTDIR, 'epi_basic')
+EPI_REGION_DIR = os.path.join(OUTDIR, 'epi_region')
+EVAL_BASIC_DIR = os.path.join(OUTDIR, 'result_basic')
+EVAL_REGION_DIR = os.path.join(OUTDIR, 'result_region')
 
 run=list(range(0,config["NUM_EPI_ITERS"]))
+
+default_mem=12
 
 rule all:
     input:
@@ -27,6 +28,8 @@ rule run_preprocess:
         regions_file=config['REGION_FILE']
     output:
         os.path.join(NPM_DIRECTORY, re.sub('.tsv.gz', '.RDa.gz', os.path.basename(config['METH_FILE'])))
+    resources:
+        h_vmem=default_mem
     shell:
         'Rscript {config[SOFTWARE][hclust_software]} '
         '--method None '
@@ -41,7 +44,9 @@ rule run_euclidean_clust:
         regions_file=config['REGION_FILE'],
         cache_data=os.path.join(NPM_DIRECTORY, re.sub('.tsv.gz', '.RDa.gz', os.path.basename(config['METH_FILE'])))
     output:
-        os.path.join(NPM_DIRECTORY, 'EuclideanClust_clusters_region_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k'])),
+        os.path.join(NPM_DIRECTORY, 'EuclideanClust_clusters_region_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
+    resources:
+        h_vmem=default_mem
     log:
         os.path.join(LOG_DIR, 'run_euclidean_clust.log')
     shell:
@@ -62,7 +67,9 @@ rule run_hamming_clust:
         regions_file=config['REGION_FILE'],
         cache_data=os.path.join(NPM_DIRECTORY, re.sub('.tsv.gz', '.RDa.gz', os.path.basename(config['METH_FILE'])))
     output:
-        os.path.join(NPM_DIRECTORY, 'HammingClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k'])),
+        os.path.join(NPM_DIRECTORY, 'HammingClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
+    resources:
+        h_vmem=default_mem
     log:
         os.path.join(LOG_DIR, 'run_hamming_clust.log')
     shell:
@@ -83,7 +90,9 @@ rule run_pearson_clust:
         regions_file=config['REGION_FILE'],
         cache_data=os.path.join(NPM_DIRECTORY, re.sub('.tsv.gz', '.RDa.gz', os.path.basename(config['METH_FILE'])))
     output:
-        os.path.join(NPM_DIRECTORY, 'PearsonClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k'])),
+        os.path.join(NPM_DIRECTORY, 'PearsonClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
+    resources:
+        h_vmem=default_mem
     log:
         os.path.join(LOG_DIR, 'run_pearson_clust.log')
     shell:
@@ -105,6 +114,8 @@ rule run_density_cut:
         cache_data=os.path.join(NPM_DIRECTORY, re.sub('.tsv.gz', '.RDa.gz', os.path.basename(config['METH_FILE'])))
     output:
         os.path.join(NPM_DIRECTORY, 'DensityCut_clusters_Region_based_maxPC_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
+    resources:
+        h_vmem=default_mem
     log:
         os.path.join(LOG_DIR, 'run_density_cut.log')
     shell:
@@ -129,7 +140,9 @@ rule process_npm_methods:
         ptempfile=temp('ptempfile'),
         peatempfile=temp('peatempfile'),
         dtempfile=temp('dtempfile'),
-        idtempfile=temp('idtempfile'),
+        idtempfile=temp('idtempfile')
+    resources:
+        h_vmem=default_mem
     params:
         k_1=config['PARAMS']['NPM']['max_k']+1
     shell:
@@ -148,6 +161,8 @@ rule join_npm_methods:
         idtempfile='idtempfile'
     output:
         os.path.join(NPM_DIRECTORY, 'initial_inputs.tsv.gz')
+    resources:
+        h_vmem=default_mem
     shell:
         'paste {input.idtempfile} {input.htempfile} {input.ptempfile} {input.peatempfile} {input.dtempfile} | gzip -c - > {output}'
 
@@ -158,6 +173,8 @@ if (config['TRUE_FILE']):
         output:
             results=os.path.join(NPM_DIRECTORY, "results_EuclideanClust.txt"),
             flag=touch(temp('.euclidean_eval'))
+        resources:
+            h_vmem=default_mem
         shell:
             'evaluate_clustering '
             '--true_clusters_file {config[TRUE_FILE]} '
@@ -172,6 +189,8 @@ if (config['TRUE_FILE']):
         output:
             results=os.path.join(NPM_DIRECTORY, "results_HammingClust.txt"),
             flag=touch(temp('.hamming_eval'))
+        resources:
+            h_vmem=default_mem
         shell:
             'evaluate_clustering '
             '--true_clusters_file {config[TRUE_FILE]} '
@@ -186,6 +205,8 @@ if (config['TRUE_FILE']):
         output:
             results=os.path.join(NPM_DIRECTORY, "results_PearsonClust.txt"),
             flag=touch(temp('.pearson_eval'))
+        resources:
+            h_vmem=default_mem
         shell:
             'evaluate_clustering '
             '--true_clusters_file {config[TRUE_FILE]} '
@@ -200,6 +221,8 @@ if (config['TRUE_FILE']):
         output:
             results=os.path.join(NPM_DIRECTORY, "results_DensityCut.txt"),
             flag=touch(temp('.densitycut_eval'))
+        resources:
+            h_vmem=default_mem
         shell:
             'evaluate_clustering '
             '--true_clusters_file {config[TRUE_FILE]} '
@@ -219,6 +242,8 @@ else:
             touch(temp('.hamming_eval')),
             touch(temp('.pearson_eval')),
             touch(temp('.densitycut_eval'))
+        resources:
+            h_vmem=default_mem
 
 rule run_epiclomal_basic:
     input:
@@ -226,8 +251,8 @@ rule run_epiclomal_basic:
         initial_clusters_file=os.path.join(NPM_DIRECTORY, 'initial_inputs.tsv.gz')
     output:
         directory(os.path.join(EPI_BASIC_DIR, '{run}'))
-    log:
-        os.path.join(config['LOG_DIR'], 'run_epiclomal_basic_{run}.log')
+    resources:
+        h_vmem=500
     run:
         if (config['TRUE_FILE']):
             shell( '(echo "==================================="; '
@@ -241,8 +266,7 @@ rule run_epiclomal_basic:
                 '--config_file {config[PARAMS][EPICLOMAL][config_file]} '
                 '--methylation_file {input.meth_file} '
                 '--initial_clusters_file {input.initial_clusters_file} '
-                '--true_clusters_file {config[TRUE_FILE]}) '
-                '> {log}')
+                '--true_clusters_file {config[TRUE_FILE]})')
         else:
             shell('(echo "==================================="; '
                 'echo "Running EpiclomalBasic RUN {wildcards.run}"; '
@@ -254,8 +278,7 @@ rule run_epiclomal_basic:
                 '--mu_has_k {config[PARAMS][EPICLOMAL][mu_has_k]} '
                 '--config_file {config[PARAMS][EPICLOMAL][config_file]} '
                 '--methylation_file {input.meth_file} '
-                '--initial_clusters_file {input.initial_clusters_file}) '
-                '> {log}')
+                '--initial_clusters_file {input.initial_clusters_file})')
 
 rule run_epiclomal_region:
     input:
@@ -264,8 +287,8 @@ rule run_epiclomal_region:
         regions_file=config['REGION_FILE'],
     output:
         directory(os.path.join(EPI_REGION_DIR, '{run}'))
-    log:
-        os.path.join(config['LOG_DIR'], 'run_epiclomal_region_{run}.log')
+    resources:
+        h_vmem=500
     run:
         if (config['TRUE_FILE']):
             shell('(echo "==================================="; '
@@ -282,8 +305,7 @@ rule run_epiclomal_region:
                 '--regions_file {input.regions_file} '
                 '--slsbulk_iterations {config[PARAMS][EPICLOMAL][slsbulk_iterations]} '
                 '--check_uncertainty {config[PARAMS][EPICLOMAL][check_uncertainty]} '
-                '--true_clusters_file {config[TRUE_FILE]}) '
-                '> {log}')
+                '--true_clusters_file {config[TRUE_FILE]})')
         else:
             shell('(echo "==================================="; '
                 'echo "Running EpiclomalRegion RUN {wildcards.run}"; '
@@ -298,8 +320,7 @@ rule run_epiclomal_region:
                 '--initial_clusters_file {input.initial_clusters_file} '
                 '--regions_file {input.regions_file} '
                 '--slsbulk_iterations {config[PARAMS][EPICLOMAL][slsbulk_iterations]} '
-                '--check_uncertainty {config[PARAMS][EPICLOMAL][check_uncertainty]}) '
-                '> {log}')
+                '--check_uncertainty {config[PARAMS][EPICLOMAL][check_uncertainty]})')
 
 rule run_eval_basic:
     input:
@@ -308,6 +329,8 @@ rule run_eval_basic:
         dependency=expand(os.path.join(EPI_BASIC_DIR, '{run}'), run=run)
     output:
         directory(EVAL_BASIC_DIR)
+    resources:
+        h_vmem=default_mem
     log:
         os.path.join(config['LOG_DIR'], 'run_eval_basic.log')
     run:
@@ -336,6 +359,8 @@ rule run_eval_region:
         dependency=expand(os.path.join(EPI_REGION_DIR, '{run}'), run=run)
     output:
         directory(EVAL_REGION_DIR)
+    resources:
+        h_vmem=default_mem
     log:
         os.path.join(config['LOG_DIR'], 'run_eval_region.log')
     run:

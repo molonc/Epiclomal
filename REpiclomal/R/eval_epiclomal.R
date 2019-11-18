@@ -70,8 +70,10 @@ evaluate.epiclomal <- function (input, output, model, flag, criterion, GAIN_THRE
   # input can actually be a list of directories. Then look through all of them and compute the measure
   directories <- Sys.glob(input)
   files <- unlist(lapply(directories, function(x) return(list.files(x, recursive=TRUE, pattern="params.yaml", full.names=TRUE))))
+  print(paste("number of files:", length(files)))
   run <- unlist(lapply(directories, function(x) return(list.files(x, recursive=TRUE, pattern="cluster_posteriors.tsv.gz", full.names=TRUE))))
   lines <- lapply(files, yaml.load_file)
+  print(paste("length of lines:", length(lines)))
 
   converged <- as.integer(as.logical(sapply(lines, '[[', "converged")))
   if (criterion == "DIC_measure" || criterion == "DIC_LINE_ELBOW") {
