@@ -202,7 +202,7 @@ same.meth.f <- function(x,same_cutoff){
 
 outdir <- args$output_directory
 
-all_CpG_cell_files <- list.files(path=args$path_post_processed_CpG_data, pattern="*.tsv")
+all_CpG_cell_files <- list.files(path=args$path_post_processed_CpG_data, pattern="*.tsv.gz")
 
 number_cells <- length(all_CpG_cell_files) ## this will be used to construct a table with the info about the data set
 

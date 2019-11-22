@@ -25,6 +25,7 @@ dir.create(file.path(outdir), showWarnings = FALSE, recursive=TRUE)
 
 coef_t <- args$coef_threshold
 N <- args$n_to_keep
+mean_diff_threshold <- args$mean_diff_threshold
 
 load_mean_meth <- function(filename) {
     mean_meth_matrix <- read.csv(filename, sep = "\t", header = TRUE)
@@ -49,32 +50,31 @@ set_index_gaps <- function(data) {
 }
 
 find_correlated_regions <- function(mean_meth_matrix, coef_t) {
-    correlated_regions <- NULL
-    region_weights <- data.frame(row.names=colnames(mean_meth_matrix))
+    regions_to_remove <- NULL
+    region_weights <- data.frame(region=colnames(mean_meth_matrix))
     region_weights$weight <- 1
     for (r1 in 1:(ncol(mean_meth_matrix) - 1)) {
         # print(r1)
-        if (colnames(mean_meth_matrix)[r1] %in% correlated_regions) {
-            # print("r1 already in correlated_regions")
+        if (colnames(mean_meth_matrix)[r1] %in% regions_to_remove) {
+            # print("r1 already in regions_to_remove")
             next
         }
-        r1_correlated_regions <- NULL
         for (r2 in (r1+1):ncol(mean_meth_matrix)) {
             # print(r2)
-            if (colnames(mean_meth_matrix)[r2] %in% correlated_regions) {
-                # print(paste(r2, "already in correlated_regions"))
+            if (colnames(mean_meth_matrix)[r2] %in% regions_to_remove) {
+                # print(paste(r2, "already in regions_to_remove"))
                 next
             } else {
 
                 pearson_corr <- cor(mean_meth_matrix[,r1], mean_meth_matrix[,r2], method = "pearson", use = "na.or.complete")
 
                 if (!is.na(pearson_corr) && ((pearson_corr > coef_t) || (pearson_corr < (-1 * coef_t)))) {
-                    #keep the region with fewer NAs
-                    if (sum(is.na(mean_meth_matrix[r2])) > sum(is.na(mean_meth_matrix[r1]))) {
-                        correlated_regions <- append(correlated_regions, colnames(mean_meth_matrix)[r2])
+                    #remove region with greater NAs
+                    if (sum(is.na(mean_meth_matrix[r2])) >= sum(is.na(mean_meth_matrix[r1]))) {
+                        regions_to_remove <- append(regions_to_remove, colnames(mean_meth_matrix)[r2])
                         region_weights[r1, 'weight'] <- region_weights[r1, 'weight'] + region_weights[r2, 'weight']
                     } else {
-                        correlated_regions <- append(correlated_regions, colnames(mean_meth_matrix)[r1])
+                        regions_to_remove <- append(regions_to_remove, colnames(mean_meth_matrix)[r1])
                         region_weights[r2, 'weight'] <- region_weights[r1, 'weight'] + region_weights[r2, 'weight']
                         break
                     }
@@ -82,15 +82,13 @@ find_correlated_regions <- function(mean_meth_matrix, coef_t) {
             }
         }
     }
-    region_weights <- region_weights[!(rownames(region_weights) %in% correlated_regions),,drop=FALSE]
-    region_weight_file <- gzfile(paste0(outdir, "/non_redundant_region_weights_", data_id, ".tsv.gz"))
-    write.csv(region_weights, file = region_weight_file, sep = "\t", quote=FALSE, row.names = TRUE, col.names = TRUE)
-    return(correlated_regions)
+    return(list("regions_to_remove" = regions_to_remove, "region_weights" = region_weights))
 }
 
 find_most_variant_regions <- function(data, N) {
     data <- data[, order(-apply(data, 2, var, na.rm=TRUE))]
-    return(data[,1:N])
+    data <- data[,1:N]
+    return(data[, mixedsort(colnames(data))])
 }
 
 find_cluster_means <- function(data, true_clusters) {
@@ -106,7 +104,7 @@ find_cluster_means <- function(data, true_clusters) {
     return(epi_means)
 }
 
-main <- function(mean_meth_file, true_file, output_directory, coef_threshold) {
+main <- function(mean_meth_file, true_file, output_directory, coef_t, mean_diff_threshold) {
     mean_meth_matrix <- load_mean_meth(mean_meth_file)
     print(paste("Number of cells", dim(mean_meth_matrix)[1]))
     print(paste("Number of regions", dim(mean_meth_matrix)[2]))
@@ -114,8 +112,11 @@ main <- function(mean_meth_file, true_file, output_directory, coef_threshold) {
     print("Finding and removing highly correlated regions")
     correlated_regions <- find_correlated_regions(mean_meth_matrix, coef_t)
 
-    redundant_matrix <- mean_meth_matrix[, colnames(mean_meth_matrix) %in% correlated_regions]
-    non_redundant_matrix <- mean_meth_matrix[, !(colnames(mean_meth_matrix) %in% correlated_regions)]
+    regions_to_remove <- correlated_regions$regions_to_remove
+    region_weights <- correlated_regions$region_weights
+
+    redundant_matrix <- mean_meth_matrix[, colnames(mean_meth_matrix) %in% regions_to_remove]
+    non_redundant_matrix <- mean_meth_matrix[, !(colnames(mean_meth_matrix) %in% regions_to_remove)]
 
     print(paste("Number of highly correlated regions", dim(redundant_matrix)[2]))
     print(paste("Number of non-redundant regions", dim(non_redundant_matrix)[2]))
@@ -123,13 +124,18 @@ main <- function(mean_meth_file, true_file, output_directory, coef_threshold) {
     if (N < dim(non_redundant_matrix)[2]) {
         print(paste("Finding top", N, "most variant regions"))
         non_redundant_matrix <- find_most_variant_regions(non_redundant_matrix, N)
-        non_redundant_matrix <- non_redundant_matrix[, mixedsort(colnames(non_redundant_matrix))]
         } else {
             print("N is greater than number of non-redundant regions, keep all")
         }
 
+    region_weights <- region_weights[(rownames(region_weights) %in% colnames(non_redundant_matrix)),,drop=FALSE]
+    region_weight_file <- gzfile(paste0(outdir, "/non_redundant_region_weights_", data_id, ".tsv.gz"))
+    write.csv(region_weights, file = region_weight_file, sep = "\t", quote=FALSE, row.names = TRUE, col.names = TRUE)
+    close(region_weight_file)
+
     if (!is.null(true_file)) {
         true_clone_membership <- read.csv(true_file, sep = "\t", header = TRUE)
+        true_clone_membership <- true_clone_membership[order(as.character(true_clone_membership$cell_id)),]
         annotation_row <- set_annotation_row(true_clone_membership)
         index_gaps <- set_index_gaps(true_clone_membership)
 
@@ -142,12 +148,15 @@ main <- function(mean_meth_file, true_file, output_directory, coef_threshold) {
 
     redundant_file <- gzfile(paste0(outdir, "/redundant_regions_meth_", data_id, ".tsv.gz"))
     write.csv(redundant_matrix, file = redundant_file, sep = "\t", quote=FALSE, row.names = TRUE, col.names = TRUE)
+    close(redundant_file)
 
     non_redundant_file <- gzfile(paste0(outdir, "/to_keep_meth_", data_id, ".tsv.gz"))
     write.csv(non_redundant_matrix, file = non_redundant_file, sep = "\t", quote=FALSE, row.names = TRUE, col.names = TRUE)
+    close(non_redundant_file)
 
     regions_file <- paste0(outdir, "/filtered_regions_", data_id, ".tsv")
     write.table(colnames(non_redundant_matrix), file = regions_file, sep = "\t", quote=FALSE, row.names = FALSE, col.names = FALSE)
+    close(regions_file)
 
     print("Plotting methylation of redundant regions")
     redundant_plot <- paste0(outdir, "/redundant_regions_plot_", data_id, ".png")
@@ -171,7 +180,7 @@ main <- function(mean_meth_file, true_file, output_directory, coef_threshold) {
 
         print("Finding and removing regions with low variance between clusters")
         cluster_means <- find_cluster_means(mean_meth_matrix, true_clone_membership)
-        low_variance_regions <- rownames(cluster_means[cluster_means$max_diff < 0.05,])
+        low_variance_regions <- rownames(cluster_means[cluster_means$max_diff < mean_diff_threshold,])
 
         print(paste("Number of low variance regions", length(low_variance_regions)))
         redundant_matrix <- mean_meth_matrix[, colnames(mean_meth_matrix) %in% low_variance_regions]
@@ -213,5 +222,5 @@ main <- function(mean_meth_file, true_file, output_directory, coef_threshold) {
     # dev.off()
 }
 
-main(mean_meth_file, true_file, output_directory, coef_t)
+main(mean_meth_file, true_file, output_directory, coef_t, mean_diff_threshold)
 

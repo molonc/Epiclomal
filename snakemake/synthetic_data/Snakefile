@@ -258,6 +258,9 @@ rule run_epiclomal_basic:
         directory(os.path.join(EPI_BASIC_DIR, '{run}'))
     resources:
         h_vmem=512
+    params:
+        qsub_out=os.path.join(EPI_BASIC_DIR, 'qsub_out'),
+        qsub_err=os.path.join(EPI_BASIC_DIR, 'qsub_err')
     shell:
         '(echo "==================================="; '
         'echo "Running EpiclomalBasic RUN {wildcards.run}"; '
@@ -284,6 +287,9 @@ rule run_epiclomal_region:
         directory(os.path.join(EPI_REGION_DIR, '{run}'))
     resources:
         h_vmem=512
+    params:
+        qsub_out=os.path.join(EPI_REGION_DIR, 'qsub_out'),
+        qsub_err=os.path.join(EPI_REGION_DIR, 'qsub_err')
     shell:
         '(echo "==================================="; '
         'echo "Running EpiclomalRegion RUN {wildcards.run}"; '

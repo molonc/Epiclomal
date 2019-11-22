@@ -5,7 +5,7 @@ samples = config["samples"]
 FILTER_REGIONS_OUTDIR = os.path.join(config['output_dir'], 'filter_regions')
 READY_EPICLOMAL_OUTDIR = os.path.join(config['output_dir'], 'epiclomal_input')
 
-default_mem=240
+default_mem=480
 
 rule all:
     input:

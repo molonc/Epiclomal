@@ -12,7 +12,7 @@ STATS_METHYLATION_OUTDIR = os.path.join(config['OUTDIR'], 'final_stats')
 FILTER_REGIONS_OUTDIR = os.path.join(config['OUTDIR'], 'filter_regions')
 READY_EPICLOMAL_OUTDIR = os.path.join(config['OUTDIR'], 'epiclomal_input')
 
-default_mem=12
+default_mem=50
 
 if (config['STATS_METHYLATION']['ALL_CUTOFFS']) :
     cutoffs = config['STATS_METHYLATION']['ALL_CUTOFFS']
@@ -37,6 +37,9 @@ rule get_cpgs_in_regions:
         touch(temp('.get_cpgs_in_regions_{CHR}'))
     resources:
         h_vmem=default_mem
+    params:
+        qsub_out=os.path.join(CPG_COORDS_OUTDIR, '{CHR}_qsub_out'),
+        qsub_err=os.path.join(CPG_COORDS_OUTDIR, '{CHR}_qsub_err')
     shell:
         'mkdir -p {CPG_COORDS_OUTDIR}; '
         'Rscript {config[PROCESS_REAL_DATA_DIR]}/CpG_coordinates_across_regions.R '
@@ -52,9 +55,12 @@ rule cell_based_methylation_extraction:
         path_cell_data=config['DATA_DIR'],
         get_cpgs_in_regions=expand('.get_cpgs_in_regions_{CHR}', CHR=CHR)
     output:
-        os.path.join(CELL_BASED_METH_OUTDIR, "CpG_meth_data_long_" + data_ID + "_{cells}.tsv")
+        os.path.join(CELL_BASED_METH_OUTDIR, "CpG_meth_data_long_" + data_ID + "_{cells}.tsv.gz")
     resources:
-        h_vmem=default_mem
+        h_vmem=120
+    params:
+        qsub_out=os.path.join(CELL_BASED_METH_OUTDIR, 'qsub_out'),
+        qsub_err=os.path.join(CELL_BASED_METH_OUTDIR, 'qsub_err')
     shell:
         'mkdir -p {CELL_BASED_METH_OUTDIR}; '
         'Rscript {config[PROCESS_REAL_DATA_DIR]}/cell_based_methylation_extraction.R '
@@ -69,17 +75,20 @@ rule cell_based_methylation_extraction:
 
 rule cell_based_stats_methylation:
     input:
-        os.path.join(CELL_BASED_METH_OUTDIR, "CpG_meth_data_long_" + data_ID + "_{cells}.tsv")
+        os.path.join(CELL_BASED_METH_OUTDIR, "CpG_meth_data_long_" + data_ID + "_{cells}.tsv.gz")
     output:
         os.path.join(CELL_BASED_STAT_OUTDIR, "stats_region_" + data_ID + "_{cells}.tsv")
     resources:
         h_vmem=default_mem
+    params:
+        qsub_out=os.path.join(CELL_BASED_STAT_OUTDIR, 'qsub_out'),
+        qsub_err=os.path.join(CELL_BASED_STAT_OUTDIR, 'qsub_err')
     shell:
         'mkdir -p {CELL_BASED_STAT_OUTDIR}; '
         'Rscript {config[PROCESS_REAL_DATA_DIR]}/cell_based_stats_methylation.R '
         '--output_directory {CELL_BASED_STAT_OUTDIR} '
         '--data_ID {data_ID} '
-        '--path_post_processed_CpG_data {CELL_BASED_METH_OUTDIR} '
+        '--path_post_processed_CpG_data {input} '
         '--cell_ID {wildcards.cells}'
 
 rule stats_methylation:
@@ -91,6 +100,9 @@ rule stats_methylation:
         os.path.join(STATS_METHYLATION_OUTDIR, cutoffs, "final_regions_" + data_ID + ".tsv")
     resources:
         h_vmem=120
+    params:
+        qsub_out=os.path.join(STATS_METHYLATION_OUTDIR, 'qsub_out'),
+        qsub_err=os.path.join(STATS_METHYLATION_OUTDIR, 'qsub_err')
     log:
         os.path.join(STATS_METHYLATION_OUTDIR, cutoffs, "log.txt")
     shell:
@@ -115,6 +127,9 @@ rule filter_regions:
         os.path.join(FILTER_REGIONS_OUTDIR, cutoffs, "filtered_regions_" + data_ID + ".tsv")
     resources:
         h_vmem=120
+    params:
+        qsub_out=os.path.join(FILTER_REGIONS_OUTDIR, 'qsub_out'),
+        qsub_err=os.path.join(FILTER_REGIONS_OUTDIR, 'qsub_err')
     log:
         os.path.join(FILTER_REGIONS_OUTDIR, cutoffs, "log.txt")
     run:
@@ -138,7 +153,10 @@ rule get_data_ready_Epiclomal:
         regions=os.path.join(READY_EPICLOMAL_OUTDIR, cutoffs, 'regionIDs_input_Epiclomal_' + data_ID + '.tsv.gz'),
         meth_file=os.path.join(READY_EPICLOMAL_OUTDIR, cutoffs, 'input_Epiclomal_' + data_ID + '.tsv.gz')
     resources:
-        h_vmem=240
+        h_vmem=480
+    params:
+        qsub_out=os.path.join(READY_EPICLOMAL_OUTDIR, 'qsub_out'),
+        qsub_err=os.path.join(READY_EPICLOMAL_OUTDIR, 'qsub_err')
     log:
         os.path.join(READY_EPICLOMAL_OUTDIR, cutoffs, "log.txt")
     shell:

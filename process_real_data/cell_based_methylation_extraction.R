@@ -211,9 +211,10 @@ if(args$genome == "mouse"){
 print(chrs)
 
 outdir <- args$output_directory
+outfile <- gzfile(paste0(outdir,"/CpG_meth_data_long_",args$data_ID,"_",args$cell_ID,".tsv.gz"))
 
-cat(sapply(c("chr","CpG_start","CpG_end","region_start", "region_end"  ,"region_cpgNum","region_length","region_id","meth_frac","count_meth", "count_unmeth", "cell_id"), toString), file= paste0(outdir,"/CpG_meth_data_long_",args$data_ID,"_",args$cell_ID,".tsv"), sep="\t")
-cat("\n", file= paste0(outdir,"/CpG_meth_data_long_",args$data_ID,"_",args$cell_ID,".tsv"), append=TRUE)
+cat(sapply(c("chr","CpG_start","CpG_end","region_start", "region_end"  ,"region_cpgNum","region_length","region_id","meth_frac","count_meth", "count_unmeth", "cell_id"), toString), file= outfile, sep="\t")
+cat("\n", file= outfile, append=TRUE)
 
 # Finding the cov file from the path and cell_id
 cov_file <- Sys.glob(file.path(args$path_cell_data, paste0("*", args$cell_ID, "*")))
@@ -295,7 +296,7 @@ for(c in 1:length(chrs)){
     #print(head(CpGs_per_region_cov_data_long))
     #print(dim(CpGs_per_region_cov_data_long))
 
-    write.table(CpGs_per_region_cov_data_long,file= paste0(outdir,"/CpG_meth_data_long_",args$data_ID,"_",args$cell_ID,".tsv"),row.names=FALSE,col.names=FALSE,sep="\t",append=TRUE,quote=FALSE)
+    write.table(CpGs_per_region_cov_data_long,file= outfile,row.names=FALSE,col.names=FALSE,sep="\t",append=TRUE,quote=FALSE)
 
   }
 

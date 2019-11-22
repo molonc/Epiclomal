@@ -94,15 +94,15 @@ if(args$LuoDiamond == 1){
     reg_coord <- cbind((1:num_regions),reg_coord)
     colnames(reg_coord) <- c("region_id","start","end")
 
-    write.table(as.matrix(reg_coord-1 ), file = paste0(outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t")
-    system(paste0("gzip --force ", outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"))
-
+    filename = gzfile(paste0(outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv.gz"))
+    write.table(as.matrix(reg_coord-1 ), file = filename, row.names = FALSE, quote = FALSE, sep = "\t")
   }
 
   print(dim(sub_tmp))
 
-  cat(sapply(c("cell_id",id), toString), file= paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"), sep="\t")
-  cat("\n", file=paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"), append=TRUE)
+  epiclomal_input_file = gzfile(paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv.gz"))
+  cat(sapply(c("cell_id",id), toString), file = epiclomal_input_file , sep="\t")
+  cat("\n", file=epiclomal_input_file, append=TRUE)
 
   rm(tmp)
   rm(sub_tmp)
@@ -134,12 +134,11 @@ if(args$LuoDiamond == 1){
 
     #print(head(CpG_data))
     #print(head(t(as.matrix(c(cell_id,CpG_data)))))
-    write.table(t(as.matrix(c(cell_id,CpG_data))), file = paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t", na = "",append=TRUE)
+    write.table(t(as.matrix(c(cell_id,CpG_data))), file = epiclomal_input_file, row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t", na = "",append=TRUE)
     print("  ...wrote in table")
   }
 
   if(args$filter_CpG_no_data == 1){
-    system(paste0("gzip --force ", outdir,"/input_Epiclomal_",args$data_ID,".tsv"))
     print("End of getting input ready for Luo diamonds")
   }
 
@@ -156,8 +155,8 @@ if(args$LuoDiamond == 1){
     #print(head((which(CpG_with_data == 1)+1)))
 
     print("loading only the data with columns with some data, that is, excluding the CpGs with no data")
-
-    tmp4 <- fread(paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"),showProgress=FALSE,select=c(1,(which(CpG_with_data == 1)+1)),sep="\t",header=TRUE)
+    epiclomal_input_file = gzfile(paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv.gz"))
+    tmp4 <- fread(paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv.gz"),showProgress=FALSE,select=c(1,(which(CpG_with_data == 1)+1)),sep="\t",header=TRUE)
 
     print(dim(tmp4))
     print(tmp4[1:2,1:15])
@@ -165,14 +164,13 @@ if(args$LuoDiamond == 1){
 
     print("saving the final data without CpGs with no data")
 
-    file.rename(from=paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"), to=paste0(outdir,"/input_Epiclomal_",args$data_ID,"_temp_file.tsv"))
+    file.rename(from=paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv.gz"), to=paste0(outdir,"/input_Epiclomal_",args$data_ID,"_temp_file.tsv"))
     ## file.remove(paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"))
 
     #tmp4 <- as.data.frame(tmp4)
     print(class(tmp4))
 
-    fwrite(tmp4, file = paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t", na = "",showProgress=FALSE)
-    system(paste0("gzip --force ", outdir,"/input_Epiclomal_",args$data_ID,".tsv"))
+    fwrite(tmp4, file = epiclomal_input_file, row.names = FALSE, quote = FALSE, sep = "\t", na = "",showProgress=FALSE)
 
     print("adjusting for right set of regions")
 
@@ -205,8 +203,8 @@ if(args$LuoDiamond == 1){
     reg_coord <- cbind((1:num_regions),reg_coord)
     colnames(reg_coord) <- c("region_id","start","end")
 
-    write.table(as.matrix(reg_coord-1 ), file = paste0(outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t")
-    system(paste0("gzip --force ", outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"))
+    region_file = gzfile(paste0(outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"))
+    write.table(as.matrix(reg_coord-1 ), file = region_file, row.names = FALSE, quote = FALSE, sep = "\t")
 
 
   }
@@ -216,7 +214,8 @@ if(args$LuoDiamond == 1){
   #finaltime <- proc.time() - ptm
 }
 
-if(args$LuoDiamond == 0){
+if (args$LuoDiamond == 0) {
+  print("getting input ready for Luo diamonds")
 
   #ptm = proc.time()
 
@@ -256,9 +255,8 @@ if(args$LuoDiamond == 0){
   colnames(reg_coord) <- c("region_id","start","end")
 
   if(args$filter_CpG_no_data == 1){
-
-    write.table(as.matrix(reg_coord-1 ), file = paste0(outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t")
-    system(paste0("gzip --force ", outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"))
+    region_file = gzfile(paste0(outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"))
+    write.table(as.matrix(reg_coord-1 ), file = region_file, row.names = FALSE, quote = FALSE, sep = "\t")
 
   }
 
@@ -374,8 +372,8 @@ if(args$LuoDiamond == 0){
     reg_coord <- cbind((1:num_regions),reg_coord)
     colnames(reg_coord) <- c("region_id","start","end")
 
-    write.table(as.matrix(reg_coord-1 ), file = paste0(outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t")
-    system(paste0("gzip --force ", outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"))
+    filename = gzfile(paste0(outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv.gz"))
+    write.table(as.matrix(reg_coord-1 ), file = filename, row.names = FALSE, quote = FALSE, sep = "\t")
 
 
   }
@@ -391,8 +389,8 @@ if(args$LuoDiamond == 0){
 
   print(which(final_miss_prop == 1))
 
-  write.table(cbind(cell_id,final_miss_prop), file = paste0(outdir,"/final_miss_prop_per_cell_",args$data_ID,".tsv"), row.names = FALSE, col.names=FALSE, quote = FALSE, sep = "\t")
-  system(paste0("gzip --force ", outdir,"/final_miss_prop_per_cell_",args$data_ID,".tsv"))
+  filename = gzfile(paste0(outdir,"/final_miss_prop_per_cell_",args$data_ID,".tsv.gz"))
+  write.table(cbind(cell_id,final_miss_prop), file = filename, row.names = FALSE, col.names=FALSE, quote = FALSE, sep = "\t"
 
   if( (dim(CpG_data)[2]) > 250){
     pheatmap(CpG_data[,1:250],cluster_rows = FALSE,cluster_cols=FALSE, cellwidth = 5,
@@ -440,8 +438,9 @@ if(args$LuoDiamond == 0){
 
   print(head(CpG_data)[,head(colnames(CpG_data))])
 
-  write.table(CpG_data, file = paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t", na = "")
-  system(paste0("gzip --force ", outdir,"/input_Epiclomal_",args$data_ID,".tsv"))
+  filename = gzfile(paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv.gz"))
+
+  write.table(CpG_data, file = filename, row.names = FALSE, quote = FALSE, sep = "\t", na = ""
 
   final_number_loci <- (dim(CpG_data)[2]-1) ### number of columns in CpG_data minus the columns corresponding to cell_id
 
@@ -458,13 +457,10 @@ if(args$LuoDiamond == 0){
 
   write.table(info_filtered,paste0(outdir,"/filtered_data_info_",args$data_ID,".tsv"),sep="\t",quote=FALSE,col.names=FALSE,append=FALSE)
 
-  print("Done")
-
   #finaltime <- proc.time() - ptm
-
-
 }
 
+  print("Done")
 
 
 

@@ -29,7 +29,10 @@ rule run_preprocess:
     output:
         os.path.join(NPM_DIRECTORY, re.sub('.tsv.gz', '.RDa.gz', os.path.basename(config['METH_FILE'])))
     resources:
-        h_vmem=default_mem
+        h_vmem=240
+    params:
+        qsub_out='preprocess_qsub_out',
+        qsub_err='preprocess_qsub_err'
     shell:
         'Rscript {config[SOFTWARE][hclust_software]} '
         '--method None '
@@ -47,6 +50,9 @@ rule run_euclidean_clust:
         os.path.join(NPM_DIRECTORY, 'EuclideanClust_clusters_region_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
     resources:
         h_vmem=default_mem
+    params:
+        qsub_out=os.path.join(NPM_DIRECTORY, 'euclidean_qsub_out'),
+        qsub_err=os.path.join(NPM_DIRECTORY, 'euclidean_qsub_err')
     log:
         os.path.join(LOG_DIR, 'run_euclidean_clust.log')
     shell:
@@ -70,6 +76,9 @@ rule run_hamming_clust:
         os.path.join(NPM_DIRECTORY, 'HammingClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
     resources:
         h_vmem=default_mem
+    params:
+        qsub_out=os.path.join(NPM_DIRECTORY, 'hamming_qsub_out'),
+        qsub_err=os.path.join(NPM_DIRECTORY, 'hamming_qsub_err')
     log:
         os.path.join(LOG_DIR, 'run_hamming_clust.log')
     shell:
@@ -93,6 +102,9 @@ rule run_pearson_clust:
         os.path.join(NPM_DIRECTORY, 'PearsonClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
     resources:
         h_vmem=default_mem
+    params:
+        qsub_out=os.path.join(NPM_DIRECTORY, 'pearson_qsub_out'),
+        qsub_err=os.path.join(NPM_DIRECTORY, 'pearson_qsub_err')
     log:
         os.path.join(LOG_DIR, 'run_pearson_clust.log')
     shell:
@@ -116,6 +128,9 @@ rule run_density_cut:
         os.path.join(NPM_DIRECTORY, 'DensityCut_clusters_Region_based_maxPC_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
     resources:
         h_vmem=default_mem
+    params:
+        qsub_out=os.path.join(NPM_DIRECTORY, 'densitycut_qsub_out'),
+        qsub_err=os.path.join(NPM_DIRECTORY, 'densitycut_qsub_err')
     log:
         os.path.join(LOG_DIR, 'run_density_cut.log')
     shell:
@@ -144,7 +159,9 @@ rule process_npm_methods:
     resources:
         h_vmem=default_mem
     params:
-        k_1=config['PARAMS']['NPM']['max_k']+1
+        k_1=config['PARAMS']['NPM']['max_k']+1,
+        qsub_out=os.path.join(NPM_DIRECTORY, 'process_npm_qsub_out'),
+        qsub_err=os.path.join(NPM_DIRECTORY, 'process_npm_qsub_err')
     shell:
         'gunzip -c {input.hfile} | cut -f1 > {output.idtempfile}; '
         'gunzip -c {input.hfile} | cut -f2-{params.k_1} > {output.htempfile}; '
@@ -163,6 +180,9 @@ rule join_npm_methods:
         os.path.join(NPM_DIRECTORY, 'initial_inputs.tsv.gz')
     resources:
         h_vmem=default_mem
+    params:
+        qsub_out=os.path.join(NPM_DIRECTORY, 'join_qsub_out'),
+        qsub_err=os.path.join(NPM_DIRECTORY, 'join_qsub_err')
     shell:
         'paste {input.idtempfile} {input.htempfile} {input.ptempfile} {input.peatempfile} {input.dtempfile} | gzip -c - > {output}'
 
@@ -175,6 +195,9 @@ if (config['TRUE_FILE']):
             flag=touch(temp('.euclidean_eval'))
         resources:
             h_vmem=default_mem
+        params:
+            qsub_out=os.path.join(NPM_DIRECTORY, 'euclidean_eval_qsub_out'),
+            qsub_err=os.path.join(NPM_DIRECTORY, 'euclidean_eval_qsub_err')
         shell:
             'evaluate_clustering '
             '--true_clusters_file {config[TRUE_FILE]} '
@@ -191,6 +214,9 @@ if (config['TRUE_FILE']):
             flag=touch(temp('.hamming_eval'))
         resources:
             h_vmem=default_mem
+        params:
+            qsub_out=os.path.join(NPM_DIRECTORY, 'hamming_eval_qsub_out'),
+            qsub_err=os.path.join(NPM_DIRECTORY, 'hamming_eval_qsub_err')
         shell:
             'evaluate_clustering '
             '--true_clusters_file {config[TRUE_FILE]} '
@@ -207,6 +233,9 @@ if (config['TRUE_FILE']):
             flag=touch(temp('.pearson_eval'))
         resources:
             h_vmem=default_mem
+        params:
+            qsub_out=os.path.join(NPM_DIRECTORY, 'pearson_eval_qsub_out'),
+            qsub_err=os.path.join(NPM_DIRECTORY, 'pearson_eval_qsub_err')
         shell:
             'evaluate_clustering '
             '--true_clusters_file {config[TRUE_FILE]} '
@@ -223,6 +252,9 @@ if (config['TRUE_FILE']):
             flag=touch(temp('.densitycut_eval'))
         resources:
             h_vmem=default_mem
+        params:
+            qsub_out=os.path.join(NPM_DIRECTORY, 'densitycut_eval_qsub_out'),
+            qsub_err=os.path.join(NPM_DIRECTORY, 'densitycut_eval_qsub_err')
         shell:
             'evaluate_clustering '
             '--true_clusters_file {config[TRUE_FILE]} '
@@ -244,6 +276,9 @@ else:
             touch(temp('.densitycut_eval'))
         resources:
             h_vmem=default_mem
+        params:
+            qsub_out=os.path.join(NPM_DIRECTORY, 'eval_no_true_clusters_qsub_out'),
+            qsub_err=os.path.join(NPM_DIRECTORY, 'eval_no_true_clusters_qsub_err')
 
 rule run_epiclomal_basic:
     input:
@@ -253,6 +288,9 @@ rule run_epiclomal_basic:
         directory(os.path.join(EPI_BASIC_DIR, '{run}'))
     resources:
         h_vmem=500
+    params:
+        qsub_out=os.path.join(EPI_BASIC_DIR, 'qsub_out'),
+        qsub_err=os.path.join(EPI_BASIC_DIR, 'qsub_err')
     run:
         if (config['TRUE_FILE']):
             shell( '(echo "==================================="; '
@@ -289,6 +327,9 @@ rule run_epiclomal_region:
         directory(os.path.join(EPI_REGION_DIR, '{run}'))
     resources:
         h_vmem=500
+    params:
+        qsub_out=os.path.join(EPI_REGION_DIR, 'qsub_out'),
+        qsub_err=os.path.join(EPI_REGION_DIR, 'qsub_err')
     run:
         if (config['TRUE_FILE']):
             shell('(echo "==================================="; '
@@ -331,6 +372,9 @@ rule run_eval_basic:
         directory(EVAL_BASIC_DIR)
     resources:
         h_vmem=default_mem
+    params:
+        qsub_out=os.path.join(EVAL_BASIC_DIR, 'qsub_out'),
+        qsub_err=os.path.join(EVAL_BASIC_DIR, 'qsub_err')
     log:
         os.path.join(config['LOG_DIR'], 'run_eval_basic.log')
     run:
@@ -361,6 +405,9 @@ rule run_eval_region:
         directory(EVAL_REGION_DIR)
     resources:
         h_vmem=default_mem
+    params:
+        qsub_out=os.path.join(EVAL_REGION_DIR, 'qsub_out'),
+        qsub_err=os.path.join(EVAL_REGION_DIR, 'qsub_err')
     log:
         os.path.join(config['LOG_DIR'], 'run_eval_region.log')
     run:

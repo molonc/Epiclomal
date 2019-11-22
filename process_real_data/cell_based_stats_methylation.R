@@ -15,7 +15,7 @@ parser <- ArgumentParser()
 
 parser$add_argument("--output_directory", type="character", help="Path to the output directory")
 parser$add_argument("--data_ID", type="character", help="Some identification for the data, e.g., Smallwood2014_CGI")
-parser$add_argument("--path_post_processed_CpG_data", type="character",help="Path to cell file containing the methylation data for each CpG in the reference genome for the regions considered")
+parser$add_argument("--post_processed_CpG_data_file", type="character",help="Path to cell file containing the methylation data for each CpG in the reference genome for the regions considered")
 parser$add_argument("--cell_ID", type="character", help="Cell ID")
 
 args <- parser$parse_args()
@@ -48,7 +48,7 @@ ave.cov.function <- function(x1,x2){
 outdir <- args$output_directory
 
 # Finding the input file from the path and cell_id
-input_file <- Sys.glob(file.path(args$path_post_processed_CpG_data, paste0("*", args$cell_ID, "*.tsv")))
+input_file <- args$post_processed_CpG_data_file
 print("Input file for this cell is")
 print(input_file)
 
