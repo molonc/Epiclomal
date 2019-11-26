@@ -22,7 +22,7 @@ rule all:
         '.pearson_eval',
         '.densitycut_eval'
 
-rule run_preprocess:
+rule preprocess:
     input:
         meth_file=config['METH_FILE'],
         regions_file=config['REGION_FILE']
@@ -41,7 +41,7 @@ rule run_preprocess:
         '--regions_file {input.regions_file} '
         '--use_cache {config[PARAMS][NPM][use_cache]} '
 
-rule run_euclidean_clust:
+rule euclidean_clust:
     input:
         meth_file=config['METH_FILE'],
         regions_file=config['REGION_FILE'],
@@ -51,10 +51,8 @@ rule run_euclidean_clust:
     resources:
         h_vmem=default_mem
     params:
-        qsub_out=os.path.join(NPM_DIRECTORY, 'euclidean_qsub_out'),
-        qsub_err=os.path.join(NPM_DIRECTORY, 'euclidean_qsub_err')
-    log:
-        os.path.join(LOG_DIR, 'run_euclidean_clust.log')
+        qsub_out=os.path.join(LOG_DIR, 'euclidean_qsub_out'),
+        qsub_err=os.path.join(LOG_DIR, 'euclidean_qsub_err')
     shell:
         'Rscript {config[SOFTWARE][hclust_software]} '
         '--method euclidean '
@@ -64,10 +62,9 @@ rule run_euclidean_clust:
         '--methylation_file {input.meth_file} '
         '--regions_file {input.regions_file} '
         '--impute {config[PARAMS][NPM][impute]} '
-        '--use_cache {config[PARAMS][NPM][use_cache]} '
-        '> {log}'
+        '--use_cache {config[PARAMS][NPM][use_cache]}'
 
-rule run_hamming_clust:
+rule hamming_clust:
     input:
         meth_file=config['METH_FILE'],
         regions_file=config['REGION_FILE'],
@@ -77,10 +74,8 @@ rule run_hamming_clust:
     resources:
         h_vmem=default_mem
     params:
-        qsub_out=os.path.join(NPM_DIRECTORY, 'hamming_qsub_out'),
-        qsub_err=os.path.join(NPM_DIRECTORY, 'hamming_qsub_err')
-    log:
-        os.path.join(LOG_DIR, 'run_hamming_clust.log')
+        qsub_out=os.path.join(LOG_DIR, 'hamming_qsub_out'),
+        qsub_err=os.path.join(LOG_DIR, 'hamming_qsub_err')
     shell:
         'Rscript {config[SOFTWARE][hclust_software]} '
         '--method hamming '
@@ -90,10 +85,9 @@ rule run_hamming_clust:
         '--methylation_file {input.meth_file} '
         '--regions_file {input.regions_file} '
         '--impute {config[PARAMS][NPM][impute]} '
-        '--use_cache {config[PARAMS][NPM][use_cache]} '
-        '> {log}'
+        '--use_cache {config[PARAMS][NPM][use_cache]}'
 
-rule run_pearson_clust:
+rule pearson_clust:
     input:
         meth_file=config['METH_FILE'],
         regions_file=config['REGION_FILE'],
@@ -103,10 +97,8 @@ rule run_pearson_clust:
     resources:
         h_vmem=default_mem
     params:
-        qsub_out=os.path.join(NPM_DIRECTORY, 'pearson_qsub_out'),
-        qsub_err=os.path.join(NPM_DIRECTORY, 'pearson_qsub_err')
-    log:
-        os.path.join(LOG_DIR, 'run_pearson_clust.log')
+        qsub_out=os.path.join(LOG_DIR, 'pearson_qsub_out'),
+        qsub_err=os.path.join(LOG_DIR, 'pearson_qsub_err')
     shell:
         'Rscript {config[SOFTWARE][hclust_software]} '
         '--method pearson '
@@ -116,10 +108,9 @@ rule run_pearson_clust:
         '--methylation_file {input.meth_file} '
         '--regions_file {input.regions_file} '
         '--impute {config[PARAMS][NPM][impute]} '
-        '--use_cache {config[PARAMS][NPM][use_cache]} '
-        '> {log}'
+        '--use_cache {config[PARAMS][NPM][use_cache]}'
 
-rule run_density_cut:
+rule density_cut:
     input:
         meth_file=config['METH_FILE'],
         regions_file=config['REGION_FILE'],
@@ -129,10 +120,8 @@ rule run_density_cut:
     resources:
         h_vmem=default_mem
     params:
-        qsub_out=os.path.join(NPM_DIRECTORY, 'densitycut_qsub_out'),
-        qsub_err=os.path.join(NPM_DIRECTORY, 'densitycut_qsub_err')
-    log:
-        os.path.join(LOG_DIR, 'run_density_cut.log')
+        qsub_out=os.path.join(LOG_DIR, 'densitycut_qsub_out'),
+        qsub_err=os.path.join(LOG_DIR, 'densitycut_qsub_err')
     shell:
         'Rscript {config[SOFTWARE][hclust_software]} '
         '--method densitycut '
@@ -141,8 +130,7 @@ rule run_density_cut:
         '--methylation_file {input.meth_file} '
         '--regions_file {input.regions_file} '
         '--impute {config[PARAMS][NPM][impute]} '
-        '--use_cache {config[PARAMS][NPM][use_cache]} '
-        '> {log}'
+        '--use_cache {config[PARAMS][NPM][use_cache]}'
 
 rule process_npm_methods:
     input:
@@ -160,8 +148,8 @@ rule process_npm_methods:
         h_vmem=default_mem
     params:
         k_1=config['PARAMS']['NPM']['max_k']+1,
-        qsub_out=os.path.join(NPM_DIRECTORY, 'process_npm_qsub_out'),
-        qsub_err=os.path.join(NPM_DIRECTORY, 'process_npm_qsub_err')
+        qsub_out=os.path.join(LOG_DIR, 'process_npm_qsub_out'),
+        qsub_err=os.path.join(LOG_DIR, 'process_npm_qsub_err')
     shell:
         'gunzip -c {input.hfile} | cut -f1 > {output.idtempfile}; '
         'gunzip -c {input.hfile} | cut -f2-{params.k_1} > {output.htempfile}; '
@@ -181,13 +169,13 @@ rule join_npm_methods:
     resources:
         h_vmem=default_mem
     params:
-        qsub_out=os.path.join(NPM_DIRECTORY, 'join_qsub_out'),
-        qsub_err=os.path.join(NPM_DIRECTORY, 'join_qsub_err')
+        qsub_out=os.path.join(LOG_DIR, 'join_qsub_out'),
+        qsub_err=os.path.join(LOG_DIR, 'join_qsub_err')
     shell:
         'paste {input.idtempfile} {input.htempfile} {input.ptempfile} {input.peatempfile} {input.dtempfile} | gzip -c - > {output}'
 
 if (config['TRUE_FILE']):
-    rule run_euclidean_eval:
+    rule euclidean_eval:
         input:
             hfile=os.path.join(NPM_DIRECTORY, 'EuclideanClust_clusters_region_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
         output:
@@ -196,8 +184,8 @@ if (config['TRUE_FILE']):
         resources:
             h_vmem=default_mem
         params:
-            qsub_out=os.path.join(NPM_DIRECTORY, 'euclidean_eval_qsub_out'),
-            qsub_err=os.path.join(NPM_DIRECTORY, 'euclidean_eval_qsub_err')
+            qsub_out=os.path.join(LOG_DIR, 'euclidean_eval_qsub_out'),
+            qsub_err=os.path.join(LOG_DIR, 'euclidean_eval_qsub_err')
         shell:
             'evaluate_clustering '
             '--true_clusters_file {config[TRUE_FILE]} '
@@ -206,7 +194,7 @@ if (config['TRUE_FILE']):
             '--clusters_are_probabilities False '
             '--results_file {output.results}'
 
-    rule run_hamming_eval:
+    rule hamming_eval:
         input:
             pfile=os.path.join(NPM_DIRECTORY, 'HammingClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
         output:
@@ -215,8 +203,8 @@ if (config['TRUE_FILE']):
         resources:
             h_vmem=default_mem
         params:
-            qsub_out=os.path.join(NPM_DIRECTORY, 'hamming_eval_qsub_out'),
-            qsub_err=os.path.join(NPM_DIRECTORY, 'hamming_eval_qsub_err')
+            qsub_out=os.path.join(LOG_DIR, 'hamming_eval_qsub_out'),
+            qsub_err=os.path.join(LOG_DIR, 'hamming_eval_qsub_err')
         shell:
             'evaluate_clustering '
             '--true_clusters_file {config[TRUE_FILE]} '
@@ -225,7 +213,7 @@ if (config['TRUE_FILE']):
             '--clusters_are_probabilities False '
             '--results_file {output.results}'
 
-    rule run_pearson_eval:
+    rule pearson_eval:
         input:
             peafile=os.path.join(NPM_DIRECTORY, 'PearsonClust_clusters_CpG_based_maxk_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
         output:
@@ -234,8 +222,8 @@ if (config['TRUE_FILE']):
         resources:
             h_vmem=default_mem
         params:
-            qsub_out=os.path.join(NPM_DIRECTORY, 'pearson_eval_qsub_out'),
-            qsub_err=os.path.join(NPM_DIRECTORY, 'pearson_eval_qsub_err')
+            qsub_out=os.path.join(LOG_DIR, 'pearson_eval_qsub_out'),
+            qsub_err=os.path.join(LOG_DIR, 'pearson_eval_qsub_err')
         shell:
             'evaluate_clustering '
             '--true_clusters_file {config[TRUE_FILE]} '
@@ -244,7 +232,7 @@ if (config['TRUE_FILE']):
             '--clusters_are_probabilities False '
             '--results_file {output.results}'
 
-    rule run_densitycut_eval:
+    rule densitycut_eval:
         input:
             dfile=os.path.join(NPM_DIRECTORY, 'DensityCut_clusters_Region_based_maxPC_{}.tsv.gz'.format(config['PARAMS']['NPM']['max_k']))
         output:
@@ -253,8 +241,8 @@ if (config['TRUE_FILE']):
         resources:
             h_vmem=default_mem
         params:
-            qsub_out=os.path.join(NPM_DIRECTORY, 'densitycut_eval_qsub_out'),
-            qsub_err=os.path.join(NPM_DIRECTORY, 'densitycut_eval_qsub_err')
+            qsub_out=os.path.join(LOG_DIR, 'densitycut_eval_qsub_out'),
+            qsub_err=os.path.join(LOG_DIR, 'densitycut_eval_qsub_err')
         shell:
             'evaluate_clustering '
             '--true_clusters_file {config[TRUE_FILE]} '
@@ -277,10 +265,10 @@ else:
         resources:
             h_vmem=default_mem
         params:
-            qsub_out=os.path.join(NPM_DIRECTORY, 'eval_no_true_clusters_qsub_out'),
-            qsub_err=os.path.join(NPM_DIRECTORY, 'eval_no_true_clusters_qsub_err')
+            qsub_out=os.path.join(LOG_DIR, 'eval_no_true_clusters_qsub_out'),
+            qsub_err=os.path.join(LOG_DIR, 'eval_no_true_clusters_qsub_err')
 
-rule run_epiclomal_basic:
+rule epiclomal_basic:
     input:
         meth_file=config['METH_FILE'],
         initial_clusters_file=os.path.join(NPM_DIRECTORY, 'initial_inputs.tsv.gz')
@@ -289,8 +277,8 @@ rule run_epiclomal_basic:
     resources:
         h_vmem=500
     params:
-        qsub_out=os.path.join(EPI_BASIC_DIR, 'qsub_out'),
-        qsub_err=os.path.join(EPI_BASIC_DIR, 'qsub_err')
+        qsub_out=os.path.join(LOG_DIR, 'epi_basic_qsub_out'),
+        qsub_err=os.path.join(LOG_DIR, 'epi_basic_qsub_err')
     run:
         if (config['TRUE_FILE']):
             shell( '(echo "==================================="; '
@@ -318,7 +306,7 @@ rule run_epiclomal_basic:
                 '--methylation_file {input.meth_file} '
                 '--initial_clusters_file {input.initial_clusters_file})')
 
-rule run_epiclomal_region:
+rule epiclomal_region:
     input:
         meth_file=config['METH_FILE'],
         initial_clusters_file=os.path.join(NPM_DIRECTORY, 'initial_inputs.tsv.gz'),
@@ -328,8 +316,8 @@ rule run_epiclomal_region:
     resources:
         h_vmem=500
     params:
-        qsub_out=os.path.join(EPI_REGION_DIR, 'qsub_out'),
-        qsub_err=os.path.join(EPI_REGION_DIR, 'qsub_err')
+        qsub_out=os.path.join(LOG_DIR, 'epi_region_qsub_out'),
+        qsub_err=os.path.join(LOG_DIR, 'epi_region_qsub_err')
     run:
         if (config['TRUE_FILE']):
             shell('(echo "==================================="; '
@@ -363,7 +351,7 @@ rule run_epiclomal_region:
                 '--slsbulk_iterations {config[PARAMS][EPICLOMAL][slsbulk_iterations]} '
                 '--check_uncertainty {config[PARAMS][EPICLOMAL][check_uncertainty]})')
 
-rule run_eval_basic:
+rule eval_basic:
     input:
         regions_file=config['REGION_FILE'],
         meth_file=config['METH_FILE'],
@@ -373,10 +361,8 @@ rule run_eval_basic:
     resources:
         h_vmem=default_mem
     params:
-        qsub_out=os.path.join(EVAL_BASIC_DIR, 'qsub_out'),
-        qsub_err=os.path.join(EVAL_BASIC_DIR, 'qsub_err')
-    log:
-        os.path.join(config['LOG_DIR'], 'run_eval_basic.log')
+        qsub_out=os.path.join(LOG_DIR, 'eval_basic_qsub_out'),
+        qsub_err=os.path.join(LOG_DIR, 'eval_basic_qsub_err')
     run:
         if (config['TRUE_FILE']):
             shell('Rscript {config[SOFTWARE][eval_software]} '
@@ -385,18 +371,16 @@ rule run_eval_basic:
                 '--methylation_file {input.meth_file} '
                 '--regions_file {input.regions_file} '
                 '--model_name basic '
-                '--true_clusters_file {config[TRUE_FILE]} '
-                '> {log}')
+                '--true_clusters_file {config[TRUE_FILE]}')
         else:
             shell('Rscript {config[SOFTWARE][eval_software]} '
                 '--output_dir {output} '
                 '--input_dir {EPI_BASIC_DIR} '
                 '--methylation_file {input.meth_file} '
                 '--regions_file {input.regions_file} '
-                '--model_name basic '
-                '> {log}')
+                '--model_name basic')
 
-rule run_eval_region:
+rule eval_region:
     input:
         regions_file=config['REGION_FILE'],
         meth_file=config['METH_FILE'],
@@ -406,10 +390,8 @@ rule run_eval_region:
     resources:
         h_vmem=default_mem
     params:
-        qsub_out=os.path.join(EVAL_REGION_DIR, 'qsub_out'),
-        qsub_err=os.path.join(EVAL_REGION_DIR, 'qsub_err')
-    log:
-        os.path.join(config['LOG_DIR'], 'run_eval_region.log')
+        qsub_out=os.path.join(LOG_DIR, 'eval_region_qsub_out'),
+        qsub_err=os.path.join(LOG_DIR, 'eval_region_qsub_err')
     run:
         if (config['TRUE_FILE']):
             shell('Rscript {config[SOFTWARE][eval_software]} '
@@ -418,13 +400,11 @@ rule run_eval_region:
                 '--methylation_file {input.meth_file} '
                 '--regions_file {input.regions_file} '
                 '--model_name region '
-                '--true_clusters_file {config[TRUE_FILE]} '
-                '> {log}')
+                '--true_clusters_file {config[TRUE_FILE]}')
         else:
             shell('Rscript {config[SOFTWARE][eval_software]} '
                 '--output_dir {output} '
                 '--input_dir {EPI_REGION_DIR} '
                 '--methylation_file {input.meth_file} '
                 '--regions_file {input.regions_file} '
-                '--model_name region '
-                '> {log}')
+                '--model_name region')

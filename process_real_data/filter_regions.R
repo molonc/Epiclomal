@@ -1,6 +1,7 @@
 suppressMessages(library(argparse))
 suppressMessages(library(pheatmap))
 suppressMessages(library(gtools))
+suppressMessages(library(Rcpp))
 
 parser <- ArgumentParser()
 
@@ -27,6 +28,15 @@ coef_t <- args$coef_threshold
 N <- args$n_to_keep
 mean_diff_threshold <- args$mean_diff_threshold
 
+# assume filter_regions.cpp is in the same directory as this file
+# trying to figure out the path of this file so I can source filter_regions.cpp
+initial.options <- commandArgs(trailingOnly = FALSE)
+file.arg.name <- "--file="
+script.name <- sub(file.arg.name, "", initial.options[grep(file.arg.name, initial.options)])
+script.basename <- dirname(script.name)
+sourceCpp(paste(sep="/", script.basename, "filter_regions.cpp"))
+
+
 load_mean_meth <- function(filename) {
     mean_meth_matrix <- read.csv(filename, sep = "\t", header = TRUE)
     mean_meth_matrix <- t(mean_meth_matrix)
@@ -49,41 +59,42 @@ set_index_gaps <- function(data) {
     return(index_gaps)
 }
 
-find_correlated_regions <- function(mean_meth_matrix, coef_t) {
-    regions_to_remove <- NULL
-    region_weights <- data.frame(region=colnames(mean_meth_matrix))
-    region_weights$weight <- 1
-    for (r1 in 1:(ncol(mean_meth_matrix) - 1)) {
-        # print(r1)
-        if (colnames(mean_meth_matrix)[r1] %in% regions_to_remove) {
-            # print("r1 already in regions_to_remove")
-            next
-        }
-        for (r2 in (r1+1):ncol(mean_meth_matrix)) {
-            # print(r2)
-            if (colnames(mean_meth_matrix)[r2] %in% regions_to_remove) {
-                # print(paste(r2, "already in regions_to_remove"))
-                next
-            } else {
+# # find correlated regions to remove, outdated, using c++ version
+# find_correlated_regions <- function(mean_meth_matrix, coef_t) {
+#     regions_to_remove <- NULL
+#     region_weights <- data.frame(region=colnames(mean_meth_matrix))
+#     region_weights$weight <- 1
+#     for (r1 in 1:(ncol(mean_meth_matrix) - 1)) {
+#         # print(r1)
+#         if (colnames(mean_meth_matrix)[r1] %in% regions_to_remove) {
+#             # print("r1 already in regions_to_remove")
+#             next
+#         }
+#         for (r2 in (r1+1):ncol(mean_meth_matrix)) {
+#             # print(r2)
+#             if (colnames(mean_meth_matrix)[r2] %in% regions_to_remove) {
+#                 # print(paste(r2, "already in regions_to_remove"))
+#                 next
+#             } else {
 
-                pearson_corr <- cor(mean_meth_matrix[,r1], mean_meth_matrix[,r2], method = "pearson", use = "na.or.complete")
+#                 pearson_corr <- cor(mean_meth_matrix[,r1], mean_meth_matrix[,r2], method = "pearson", use = "na.or.complete")
 
-                if (!is.na(pearson_corr) && ((pearson_corr > coef_t) || (pearson_corr < (-1 * coef_t)))) {
-                    #remove region with greater NAs
-                    if (sum(is.na(mean_meth_matrix[r2])) >= sum(is.na(mean_meth_matrix[r1]))) {
-                        regions_to_remove <- append(regions_to_remove, colnames(mean_meth_matrix)[r2])
-                        region_weights[r1, 'weight'] <- region_weights[r1, 'weight'] + region_weights[r2, 'weight']
-                    } else {
-                        regions_to_remove <- append(regions_to_remove, colnames(mean_meth_matrix)[r1])
-                        region_weights[r2, 'weight'] <- region_weights[r1, 'weight'] + region_weights[r2, 'weight']
-                        break
-                    }
-                }
-            }
-        }
-    }
-    return(list("regions_to_remove" = regions_to_remove, "region_weights" = region_weights))
-}
+#                 if (!is.na(pearson_corr) && ((pearson_corr > coef_t) || (pearson_corr < (-1 * coef_t)))) {
+#                     #remove region with greater NAs
+#                     if (sum(is.na(mean_meth_matrix[,r2])) >= sum(is.na(mean_meth_matrix[,r1]))) {
+#                         regions_to_remove <- append(regions_to_remove, colnames(mean_meth_matrix)[r2])
+#                         region_weights[r1, 'weight'] <- region_weights[r1, 'weight'] + region_weights[r2, 'weight']
+#                     } else {
+#                         regions_to_remove <- append(regions_to_remove, colnames(mean_meth_matrix)[r1])
+#                         region_weights[r2, 'weight'] <- region_weights[r1, 'weight'] + region_weights[r2, 'weight']
+#                         break
+#                     }
+#                 }
+#             }
+#         }
+#     }
+#     return(list("regions_to_remove" = regions_to_remove, "region_weights" = region_weights))
+# }
 
 find_most_variant_regions <- function(data, N) {
     data <- data[, order(-apply(data, 2, var, na.rm=TRUE))]
@@ -104,19 +115,16 @@ find_cluster_means <- function(data, true_clusters) {
     return(epi_means)
 }
 
-main <- function(mean_meth_file, true_file, output_directory, coef_t, mean_diff_threshold) {
+main <- function(mean_meth_file, true_file, outdir, coef_t, mean_diff_threshold) {
     mean_meth_matrix <- load_mean_meth(mean_meth_file)
     print(paste("Number of cells", dim(mean_meth_matrix)[1]))
     print(paste("Number of regions", dim(mean_meth_matrix)[2]))
 
     print("Finding and removing highly correlated regions")
-    correlated_regions <- find_correlated_regions(mean_meth_matrix, coef_t)
+    correlated_regions <- find_correlated_regions_LV(mean_meth_matrix, coef_t)
 
-    regions_to_remove <- correlated_regions$regions_to_remove
-    region_weights <- correlated_regions$region_weights
-
-    redundant_matrix <- mean_meth_matrix[, colnames(mean_meth_matrix) %in% regions_to_remove]
-    non_redundant_matrix <- mean_meth_matrix[, !(colnames(mean_meth_matrix) %in% regions_to_remove)]
+    redundant_matrix <- mean_meth_matrix[, !correlated_regions$keep_region]
+    non_redundant_matrix <- mean_meth_matrix[, correlated_regions$keep_region]
 
     print(paste("Number of highly correlated regions", dim(redundant_matrix)[2]))
     print(paste("Number of non-redundant regions", dim(non_redundant_matrix)[2]))
@@ -128,10 +136,9 @@ main <- function(mean_meth_file, true_file, output_directory, coef_t, mean_diff_
             print("N is greater than number of non-redundant regions, keep all")
         }
 
-    region_weights <- region_weights[(rownames(region_weights) %in% colnames(non_redundant_matrix)),,drop=FALSE]
+    region_weights <- correlated_regions[correlated_regions$keep_region, c('region', 'weight'), drop=FALSE]
     region_weight_file <- gzfile(paste0(outdir, "/non_redundant_region_weights_", data_id, ".tsv.gz"))
-    write.csv(region_weights, file = region_weight_file, sep = "\t", quote=FALSE, row.names = TRUE, col.names = TRUE)
-    close(region_weight_file)
+    write.csv(region_weights, file = region_weight_file, sep = "\t", quote=FALSE, row.names = FALSE, col.names = TRUE)
 
     if (!is.null(true_file)) {
         true_clone_membership <- read.csv(true_file, sep = "\t", header = TRUE)
@@ -148,15 +155,12 @@ main <- function(mean_meth_file, true_file, output_directory, coef_t, mean_diff_
 
     redundant_file <- gzfile(paste0(outdir, "/redundant_regions_meth_", data_id, ".tsv.gz"))
     write.csv(redundant_matrix, file = redundant_file, sep = "\t", quote=FALSE, row.names = TRUE, col.names = TRUE)
-    close(redundant_file)
 
     non_redundant_file <- gzfile(paste0(outdir, "/to_keep_meth_", data_id, ".tsv.gz"))
     write.csv(non_redundant_matrix, file = non_redundant_file, sep = "\t", quote=FALSE, row.names = TRUE, col.names = TRUE)
-    close(non_redundant_file)
 
     regions_file <- paste0(outdir, "/filtered_regions_", data_id, ".tsv")
     write.table(colnames(non_redundant_matrix), file = regions_file, sep = "\t", quote=FALSE, row.names = FALSE, col.names = FALSE)
-    close(regions_file)
 
     print("Plotting methylation of redundant regions")
     redundant_plot <- paste0(outdir, "/redundant_regions_plot_", data_id, ".png")
@@ -222,5 +226,5 @@ main <- function(mean_meth_file, true_file, output_directory, coef_t, mean_diff_
     # dev.off()
 }
 
-main(mean_meth_file, true_file, output_directory, coef_t, mean_diff_threshold)
+main(mean_meth_file, true_file, outdir, coef_t, mean_diff_threshold)
 

@@ -5,12 +5,13 @@ name_regions = config['CPG_COORDS']['NAME_REGIONS']
 cells = config['cells']
 data_ID = config['DATA_ID']
 
+LOG_DIR = os.path.join(config['OUTDIR'], 'log')
 CPG_COORDS_OUTDIR = os.path.join(config['OUTDIR'], 'CpG_coordinates_in_regions')
 CELL_BASED_METH_OUTDIR = os.path.join(config['OUTDIR'], 'cell_based_CpGs')
 CELL_BASED_STAT_OUTDIR = os.path.join(config['OUTDIR'], 'cell_based_stats')
-STATS_METHYLATION_OUTDIR = os.path.join(config['OUTDIR'], 'final_stats')
-FILTER_REGIONS_OUTDIR = os.path.join(config['OUTDIR'], 'filter_regions')
-READY_EPICLOMAL_OUTDIR = os.path.join(config['OUTDIR'], 'epiclomal_input')
+STATS_METHYLATION_OUTDIR = os.path.join(config['OUTDIR'], 'final_stats', config['STATS_METHYLATION']['ALL_CUTOFFS'])
+FILTER_REGIONS_OUTDIR = os.path.join(config['OUTDIR'], 'filter_regions', config['STATS_METHYLATION']['ALL_CUTOFFS'])
+READY_EPICLOMAL_OUTDIR = os.path.join(config['OUTDIR'], 'epiclomal_input', config['STATS_METHYLATION']['ALL_CUTOFFS'])
 
 default_mem=50
 
@@ -34,12 +35,12 @@ rule get_cpgs_in_regions:
     input:
         regions_file=config['REGION_FILE']
     output:
-        touch(temp('.get_cpgs_in_regions_{CHR}'))
+        touch('.get_cpgs_in_regions_{CHR}')
     resources:
         h_vmem=default_mem
     params:
-        qsub_out=os.path.join(CPG_COORDS_OUTDIR, '{CHR}_qsub_out'),
-        qsub_err=os.path.join(CPG_COORDS_OUTDIR, '{CHR}_qsub_err')
+        qsub_out=os.path.join(LOG_DIR, '{CHR}_cpgs_qsub_out'),
+        qsub_err=os.path.join(LOG_DIR, '{CHR}_cpgs_qsub_err')
     shell:
         'mkdir -p {CPG_COORDS_OUTDIR}; '
         'Rscript {config[PROCESS_REAL_DATA_DIR]}/CpG_coordinates_across_regions.R '
@@ -59,8 +60,8 @@ rule cell_based_methylation_extraction:
     resources:
         h_vmem=120
     params:
-        qsub_out=os.path.join(CELL_BASED_METH_OUTDIR, 'qsub_out'),
-        qsub_err=os.path.join(CELL_BASED_METH_OUTDIR, 'qsub_err')
+        qsub_out=os.path.join(LOG_DIR, 'cell_based_meth_qsub_out'),
+        qsub_err=os.path.join(LOG_DIR, 'cell_based_meth_qsub_err')
     shell:
         'mkdir -p {CELL_BASED_METH_OUTDIR}; '
         'Rscript {config[PROCESS_REAL_DATA_DIR]}/cell_based_methylation_extraction.R '
@@ -81,14 +82,14 @@ rule cell_based_stats_methylation:
     resources:
         h_vmem=default_mem
     params:
-        qsub_out=os.path.join(CELL_BASED_STAT_OUTDIR, 'qsub_out'),
-        qsub_err=os.path.join(CELL_BASED_STAT_OUTDIR, 'qsub_err')
+        qsub_out=os.path.join(LOG_DIR, 'cell_based_stats_qsub_out'),
+        qsub_err=os.path.join(LOG_DIR, 'cell_based_stats_qsub_err')
     shell:
         'mkdir -p {CELL_BASED_STAT_OUTDIR}; '
         'Rscript {config[PROCESS_REAL_DATA_DIR]}/cell_based_stats_methylation.R '
         '--output_directory {CELL_BASED_STAT_OUTDIR} '
         '--data_ID {data_ID} '
-        '--path_post_processed_CpG_data {input} '
+        '--post_processed_CpG_data_file {input} '
         '--cell_ID {wildcards.cells}'
 
 rule stats_methylation:
@@ -101,10 +102,8 @@ rule stats_methylation:
     resources:
         h_vmem=120
     params:
-        qsub_out=os.path.join(STATS_METHYLATION_OUTDIR, 'qsub_out'),
-        qsub_err=os.path.join(STATS_METHYLATION_OUTDIR, 'qsub_err')
-    log:
-        os.path.join(STATS_METHYLATION_OUTDIR, cutoffs, "log.txt")
+        qsub_out=os.path.join(LOG_DIR, 'stats_meth_qsub_out'),
+        qsub_err=os.path.join(LOG_DIR, 'stats_meth_qsub_err')
     shell:
         'Rscript {config[PROCESS_REAL_DATA_DIR]}/stats_methylation.R '
         '--output_directory {STATS_METHYLATION_OUTDIR}/{cutoffs} '
@@ -117,7 +116,7 @@ rule stats_methylation:
         '--all_cutoffs {config[STATS_METHYLATION][ALL_CUTOFFS]} '
         '--filter_regions_same_meth {config[STATS_METHYLATION][FILTER_REGIONS_SAME_METH]} '
         '--plot_heatmap_unfiltered {config[STATS_METHYLATION][PLOT_HEATMAP_UNFILTERED]} '
-        '--plot_heatmap_filtered {config[STATS_METHYLATION][PLOT_HEATMAP_FILTERED]} > {log}'
+        '--plot_heatmap_filtered {config[STATS_METHYLATION][PLOT_HEATMAP_FILTERED]}'
 
 rule filter_regions:
     input:
@@ -128,10 +127,8 @@ rule filter_regions:
     resources:
         h_vmem=120
     params:
-        qsub_out=os.path.join(FILTER_REGIONS_OUTDIR, 'qsub_out'),
-        qsub_err=os.path.join(FILTER_REGIONS_OUTDIR, 'qsub_err')
-    log:
-        os.path.join(FILTER_REGIONS_OUTDIR, cutoffs, "log.txt")
+        qsub_out=os.path.join(LOG_DIR, 'filter_regions_qsub_out'),
+        qsub_err=os.path.join(LOG_DIR, 'filter_regions_qsub_err')
     run:
         if (config['FILTER_REGIONS']['FILTER']):
             shell('Rscript {config[PROCESS_REAL_DATA_DIR]}/filter_regions.R '
@@ -140,7 +137,7 @@ rule filter_regions:
                 '--mean_methylation_file {input.meth_file} '
                 '--true_file {config[TRUE_FILE]} '
                 '--coef_threshold {config[FILTER_REGIONS][COEF_THRESHOLD]} '
-                '--mean_diff_threshold {config[FILTER_REGIONS][MEAN_DIFF_THRESHOLD]} > {log}'
+                '--mean_diff_threshold {config[FILTER_REGIONS][MEAN_DIFF_THRESHOLD]}'
             )
         else:
             shell('cp {input.regions_file} {output}')
@@ -155,10 +152,8 @@ rule get_data_ready_Epiclomal:
     resources:
         h_vmem=480
     params:
-        qsub_out=os.path.join(READY_EPICLOMAL_OUTDIR, 'qsub_out'),
-        qsub_err=os.path.join(READY_EPICLOMAL_OUTDIR, 'qsub_err')
-    log:
-        os.path.join(READY_EPICLOMAL_OUTDIR, cutoffs, "log.txt")
+        qsub_out=os.path.join(LOG_DIR, 'prepare_epiclomal_qsub_out'),
+        qsub_err=os.path.join(LOG_DIR, 'prepare_epiclomal_qsub_err')
     shell:
         'Rscript {config[PROCESS_REAL_DATA_DIR]}/get_data_ready_Epiclomal.R '
         '--output_directory {READY_EPICLOMAL_OUTDIR}/{cutoffs} '
@@ -166,6 +161,6 @@ rule get_data_ready_Epiclomal:
         '--path_post_processed_CpG_data {CELL_BASED_METH_OUTDIR} '
         '--file_final_regions {input.file_final_regions} '
         '--filter_CpG_no_data {config[READY_EPICLOMAL][FILTER_CPG_NO_DATA]} '
-        '--LuoDiamond {config[READY_EPICLOMAL][LUODIAMOND]} > {log}'
+        '--LuoDiamond {config[READY_EPICLOMAL][LUODIAMOND]}'
 
 

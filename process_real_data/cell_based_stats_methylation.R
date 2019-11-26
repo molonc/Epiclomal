@@ -54,6 +54,7 @@ print(input_file)
 
 tmp <- read.csv(input_file,sep="\t",header=TRUE)
 
+print(dim(tmp))
   ### using a smaller set when testing
   # tmp <- tmp[1:1000,]
 
