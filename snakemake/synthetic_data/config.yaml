@@ -1,7 +1,5 @@
-OUTPUT_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/synthetic_data_epiclomal'
-DATA_DIRECTORY: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/synthetic'
-
-LOG_DIR: 'log'
+OUTPUT_DIR: '/shahlab/pye/projects/epiclomal/examples/synthetic_data_epiclomal'
+DATA_DIRECTORY: '/shahlab/pye/projects/epiclomal/examples/synthetic'
 
 NUM_EPI_ITERS: 300
 

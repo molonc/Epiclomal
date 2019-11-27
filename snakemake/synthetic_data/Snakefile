@@ -1,8 +1,8 @@
 import os
 
-LOG_DIR = config['LOG_DIR']
 DATA_DIRECTORY = config['DATA_DIRECTORY']
 OUTDIR = config['OUTPUT_DIR']
+LOG_DIR = os.path.join(OUTDIR, 'log')
 NPM_DIRECTORY = os.path.join(OUTDIR, 'simple_hclust')
 EPI_BASIC_DIR = os.path.join(OUTDIR, 'epi_basic')
 EPI_REGION_DIR = os.path.join(OUTDIR, 'epi_region')
@@ -22,7 +22,20 @@ rule all:
         os.path.join(NPM_DIRECTORY, "results_PearsonClust.txt"),
         os.path.join(NPM_DIRECTORY, "results_DensityCut.txt")
 
+rule init_dir:
+    output:
+        directory(LOG_DIR)
+    resources:
+        h_vmem=default_mem
+    params:
+        qsub_out='tmp',
+        qsub_err='tmp'
+    shell:
+        'mkdir -p {LOG_DIR}'
+
 rule generate_synthetic_data:
+    input:
+        LOG_DIR
     output:
         os.path.join(DATA_DIRECTORY, 'data/data_incomplete.tsv.gz'),
         os.path.join(DATA_DIRECTORY, 'data/regions_file.tsv.gz'),

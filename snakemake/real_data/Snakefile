@@ -1,8 +1,8 @@
 import os
 import re
 
-LOG_DIR = config['LOG_DIR']
 OUTDIR = config['OUTPUT_DIR']
+LOG_DIR = os.path.join(OUTDIR, 'log')
 NPM_DIRECTORY = os.path.join(OUTDIR, 'simple_hclust')
 EPI_BASIC_DIR = os.path.join(OUTDIR, 'epi_basic')
 EPI_REGION_DIR = os.path.join(OUTDIR, 'epi_region')
@@ -22,8 +22,20 @@ rule all:
         '.pearson_eval',
         '.densitycut_eval'
 
+rule init_dir:
+    output:
+        directory(LOG_DIR)
+    resources:
+        h_vmem=default_mem
+    params:
+        qsub_out='tmp',
+        qsub_err='tmp'
+    shell:
+        'mkdir -p {LOG_DIR}'
+
 rule preprocess:
     input:
+        LOG_DIR,
         meth_file=config['METH_FILE'],
         regions_file=config['REGION_FILE']
     output:
@@ -31,8 +43,8 @@ rule preprocess:
     resources:
         h_vmem=240
     params:
-        qsub_out='preprocess_qsub_out',
-        qsub_err='preprocess_qsub_err'
+        qsub_out=os.path.join(LOG_DIR, 'preprocess_qsub_out'),
+        qsub_err=os.path.join(LOG_DIR, 'preprocess_qsub_err')
     shell:
         'Rscript {config[SOFTWARE][hclust_software]} '
         '--method None '

@@ -1,7 +1,5 @@
 OUTPUT_DIR: '/shahlab/pye/projects/epiclomal/examples/test_process_real_data/epiclomal'
 
-LOG_DIR: 'log'
-
 METH_FILE: '/shahlab/pye/projects/epiclomal/examples/test_process_real_data/epiclomal_input/0_0.95_10000/input_Epiclomal_test_pye_1.tsv.gz'
 REGION_FILE: '/shahlab/pye/projects/epiclomal/examples/test_process_real_data/epiclomal_input/0_0.95_10000/regionIDs_input_Epiclomal_test_pye_1.tsv.gz'
 TRUE_FILE: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/true_clone_membership.txt.gz'

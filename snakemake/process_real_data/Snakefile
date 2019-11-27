@@ -5,13 +5,14 @@ name_regions = config['CPG_COORDS']['NAME_REGIONS']
 cells = config['cells']
 data_ID = config['DATA_ID']
 
-LOG_DIR = os.path.join(config['OUTDIR'], 'log')
-CPG_COORDS_OUTDIR = os.path.join(config['OUTDIR'], 'CpG_coordinates_in_regions')
-CELL_BASED_METH_OUTDIR = os.path.join(config['OUTDIR'], 'cell_based_CpGs')
-CELL_BASED_STAT_OUTDIR = os.path.join(config['OUTDIR'], 'cell_based_stats')
-STATS_METHYLATION_OUTDIR = os.path.join(config['OUTDIR'], 'final_stats', config['STATS_METHYLATION']['ALL_CUTOFFS'])
-FILTER_REGIONS_OUTDIR = os.path.join(config['OUTDIR'], 'filter_regions', config['STATS_METHYLATION']['ALL_CUTOFFS'])
-READY_EPICLOMAL_OUTDIR = os.path.join(config['OUTDIR'], 'epiclomal_input', config['STATS_METHYLATION']['ALL_CUTOFFS'])
+OUTDIR = config['OUTDIR']
+LOG_DIR = os.path.join(OUTDIR, 'log')
+CPG_COORDS_OUTDIR = os.path.join(OUTDIR, 'CpG_coordinates_in_regions')
+CELL_BASED_METH_OUTDIR = os.path.join(OUTDIR, 'cell_based_CpGs')
+CELL_BASED_STAT_OUTDIR = os.path.join(OUTDIR, 'cell_based_stats')
+STATS_METHYLATION_OUTDIR = os.path.join(OUTDIR, 'final_stats', config['STATS_METHYLATION']['ALL_CUTOFFS'])
+FILTER_REGIONS_OUTDIR = os.path.join(OUTDIR, 'filter_regions', config['STATS_METHYLATION']['ALL_CUTOFFS'])
+READY_EPICLOMAL_OUTDIR = os.path.join(OUTDIR, 'epiclomal_input', config['STATS_METHYLATION']['ALL_CUTOFFS'])
 
 default_mem=50
 
@@ -31,8 +32,20 @@ rule all:
         regions=os.path.join(READY_EPICLOMAL_OUTDIR, cutoffs, 'regionIDs_input_Epiclomal_{}.tsv.gz'.format(data_ID)),
         meth_file=os.path.join(READY_EPICLOMAL_OUTDIR, cutoffs, 'input_Epiclomal_{}.tsv.gz'.format(data_ID))
 
+rule init_dir:
+    output:
+        directory(LOG_DIR)
+    resources:
+        h_vmem=default_mem
+    params:
+        qsub_out='tmp',
+        qsub_err='tmp'
+    shell:
+        'mkdir -p {LOG_DIR}'
+
 rule get_cpgs_in_regions:
     input:
+        LOG_DIR,
         regions_file=config['REGION_FILE']
     output:
         touch('.get_cpgs_in_regions_{CHR}')
@@ -53,6 +66,7 @@ rule get_cpgs_in_regions:
 
 rule cell_based_methylation_extraction:
     input:
+        LOG_DIR,
         path_cell_data=config['DATA_DIR'],
         get_cpgs_in_regions=expand('.get_cpgs_in_regions_{CHR}', CHR=CHR)
     output:
@@ -76,6 +90,7 @@ rule cell_based_methylation_extraction:
 
 rule cell_based_stats_methylation:
     input:
+        LOG_DIR,
         os.path.join(CELL_BASED_METH_OUTDIR, "CpG_meth_data_long_" + data_ID + "_{cells}.tsv.gz")
     output:
         os.path.join(CELL_BASED_STAT_OUTDIR, "stats_region_" + data_ID + "_{cells}.tsv")
@@ -94,6 +109,7 @@ rule cell_based_stats_methylation:
 
 rule stats_methylation:
     input:
+        LOG_DIR,
         cell_based_stats=expand(os.path.join(CELL_BASED_STAT_OUTDIR, "stats_region_" + data_ID + "_{cells}.tsv"), cells=cells),
         get_cpgs_in_regions=expand('.get_cpgs_in_regions_{CHR}', CHR=CHR)
     output:
@@ -120,6 +136,7 @@ rule stats_methylation:
 
 rule filter_regions:
     input:
+        LOG_DIR,
         meth_file=os.path.join(STATS_METHYLATION_OUTDIR, cutoffs, "final_mean_meth_region_" + data_ID + ".tsv"),
         regions_file=os.path.join(STATS_METHYLATION_OUTDIR, cutoffs, "final_regions_" + data_ID + ".tsv")
     output:
@@ -144,6 +161,7 @@ rule filter_regions:
 
 rule get_data_ready_Epiclomal:
     input:
+        LOG_DIR,
         cell_based_stats=expand(os.path.join(CELL_BASED_STAT_OUTDIR, "stats_region_" + data_ID + "_{cells}.tsv"), cells=cells),
         file_final_regions=os.path.join(FILTER_REGIONS_OUTDIR, cutoffs, "filtered_regions_" + data_ID + ".tsv")
     output:

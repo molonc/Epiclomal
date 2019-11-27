@@ -45,7 +45,7 @@ conda create --name Epiclomal --file conda_packages.txt
 Activate the environment:
 
 ```
-source activate Epiclomal
+conda activate Epiclomal
 ```
 
 Add Epiclomal Python package into the current site packages:
@@ -53,13 +53,13 @@ Add Epiclomal Python package into the current site packages:
 python setup.py install
 ```
 
+Epiclomal R package has dependency on DensityCut, which must be manually installed before adding Epiclomal R package. Install according to instructions listed here: https://bitbucket.org/jerry00/densitycut_dev/
+
 Add Epiclomal R package into current site packages:
 ```
 R CMD build REpiclomal
 R CMD INSTALL REpiclomal_1.0.tar.gz
 ```
-
-Epiclomal R package has dependency on DensityCut, which must be manually installed according to instructions listed here: https://bitbucket.org/jerry00/densitycut_dev/
 
 ## Usage
 
@@ -77,7 +77,7 @@ snakemake -s /path/to/Epiclomal/snakemake/synthetic_data/Snakefile --configfile 
 ```
 to run the workflow locally. To submit the jobs on the shahlab cluster and with parallelization, run
 ```
-snakemake -s /path/to/Epiclomal/snakemake/synthetic_data/Snakefile --cluster 'qsub -V -hard -q shahlab.q -l h_vmem=8G -P shahlab_high -S /bin/bash' -j 32 --configfile /path/to/Epiclomal/snakemake/synthetic_data/config.yaml
+snakemake -s /path/to/Epiclomal/snakemake/synthetic_data/Snakefile --cluster 'qsub -V -hard -q shahlab.q -l h_vmem={resources.h_vmem}G -P shahlab_high -S /bin/bash -o {params.qsub_out} -e {params.qsub_err}' -j 32 --configfile /path/to/Epiclomal/snakemake/synthetic_data/config.yaml
 ```
 
 To run each step of the synthetic data workflow individually, follow the steps outlined here: https://github.com/shahcompbio/Epiclomal/blob/master/examples/README.md
@@ -92,7 +92,7 @@ First, the real data must be preprocessed into a methylation and region file to 
 To run the preprocessing workflow, first edit the config file found at Epiclomal/snakemake/process_real_data/config.yaml with appropriate paths and parameters. Ensure all cells to cluster are accounted for. Then run
 
 ```
-snakemake -s /path/to/Epiclomal/snakemake/process_real_data/Snakefile --cluster 'qsub -V -hard -q shahlab.q -l h_vmem=32G -P shahlab_high -S /bin/bash' -j 32 --configfile /path/to/Epiclomal/snakemake/process_real_data/config.yaml
+snakemake -s /path/to/Epiclomal/snakemake/process_real_data/Snakefile --cluster 'qsub -V -hard -q shahlab.q -l h_vmem={resources.h_vmem}G -P shahlab_high -S /bin/bash -o {params.qsub_out} -e {params.qsub_err}' -j 32 --configfile /path/to/Epiclomal/snakemake/process_real_data/config.yaml
 ```
 
 Then, to run the real data through the clustering software, edit the config file found at Epiclomal/snakemake/real_data/config.yaml with the paths to the newly generated methylation and region files. Include a true clusters file if available.

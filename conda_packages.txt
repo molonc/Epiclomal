@@ -51,7 +51,6 @@ datrie=0.8=py37h516909a_0
 decorator=4.4.0=py_0
 docutils=0.15.2=py37_0
 dropbox=9.4.0=py_0
-epiclomal=0.0.1=pypi_0
 expat=2.2.5=he1b5a44_1003
 filechunkio=1.8=py_2
 fontconfig=2.13.1=he4413a7_1000
@@ -81,7 +80,7 @@ icu=58.2=hf484d3e_1000
 idna=2.8=py37_1000
 jinja2=2.10.1=py_0
 jmespath=0.9.4=py_0
-joblib=0.14.0=pypi_0
+joblib=0.14.0
 jpeg=9c=h14c3975_1001
 jsonschema=3.0.2=py37_0
 krb5=1.16.3=h05b26f9_1001
