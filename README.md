@@ -75,7 +75,7 @@ To run the Snakemake workflow, first edit the config file found at Epiclomal/sna
 ```
 snakemake -s /path/to/Epiclomal/snakemake/synthetic_data/Snakefile --configfile /path/to/Epiclomal/snakemake/synthetic_data/config.yaml
 ```
-To run the workflow locally. To submit the jobs on the shahlab cluster and with parallelization, run
+to run the workflow locally. To submit the jobs on the shahlab cluster and with parallelization, run
 ```
 snakemake -s /path/to/Epiclomal/snakemake/synthetic_data/Snakefile --cluster 'qsub -V -hard -q shahlab.q -l h_vmem=8G -P shahlab_high -S /bin/bash' -j 32 --configfile /path/to/Epiclomal/snakemake/synthetic_data/config.yaml
 ```
@@ -122,7 +122,10 @@ evaluate_clustering --true_clusters_file {true_clusters_file} --true_prevalences
 ```
 
 ## Input
+The base inputs for epiclomal are a list of cells of interest and their bismark bisulfite read files, a file containing regions of interest, and if available, a true cluster file.
+
 ## Output
+The final outputs of the epiclomal pipeline are a file containing the best clustering from epiclomal, which can be found through `all_results_bestrun_{basic|region}.tsv` which is created by the final evaluation script, and final methylation plots of the clustering.
 
 ## Source code structure
 ### epiclomal

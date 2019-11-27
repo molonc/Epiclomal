@@ -30,8 +30,7 @@ $RSCRIPT ../scripts/generate_synthetic.R \
     --percent_regions_dirichlet_param=0.8 \
     --dirichlet_param_genotype_prob=90_10 \
     --output_dir=synthetic \
-    --visualization_software ../scripts/visualization.R
-    
+
 
 # $ Rscript ../scripts/generate_synthetic.R -h
 # usage: generate_synthetic.R [-h] [--read_size READ_SIZE]
@@ -54,7 +53,7 @@ $RSCRIPT ../scripts/generate_synthetic.R \
 #                             [--phylogenetic_generation PHYLOGENETIC_GENERATION]
 #                             [--prop_cpg_flip PROP_CPG_FLIP] [--seed SEED]
 #                             [--verbose VERBOSE] [--saveall SAVEALL]
-# 
+#
 # optional arguments:
 #   -h, --help            show this help message and exit
 #   --read_size READ_SIZE
@@ -107,10 +106,6 @@ $RSCRIPT ../scripts/generate_synthetic.R \
 #                         output_dir
 #   --plot_data PLOT_DATA
 #                         If this is 1, use the visualization software to plot
-#                         the data
-#   --visualization_software VISUALIZATION_SOFTWARE
-#                         Use this visualization software to plot the data if
-#                         requested
 #   --prop_add_var PROP_ADD_VAR
 #                         proportion (0-1) of non-flipped regions to have their
 #                         methylation calls changed with prob = 0.5, default is

@@ -115,6 +115,16 @@ find_cluster_means <- function(data, true_clusters) {
     return(epi_means)
 }
 
+plot_heatmap <- function(data, filename, main, annotation_row, index_gaps) {
+    pheatmap(data, cluster_cols = FALSE, cluster_rows = FALSE,
+        annotation_row = annotation_row, fontsize = 8,
+        main = main,
+        gap_row = index_gaps, fontsize_row = 4, fontsize_col = 6,
+        annotation_names_row = FALSE, border_color = NA, show_colnames = TRUE, labels_col = NULL,
+        filename = filename)
+
+}
+
 main <- function(mean_meth_file, true_file, outdir, coef_t, mean_diff_threshold) {
     mean_meth_matrix <- load_mean_meth(mean_meth_file)
     print(paste("Number of cells", dim(mean_meth_matrix)[1]))
@@ -132,13 +142,13 @@ main <- function(mean_meth_file, true_file, outdir, coef_t, mean_diff_threshold)
     if (N < dim(non_redundant_matrix)[2]) {
         print(paste("Finding top", N, "most variant regions"))
         non_redundant_matrix <- find_most_variant_regions(non_redundant_matrix, N)
-        } else {
-            print("N is greater than number of non-redundant regions, keep all")
-        }
+    } else {
+        print("N is greater than number of non-redundant regions, keep all")
+    }
 
     region_weights <- correlated_regions[correlated_regions$keep_region, c('region', 'weight'), drop=FALSE]
     region_weight_file <- gzfile(paste0(outdir, "/non_redundant_region_weights_", data_id, ".tsv.gz"))
-    write.csv(region_weights, file = region_weight_file, sep = "\t", quote=FALSE, row.names = FALSE, col.names = TRUE)
+    write.table(region_weights, file = region_weight_file, sep = "\t", quote=FALSE, row.names = FALSE, col.names = TRUE)
 
     if (!is.null(true_file)) {
         true_clone_membership <- read.csv(true_file, sep = "\t", header = TRUE)
@@ -154,34 +164,23 @@ main <- function(mean_meth_file, true_file, outdir, coef_t, mean_diff_threshold)
     }
 
     redundant_file <- gzfile(paste0(outdir, "/redundant_regions_meth_", data_id, ".tsv.gz"))
-    write.csv(redundant_matrix, file = redundant_file, sep = "\t", quote=FALSE, row.names = TRUE, col.names = TRUE)
+    write.table(redundant_matrix, file = redundant_file, sep = "\t", quote=FALSE, row.names = TRUE, col.names = TRUE)
 
     non_redundant_file <- gzfile(paste0(outdir, "/to_keep_meth_", data_id, ".tsv.gz"))
-    write.csv(non_redundant_matrix, file = non_redundant_file, sep = "\t", quote=FALSE, row.names = TRUE, col.names = TRUE)
+    write.table(non_redundant_matrix, file = non_redundant_file, sep = "\t", quote=FALSE, row.names = TRUE, col.names = TRUE)
 
     regions_file <- paste0(outdir, "/filtered_regions_", data_id, ".tsv")
     write.table(colnames(non_redundant_matrix), file = regions_file, sep = "\t", quote=FALSE, row.names = FALSE, col.names = FALSE)
 
     print("Plotting methylation of redundant regions")
     redundant_plot <- paste0(outdir, "/redundant_regions_plot_", data_id, ".png")
-    pheatmap(redundant_matrix, cluster_cols = FALSE, cluster_rows = FALSE,
-        annotation_row = annotation_row, fontsize = 8,
-        main = "Mean methylation of redundant regions",
-        gap_row = index_gaps, fontsize_row = 4, fontsize_col = 6,
-        annotation_names_row = FALSE, border_color = NA, show_colnames = TRUE, labels_col = NULL,
-        filename = redundant_plot)
+    plot_heatmap(redundant_matrix, redundant_plot, "Mean methylation of redundant regions", annotation_row, index_gaps)
 
     print("Plotting methylation of regions to keep")
     non_redundant_plot <- paste0(outdir, "/regions_to_keep_plot_", data_id, ".png")
-    pheatmap(non_redundant_matrix, cluster_cols = FALSE, cluster_rows = FALSE,
-        annotation_row = annotation_row, fontsize = 8,
-        main = "Mean methylation of regions to keep",
-        gap_row = index_gaps, fontsize_row = 4, fontsize_col = 6,
-        annotation_names_row = FALSE, border_color = NA, show_colnames = TRUE, labels_col = NULL,
-        filename = non_redundant_plot)
+    plot_heatmap(non_redundant_matrix, non_redundant_plot, "Mean methylation of regions to keep", annotation_row, index_gaps)
 
     if (!is.null(true_file)) {
-
         print("Finding and removing regions with low variance between clusters")
         cluster_means <- find_cluster_means(mean_meth_matrix, true_clone_membership)
         low_variance_regions <- rownames(cluster_means[cluster_means$max_diff < mean_diff_threshold,])
@@ -201,30 +200,15 @@ main <- function(mean_meth_file, true_file, outdir, coef_t, mean_diff_threshold)
         if (sum(!is.na(redundant_matrix)) > 0) {
             print("Plotting methylation of low variance regions")
             redundant_plot <- paste0(outdir, "/low_variance_regions_plot_", data_id, ".png")
-            pheatmap(redundant_matrix, cluster_cols = FALSE, cluster_rows = FALSE,
-                annotation_row = annotation_row, fontsize = 8,
-                main = "Mean methylation of low variance regions",
-                gap_row = index_gaps, fontsize_row = 4, fontsize_col = 6,
-                annotation_names_row = FALSE, border_color = NA, show_colnames = TRUE, labels_col = NULL,
-                filename = redundant_plot)
+            plot_heatmap(redundant_matrix, redundant_plot, "Mean methylation of low variance regions", annotation_row, index_gaps)
         }
 
         if (sum(!is.na(non_redundant_matrix)) > 0) {
             print("Plotting methylation of variant regions")
             non_redundant_plot <- paste0(outdir, "/variant_regions_plot_", data_id, ".png")
-            pheatmap(non_redundant_matrix, cluster_cols = FALSE, cluster_rows = FALSE,
-                annotation_row = annotation_row, fontsize = 8,
-                main = "Mean methylation of variant regions",
-                gap_row = index_gaps, fontsize_row = 4, fontsize_col = 6,
-                annotation_names_row = FALSE, border_color = NA, show_colnames = TRUE, labels_col = NULL,
-                filename = non_redundant_plot)
+            plot_heatmap(non_redundant_matrix, non_redundant_plot, "Mean methylation of variant regions", annotation_row, index_gaps)
         }
     }
-    # print("Plotting histogram of Pearson correlation coefficients")
-    # png(paste0(outdir, "/pearson_corr_coeff_hist_", data_id, ".png"))
-    # hist(as.vector(as.dist(pearson_corr)), breaks = 100)
-    # dev.off()
 }
 
 main(mean_meth_file, true_file, outdir, coef_t, mean_diff_threshold)
-
