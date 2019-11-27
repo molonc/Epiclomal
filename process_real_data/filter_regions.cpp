@@ -100,43 +100,6 @@ int number_of_na(NumericVector region) {
 
 // find regions with high correlation to remove and region weights
 // [[Rcpp::export]]
-List find_correlated_regions_cpp(NumericMatrix mean_meth_matrix, double coef_t) {
-    int cols = mean_meth_matrix.ncol();
-    CharacterVector regions = colnames(mean_meth_matrix);
-    CharacterVector regions_to_remove;
-    IntegerVector region_weights(cols, 1);
-
-    for (int r1 = 0; r1 < (cols - 1); r1++) {
-        if (region_already_removed(regions_to_remove, as<std::string>(regions[r1]))) continue;
-
-        for (int r2 = (r1 + 1); r2 < cols; r2++) {
-            if (region_already_removed(regions_to_remove, as<std::string>(regions[r2]))) continue;
-
-            double pearson_corr = find_pearson_corr(mean_meth_matrix.column(r1), mean_meth_matrix.column(r2));
-
-            if (pearson_corr == NA_REAL) continue;
-            else {
-                if((pearson_corr > coef_t) || (pearson_corr < (-1 * coef_t))) {
-                    if (number_of_na(mean_meth_matrix.column(r2)) >= number_of_na(mean_meth_matrix.column(r1))) {
-                        regions_to_remove.push_back(regions[r2]);
-                        region_weights[r1] = region_weights[r1] + region_weights[r2];
-                    }
-                    else {
-                        regions_to_remove.push_back(regions[r1]);
-                        region_weights[r2] = region_weights[r1] + region_weights[r2];
-                        break;
-                    }
-                }
-            }
-        }
-    }
-    DataFrame region_weights_df = DataFrame::create(Named("region") = colnames(mean_meth_matrix), Named("weight") = region_weights);
-
-    return(List::create(Named("regions_to_remove") = regions_to_remove, Named("region_weights") = region_weights_df));
-}
-
-// find regions with high correlation to remove and region weights
-// [[Rcpp::export]]
 DataFrame find_correlated_regions_LV(NumericMatrix mean_meth_matrix, double coef_t) {
     int cols = mean_meth_matrix.ncol();
     CharacterVector regions = colnames(mean_meth_matrix);
