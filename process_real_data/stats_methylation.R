@@ -12,6 +12,7 @@ suppressMessages(library(ggplot2))
 suppressMessages(library(gridExtra))
 suppressMessages(library(plyr))
 suppressMessages(library(pheatmap))
+suppressMessages(library(doParallel))
 
 #======================
 # arguments
@@ -264,11 +265,16 @@ if((args$nloci_cutoff > 1 )){
 
 if(doThis == TRUE){
 
-  print("checking missing proportion per cell")
-
   miss_prop_per_cell <- NULL
 
-  for (c in 1: length(all_CpG_cell_files)){
+  numCores <- ceiling(detectCores()/5)
+  print(paste("number of cores available", numCores))
+  cl <- makeCluster(numCores)
+  registerDoParallel(cl)
+
+  print("checking missing proportion per cell")
+
+  miss_prop_per_cell <- foreach (c = 1:length(all_CpG_cell_files), .combine=c) %dopar% {
 
     print(c)
 
@@ -295,9 +301,11 @@ if(doThis == TRUE){
 
     print(sum(CpG_nodata_df$CpG_nodata == 0))
 
-    miss_prop_per_cell <- c(miss_prop_per_cell,sum(is.na(tmp$meth_frac))/num_loci_unfiltered)
+    sum(is.na(tmp$meth_frac))/num_loci_unfiltered
 
   }
+  stopCluster(cl)
+
 
   print("Number of loci with no data across all cells = ")
   print(sum(CpG_nodata_df$CpG_nodata == 0))
@@ -337,23 +345,47 @@ region_mean_meth <- NULL
 region_miss_prop <- NULL
 region_IQR_meth <- NULL
 
-cell_ID <- NULL
+region_stats <- data.frame(region_mean_meth = region_mean_meth, region_miss_prop = region_miss_prop, region_IQR_meth = region_IQR_meth)
 
-for(f in 1:length(all_stats_cell_files)){
+
+numCores <- ceiling(detectCores()/5)
+print(paste("number of cores available", numCores))
+cl <- makeCluster(numCores)
+registerDoParallel(cl)
+
+region_stats <- foreach (f = 1:length(all_stats_cell_files), .combine = rbind) %dopar% {
 
   # print(f)
 
   cell_stats <- read.csv(paste0(args$path_stats_region_data,"/",all_stats_cell_files[f]),sep="\t",header=TRUE)
 
-  cell_ID <- c(cell_ID, as.character(unique(cell_stats$cell_id)))
-
   cell_stats$region_id <- factor(cell_stats$region_id,levels=as.character(unique(cell_stats$region_id)))
 
-  region_mean_meth <- cbind(region_mean_meth,cell_stats$region_mean)
-  region_miss_prop  <- cbind(region_miss_prop,cell_stats$region_miss)
-  region_IQR_meth <- cbind(region_IQR_meth,cell_stats$region_IQR)
+  data.frame(region_mean_meth = cell_stats$region_mean, region_miss_prop = cell_stats$region_miss, region_IQR_meth = cell_stats$region_IQR)
 
 }
+stopCluster(cl)
+
+cell_ID <- NULL
+
+numCores <- ceiling(detectCores()/5)
+print(paste("number of cores available", numCores))
+cl <- makeCluster(numCores)
+registerDoParallel(cl)
+
+region_stats <- foreach (f = 1:length(all_stats_cell_files), .combine = c) %dopar% {
+
+  # print(f)
+
+  cell_stats <- read.csv(paste0(args$path_stats_region_data,"/",all_stats_cell_files[f]),sep="\t",header=TRUE)
+
+  as.character(unique(cell_stats$cell_id))
+}
+stopCluster(cl)
+
+region_mean_meth <- region_stats$region_mean_meth
+region_miss_prop <- region_stats$region_miss_prop
+region_IQR_meth <- region_stats$region_IQR_meth
 
 colnames(region_mean_meth) <- cell_ID
 rownames(region_mean_meth) <- as.character(cell_stats$region_id)

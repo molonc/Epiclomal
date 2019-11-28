@@ -48,6 +48,7 @@ double stdDev(NumericVector arr, IntegerVector indices) {
     }
 }
 
+// [[Rcpp::export]]
 double find_pearson_corr(NumericVector x, NumericVector y) {
     IntegerVector indices = non_na_intersection(x, y);
 
@@ -79,15 +80,7 @@ double find_pearson_corr(NumericVector x, NumericVector y) {
     }
 }
 
-bool region_already_removed(CharacterVector regions_to_remove, std::string region_name){
-    for (int i = 0; i < regions_to_remove.length(); i++) {
-        if (as<std::string>(regions_to_remove[i]) == region_name) {
-            return true;
-        }
-    }
-    return false;
-}
-
+// [[Rcpp::export]]
 int number_of_na(NumericVector region) {
     int no_na = 0;
     for (int i = 0; i < region.length(); i++) {

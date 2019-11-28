@@ -48,7 +48,7 @@ rule get_cpgs_in_regions:
         LOG_DIR,
         regions_file=config['REGION_FILE']
     output:
-        touch('.get_cpgs_in_regions_{CHR}')
+        touch(os.path.join(OUTDIR, '.get_cpgs_in_regions_{CHR}'))
     resources:
         h_vmem=default_mem
     params:
@@ -88,10 +88,10 @@ rule cell_based_methylation_extraction:
         '--genome {config[CELL_BASED_METH][GENOME]} '
         '--include_chrY {config[CELL_BASED_METH][INCLUDE_CHRY]}'
 
-rule cell_based_stats_methylation:
+rule cell_based_stats:
     input:
         LOG_DIR,
-        os.path.join(CELL_BASED_METH_OUTDIR, "CpG_meth_data_long_" + data_ID + "_{cells}.tsv.gz")
+        post_processed_CpG_data_file=os.path.join(CELL_BASED_METH_OUTDIR, "CpG_meth_data_long_" + data_ID + "_{cells}.tsv.gz")
     output:
         os.path.join(CELL_BASED_STAT_OUTDIR, "stats_region_" + data_ID + "_{cells}.tsv")
     resources:
@@ -104,12 +104,13 @@ rule cell_based_stats_methylation:
         'Rscript {config[PROCESS_REAL_DATA_DIR]}/cell_based_stats_methylation.R '
         '--output_directory {CELL_BASED_STAT_OUTDIR} '
         '--data_ID {data_ID} '
-        '--post_processed_CpG_data_file {input} '
+        '--post_processed_CpG_data_file {input.post_processed_CpG_data_file} '
         '--cell_ID {wildcards.cells}'
 
 rule stats_methylation:
     input:
         LOG_DIR,
+        cell_based_CpGs=expand(os.path.join(CELL_BASED_METH_OUTDIR, "CpG_meth_data_long_" + data_ID + "_{cells}.tsv.gz"), cells=cells),
         cell_based_stats=expand(os.path.join(CELL_BASED_STAT_OUTDIR, "stats_region_" + data_ID + "_{cells}.tsv"), cells=cells),
         get_cpgs_in_regions=expand('.get_cpgs_in_regions_{CHR}', CHR=CHR)
     output:
@@ -122,7 +123,7 @@ rule stats_methylation:
         qsub_err=os.path.join(LOG_DIR, 'stats_meth_qsub_err')
     shell:
         'Rscript {config[PROCESS_REAL_DATA_DIR]}/stats_methylation.R '
-        '--output_directory {STATS_METHYLATION_OUTDIR}/{cutoffs} '
+        '--output_directory {STATS_METHYLATION_OUTDIR} '
         '--data_ID {data_ID} '
         '--path_post_processed_CpG_data {CELL_BASED_METH_OUTDIR} '
         '--path_stats_region_data {CELL_BASED_STAT_OUTDIR} '
@@ -149,7 +150,7 @@ rule filter_regions:
     run:
         if (config['FILTER_REGIONS']['FILTER']):
             shell('Rscript {config[PROCESS_REAL_DATA_DIR]}/filter_regions.R '
-                '--output_directory {FILTER_REGIONS_OUTDIR}/{cutoffs} '
+                '--output_directory {FILTER_REGIONS_OUTDIR} '
                 '--data_ID {data_ID} '
                 '--mean_methylation_file {input.meth_file} '
                 '--true_file {config[TRUE_FILE]} '
@@ -174,7 +175,7 @@ rule get_data_ready_Epiclomal:
         qsub_err=os.path.join(LOG_DIR, 'prepare_epiclomal_qsub_err')
     shell:
         'Rscript {config[PROCESS_REAL_DATA_DIR]}/get_data_ready_Epiclomal.R '
-        '--output_directory {READY_EPICLOMAL_OUTDIR}/{cutoffs} '
+        '--output_directory {READY_EPICLOMAL_OUTDIR} '
         '--data_ID {data_ID} '
         '--path_post_processed_CpG_data {CELL_BASED_METH_OUTDIR} '
         '--file_final_regions {input.file_final_regions} '
