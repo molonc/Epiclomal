@@ -1,46 +1,17 @@
-PROCESS_REAL_DATA_DIR: '/shahlab/pye/projects/epiclomal/Epiclomal/process_real_data'
+PROCESS_REAL_DATA_DIR: '/path/to/Epiclomal/process_real_data'
 
-DATA_ID: 'test_pye_1'
-OUTDIR: '/shahlab/pye/projects/epiclomal/examples/test_process_real_data'
+DATA_ID: 'test_1'
+OUTDIR: '/path/to/process_real_data'
 
-DATA_DIR: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/cov'
+DATA_DIR: '/path/to/raw_data/cov'
 
 cells:
-  [GSM1370535_2i_1,
-  GSM1370536_2i_2,
-  GSM1370537_2i_3,
-  GSM1370538_2i_4,
-  GSM1370539_2i_5,
-  GSM1370540_2i_6,
-  GSM1370541_2i_7,
-  GSM1370542_2i_8,
-  GSM1370543_2i_9,
-  GSM1370544_2i_10,
-  GSM1370545_2i_11,
-  GSM1370546_2i_12,
-  GSM1370555_Ser1,
-  GSM1370556_Ser2,
-  GSM1370557_Ser3,
-  GSM1370558_Ser4,
-  GSM1370559_Ser5,
-  GSM1370560_Ser6,
-  GSM1370561_Ser7,
-  GSM1370562_Ser8,
-  GSM1370563_Ser9,
-  GSM1370564_Ser10,
-  GSM1370565_Ser11,
-  GSM1370566_Ser12,
-  GSM1370567_Ser13,
-  GSM1370568_Ser14,
-  GSM1370569_Ser15,
-  GSM1370570_Ser16,
-  GSM1370571_Ser17,
-  GSM1370572_Ser18,
-  GSM1370573_Ser19,
-  GSM1370574_Ser20]
+  [cell_1,
+  cell_2,
+  cell_3]
 
-REGION_FILE: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/CGI_mm10_regions.txt'
-TRUE_FILE: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/true_clone_membership.txt.gz'
+REGION_FILE: '/path/to/regions.txt'
+TRUE_FILE: '/path/to/true_clone_membership.txt.gz'
 
 CPG_COORDS:
   NAME_REGIONS: 'regions'

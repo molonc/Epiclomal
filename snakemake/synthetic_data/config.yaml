@@ -1,5 +1,5 @@
-OUTPUT_DIR: '/shahlab/pye/projects/epiclomal/examples/synthetic_data_epiclomal'
-DATA_DIRECTORY: '/shahlab/pye/projects/epiclomal/examples/synthetic'
+OUTPUT_DIR: '/path/to/synthetic_data_epiclomal'
+DATA_DIRECTORY: '/path/to/synthetic_data'
 
 NUM_EPI_ITERS: 300
 
@@ -40,9 +40,9 @@ PARAMS:
     max_num_iters: 1000
     Bishop_model_selection: False
     check_uncertainty: True
-    config_file: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/inputs/config1.yaml'
+    config_file: '/path/to/Epiclomal/examples/inputs/config1.yaml'
 
 SOFTWARE:
-  generate_synthetic_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/generate_synthetic.R'
-  hclust_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/hclust.R'
-  eval_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/eval_epiclomal.R'
+  generate_synthetic_software: '/path/to/Epiclomal/scripts/generate_synthetic.R'
+  hclust_software: '/path/to/Epiclomal/scripts/hclust.R'
+  eval_software: '/path/to/Epiclomal/scripts/eval_epiclomal.R'

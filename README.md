@@ -86,8 +86,6 @@ to run the workflow locally. To submit the jobs on the shahlab cluster and with 
 snakemake -s /path/to/Epiclomal/snakemake/synthetic_data/Snakefile --cluster 'qsub -V -hard -q shahlab.q -l h_vmem={resources.h_vmem}G -S /bin/bash -o {params.qsub_out} -e {params.qsub_err}' -j 8 --configfile /path/to/Epiclomal/snakemake/synthetic_data/config.yaml
 ```
 
-To run each step of the synthetic data workflow individually, follow the steps outlined here: https://github.com/shahcompbio/Epiclomal/blob/master/examples/README.md
-
 ### Run pipeline with real data
 
 The real data pipeline requires two steps which are separated into two workflows.

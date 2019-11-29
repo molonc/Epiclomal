@@ -1,8 +1,8 @@
-OUTPUT_DIR: '/shahlab/pye/projects/epiclomal/examples/test_process_real_data/epiclomal'
+OUTPUT_DIR: '/path/to/epiclomal_results'
 
-METH_FILE: '/shahlab/pye/projects/epiclomal/examples/test_process_real_data/epiclomal_input/0_0.95_10000/input_Epiclomal_test_pye_1.tsv.gz'
-REGION_FILE: '/shahlab/pye/projects/epiclomal/examples/test_process_real_data/epiclomal_input/0_0.95_10000/regionIDs_input_Epiclomal_test_pye_1.tsv.gz'
-TRUE_FILE: '/shahlab/mandronescu/EPI-70_Smallwood2014/data_process_Smallwood2014/true_clone_membership.txt.gz'
+METH_FILE: '/path/to/epiclomal_input.tsv.gz'
+REGION_FILE: '/path/to/region_file.tsv.gz'
+TRUE_FILE: '/path/to/true_file.txt.gz'
 TRUE_PREVALENCES: 'None'
 
 NUM_EPI_ITERS: 1000
@@ -21,8 +21,8 @@ PARAMS:
     max_num_iters: 1000
     Bishop_model_selection: False
     check_uncertainty: True
-    config_file: '/shahlab/pye/projects/epiclomal/Epiclomal/examples/inputs/config1.yaml'
+    config_file: '/path/to/Epiclomal/examples/inputs/config1.yaml'
 
 SOFTWARE:
-  hclust_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/hclust.R'
-  eval_software: '/shahlab/pye/projects/epiclomal/Epiclomal/scripts/eval_epiclomal.R'
+  hclust_software: '/path/to/Epiclomal/scripts/hclust.R'
+  eval_software: '/path/to/Epiclomal/scripts/eval_epiclomal.R'
