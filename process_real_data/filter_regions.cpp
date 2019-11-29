@@ -30,10 +30,9 @@ double cpp_mean(NumericVector arr, IntegerVector indices) {
     }
 }
 
-double stdDev(NumericVector arr, IntegerVector indices) {
+double stdDev(NumericVector arr, double mean, IntegerVector indices) {
     double sum = 0;
     double n = indices.length();
-    double mean = cpp_mean(arr, indices);
 
     for (int i = 0; i < n; i++) {
         int idx = indices[i];
@@ -48,20 +47,14 @@ double stdDev(NumericVector arr, IntegerVector indices) {
     }
 }
 
-// [[Rcpp::export]]
 double find_pearson_corr(NumericVector x, NumericVector y) {
     IntegerVector indices = non_na_intersection(x, y);
 
     double xMean = cpp_mean(x, indices);
     double yMean = cpp_mean(y, indices);
 
-    double xStdDev = stdDev(x, indices);
-    double yStdDev = stdDev(y, indices);
-
-    if(NumericVector::is_na(xMean) || NumericVector::is_na(yMean) || NumericVector::is_na(xStdDev) || NumericVector::is_na(yStdDev)) {
-        return NA_REAL;
-        // std::cout << "something is NA";
-    }
+    double xStdDev = stdDev(x, xMean, indices);
+    double yStdDev = stdDev(y, yMean, indices);
 
     double sum = 0;
     double n = indices.length();
@@ -72,6 +65,7 @@ double find_pearson_corr(NumericVector x, NumericVector y) {
     }
 
     if(n == 0) {
+        // There are no cells where both regions have data
         return (NA_REAL);
     }
     else {
@@ -80,7 +74,6 @@ double find_pearson_corr(NumericVector x, NumericVector y) {
     }
 }
 
-// [[Rcpp::export]]
 int number_of_na(NumericVector region) {
     int no_na = 0;
     for (int i = 0; i < region.length(); i++) {
