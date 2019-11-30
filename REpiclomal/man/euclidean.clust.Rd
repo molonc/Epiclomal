@@ -25,10 +25,10 @@ euclidean.clust(input_CpG_data, mean_meth_matrix, R, Max_K,
 \item{outdir}{file path to output directory}
 }
 \value{
-Predicted clusters from Euclidean clustering algorithm
+Predicted clusters from Euclidean clustering algorithm as a dataframe object (cell x cluster pred.)
 }
 \description{
-Euclidean Clustering
+Clusters methylation data based on Euclidean clustering algorithm. If R == 1, CpG based clustering is performed, if R > 1, region based clustering is performed. Also creates output files of clusters and plots in specified output directory.
 }
 \examples{
 data <- load_data(input_CpG_data_file, input_regions_file)
@@ -40,7 +40,7 @@ R <- dim(input_regions)[1] ## number of regions
 Max_K <- args$Max_K
 outdir <- args$outdir
 
-euclidean.clust(input_CpG_data, mean_meth_matrix, R, Max_K, index_type="ch", impute=0, use_cache=1, outdir)
+euclidean.clusters <- euclidean.clust(input_CpG_data, mean_meth_matrix, R, Max_K, index_type="ch", impute=0, use_cache=1, outdir)
 
 }
 \seealso{

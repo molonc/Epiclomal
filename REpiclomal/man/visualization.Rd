@@ -4,8 +4,7 @@
 \alias{visualization}
 \title{Visualization}
 \usage{
-hamming.clust(input_CpG_data, Max_K, index_type = "ch", impute,
-  use_cache, outdir)
+visualization <- function(out_dir, input_CpG_data_file, input_regions_file, input_CN_data_file=NULL, inferred_clusters_file=NULL, true_clusters_file=NULL, order_by_true=0, name, regions_to_plot=NULL)
 }
 \arguments{
 \item{out_dir}{Path to output directory}
@@ -29,7 +28,7 @@ hamming.clust(input_CpG_data, Max_K, index_type = "ch", impute,
 \item{use_cache}{if 1, use cached data when available, if 0, recompute data}
 }
 \description{
-Visualization for Epiclomal
+Visualization for Epiclomal. Plots heatmaps of methylation per cell. Heatmaps to be plotted are based on different factors such as number of regions, number of loci, and presence of a true clusters file.
 }
 \examples{
 visualization(out_dir, input_CpG_data_file, input_CN_data_file, input_regions_file, inferred_clusters_file, true_clusters_file, order_by_true, name, regions_to_plot, use_cache)

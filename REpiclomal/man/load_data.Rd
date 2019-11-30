@@ -16,7 +16,7 @@ A list containing the parsed methylation data as a matrix (input_CpG_data),
 the input regions (input_regions), and the mean methylation per region as a matrix (mean_meth_matrix)
 }
 \description{
-Load methylation data
+Load methylation data from methylation TSV file and region information from region TSV file. Then calculates mean methylation for each region of each cell.
 }
 \examples{
 data <- load_data(input_CpG_data_file, input_regions_file)

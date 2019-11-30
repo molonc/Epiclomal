@@ -25,10 +25,11 @@ densitycut.clust(input_CpG_data, mean_meth_matrix, R, max_PC = 20,
 \item{outdir}{file path to output directory}
 }
 \value{
-Predicted clusters from DensityCut algorithm
+Predicted clusters from DensityCut algorithm as a dataframe object (cell x cluster pred.)
 }
 \description{
-DensityCut caller
+DensityCut caller.
+Clusters methylation data based on DensityCut clustering algorithm. Also creates output files of region based clusters and plots in specified output directory.
 }
 \examples{
 data <- load_data(input_CpG_data_file, input_regions_file)
@@ -40,7 +41,7 @@ R <- dim(input_regions)[1] ## number of regions
 maxpc <- min(20, R)
 outdir <- args$outdir
 
-densitycut.clust(input_CpG_data, mean_meth_matrix, R, max_PC, maxit=100, impute=0, use_cache=1, outdir)
+densitycut.clusters <- densitycut.clust(input_CpG_data, mean_meth_matrix, R, max_PC, maxit=100, impute=0, use_cache=1, outdir)
 
 }
 \seealso{

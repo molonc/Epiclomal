@@ -280,6 +280,7 @@ compute_and_save_hd <- function (data_true, data_estimate, outfile) {
     #colnames(hd_stats) <- c("median","IQR")
 
     write.table (hd_stats, file=outfile, sep="\t", row.names=FALSE)
+    return(hd_stats)
 }
 
 ##====================================================================
@@ -352,9 +353,11 @@ hamming.dist <- function (outfile_est, true_epigenotype_file, true_Z_file, estim
     .impute_missing_data(meth_data, data_estimate_corr, estimate_Z, rstart, rend, variable_region)
   }
 
-  compute_and_save_hd(data_true, data_estimate, outfile_est)
-  compute_and_save_hd(data_true, data_estimate_corr, outfile_est_corr)
-  compute_and_save_hd(data_true, meth_data, outfile_naive)
+  estimates <- compute_and_save_hd(data_true, data_estimate, outfile_est)
+  corrected_estimates <- compute_and_save_hd(data_true, data_estimate_corr, outfile_est_corr)
+  naive_data <- compute_and_save_hd(data_true, meth_data, outfile_naive)
+
+  return(list("estimates" = estimates, 'corrected_estimates' = corrected_estimates, 'naive_data' = naive_data))
 }
 
 

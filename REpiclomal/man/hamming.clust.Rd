@@ -21,10 +21,10 @@ hamming.clust(input_CpG_data, Max_K, index_type = "ch", impute,
 \item{outdir}{file path to output directory}
 }
 \value{
-Predicted clusters from Hamming clustering algorithm
+Predicted clusters from Hamming clustering algorithm as a dataframe object (cell x cluster pred.)
 }
 \description{
-Hamming Clustering
+Clusters methylation data based on Hamming distance clustering algorithm. Also creates output files of CpG based clusters and plots in specified output directory.
 }
 \examples{
 data <- load_data(input_CpG_data_file, input_regions_file)
@@ -33,7 +33,7 @@ input_CpG_data <- data$input_CpG_data
 Max_K <- args$Max_K
 outdir <- args$outdir
 
-hamming.clust(input_CpG_data, Max_K, index_type="ch", impute=0, use_cache=1, outdir)
+hamming.clusters <- hamming.clust(input_CpG_data, Max_K, index_type="ch", impute=0, use_cache=1, outdir)
 
 }
 \seealso{

@@ -21,12 +21,18 @@ hamming.dist(outfile_est, true_epigenotype_file, true_Z_file, estimated_epigenot
 
 \item{regions_file}{Path to the region file}
 }
+\value{
+    List containing raw hamming distances, corrected inferred states, and naive imputation.
+}
 \description{
 Calculate hamming distance between true and estimated epigenotype/clusters. Also does the adjustment of the Epiclomal inferred states, and calculates the naive imputation.
-
+Distances are written to specified output file.
 }
 \examples{
-hamming.dist(houtfile, true_epigenotypes_file, true_clusters_file, epiMAPfile, clMAPfile, meth_file, regions_file)
+hamming_dist <- hamming.dist(houtfile, true_epigenotypes_file, true_clusters_file, epiMAPfile, clMAPfile, meth_file, regions_file)
+estimates <- hamming_dist$estimates
+corrected_estimates <- hamming_dist$estimates
+naive_data <- hamming_dist$naive_data
 
 }
 \seealso{
