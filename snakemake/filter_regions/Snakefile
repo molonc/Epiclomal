@@ -1,0 +1,58 @@
+import os
+
+samples = config["samples"]
+
+FILTER_REGIONS_OUTDIR = os.path.join(config['output_dir'], 'filter_regions')
+READY_EPICLOMAL_OUTDIR = os.path.join(config['output_dir'], 'epiclomal_input')
+
+default_mem=480
+
+rule all:
+    input:
+        # expand("/shahlab/pye/project/epiclomal/examples/{samples}", samples=samples)
+        regions=expand(os.path.join(READY_EPICLOMAL_OUTDIR, '{samples}/regionIDs_input_Epiclomal_{samples}.tsv.gz'), samples = samples),
+        meth_file=expand(os.path.join(READY_EPICLOMAL_OUTDIR, '{samples}/input_Epiclomal_{samples}.tsv.gz'), samples = samples)
+
+rule filter:
+    params:
+        n_to_keep=lambda wildcards: config["samples"][wildcards.samples]['N_to_keep']
+    input:
+        meth_file=lambda wildcards: config["samples"][wildcards.samples]['meth_file'],
+        true_cluster_file=lambda wildcards: config["samples"][wildcards.samples]['true_file'],
+    output:
+        os.path.join(FILTER_REGIONS_OUTDIR, "{samples}/filtered_regions_{samples}.tsv")
+    resources:
+        h_vmem=default_mem
+    log:
+        os.path.join(FILTER_REGIONS_OUTDIR, "{samples}/filter_regions_log.txt")
+    shell:
+        'Rscript /shahlab/pye/projects/epiclomal/Epiclomal/process_real_data/filter_regions.R '
+        '--mean_methylation_file {input.meth_file} '
+        '--data_ID {wildcards.samples} '
+        '--true_file {input.true_cluster_file} '
+        '--coef_threshold {config[coef_threshold]} '
+        '--mean_diff_threshold {config[mean_diff_threshold]} '
+        '--n_to_keep {params.n_to_keep} '
+        '--output_directory {FILTER_REGIONS_OUTDIR}/{wildcards.samples} > {log}'
+
+rule prepare_epiclomal:
+    input:
+        regions=os.path.join(FILTER_REGIONS_OUTDIR, "{samples}/filtered_regions_{samples}.tsv"),
+        CpG_data=lambda wildcards: config["samples"][wildcards.samples]['path_post_processed_CpG_data']
+    output:
+        regions=os.path.join(READY_EPICLOMAL_OUTDIR, '{samples}/regionIDs_input_Epiclomal_{samples}.tsv.gz'),
+        meth_file=os.path.join(READY_EPICLOMAL_OUTDIR, '{samples}/input_Epiclomal_{samples}.tsv.gz')
+    resources:
+        h_vmem=default_mem
+    log:
+        os.path.join(READY_EPICLOMAL_OUTDIR, "{samples}/prepare_epiclomal_log.txt")
+    shell:
+        'Rscript /shahlab/pye/projects/epiclomal/Epiclomal/process_real_data/get_data_ready_Epiclomal.R '
+        '--output_directory {READY_EPICLOMAL_OUTDIR}/{wildcards.samples} '
+        '--data_ID {wildcards.samples} '
+        '--path_post_processed_CpG_data {input.CpG_data} '
+        '--file_final_regions {input.regions} '
+        '--filter_CpG_no_data {config[FILTER_CPG_NO_DATA]} '
+        '--LuoDiamond {config[LUODIAMOND]} > {log}'
+
+

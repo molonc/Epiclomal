@@ -78,7 +78,7 @@ def init_log_pi_star(K, N, initial_clusters_data):
         initial_clusters_data = initial_clusters_data - mincl
 
         # initialize to this and exit
-        labels = np.reshape(initial_clusters_data.as_matrix(),N)
+        labels = np.reshape(initial_clusters_data.values, N)
 
     else:
         labels = np.random.random(size=(N, K)).argmax(axis=1)

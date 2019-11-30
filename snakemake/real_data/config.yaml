@@ -1,0 +1,28 @@
+OUTPUT_DIR: '/path/to/epiclomal_results'
+
+METH_FILE: '/path/to/epiclomal_input.tsv.gz'
+REGION_FILE: '/path/to/region_file.tsv.gz'
+TRUE_FILE: '/path/to/true_file.txt.gz'
+TRUE_PREVALENCES: 'None'
+
+NUM_EPI_ITERS: 1000
+
+PARAMS:
+  NPM:
+    index: 'ch'
+    max_k: 10
+    impute: 0
+    use_cache: 1
+  EPICLOMAL:
+    K: 10
+    slsbulk_iterations: 10
+    mu_has_k: True
+    convergence_tolerange: 1e-4
+    max_num_iters: 1000
+    Bishop_model_selection: False
+    check_uncertainty: True
+    config_file: '/path/to/Epiclomal/examples/inputs/config1.yaml'
+
+SOFTWARE:
+  hclust_software: '/path/to/Epiclomal/scripts/hclust.R'
+  eval_software: '/path/to/Epiclomal/scripts/eval_epiclomal.R'

@@ -1,0 +1,14 @@
+*.pyc
+*.DS_Store
+*.egg-info
+*.project
+*.pydevproject
+build
+dist
+files.txt
+*.Rproj*
+*snakejob.*
+.Rproj.user
+REpiclomal_1.0.tar.gz
+*.snakemake
+*log
