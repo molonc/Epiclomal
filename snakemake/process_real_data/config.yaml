@@ -1,0 +1,42 @@
+PROCESS_REAL_DATA_DIR: '/path/to/Epiclomal/process_real_data'
+
+DATA_ID: 'test_1'
+OUTDIR: '/path/to/process_real_data'
+
+DATA_DIR: '/path/to/raw_data/cov'
+
+cells:
+  [cell_1,
+  cell_2,
+  cell_3]
+
+REGION_FILE: '/path/to/regions.txt'
+TRUE_FILE: '/path/to/true_clone_membership.txt.gz'
+
+CPG_COORDS:
+  NAME_REGIONS: 'regions'
+  GENOME_LIBRARY: 'BSgenome.Mmusculus.UCSC.mm10'
+  TYPE_OF_C: 'CpG'
+
+CELL_BASED_METH:
+  INCLUDE_CHRY: 1
+  DATA_TYPE: 'bismark'
+  GENOME: 'mouse'
+
+STATS_METHYLATION:
+  NUM_CELLS_CUTOFF: 5
+  MISS_PROP_CUTOFF: 0.95
+  NLOCI_CUTOFF: 0.0
+  ALL_CUTOFFS: "0_0.95_10000"
+  FILTER_REGIONS_SAME_METH: Null
+  PLOT_HEATMAP_FILTERED: 1
+  PLOT_HEATMAP_UNFILTERED: 1
+
+FILTER_REGIONS:
+  FILTER: True
+  COEF_THRESHOLD: 0.95
+  MEAN_DIFF_THRESHOLD: 0.05
+
+READY_EPICLOMAL:
+  FILTER_CPG_NO_DATA: 0
+  LUODIAMOND: 0

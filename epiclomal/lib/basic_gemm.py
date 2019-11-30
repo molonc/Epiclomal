@@ -11,8 +11,9 @@ from __future__ import division
 
 import numpy as np
 import pandas as pd
+from numba import njit, prange
 
-from lib.utils import compute_e_log_dirichlet, compute_e_log_q_dirichlet, compute_e_log_p_dirichlet, \
+from epiclomal.lib.utils import compute_e_log_dirichlet, compute_e_log_q_dirichlet, compute_e_log_p_dirichlet, \
                       compute_e_log_q_discrete, init_log_pi_star, log_space_normalise, safe_multiply
 
 from scipy.stats import dirichlet
@@ -20,6 +21,8 @@ from sklearn.metrics import mean_absolute_error
 
 from collections import defaultdict
 from random import random, shuffle
+
+from math import exp
 
 class BasicGeMM(object):
     def __init__(self,
@@ -98,10 +101,9 @@ class BasicGeMM(object):
             self.T[data_type] = gamma_prior[data_type].shape[1]
             # T is 2 when gamma_prior is [99, 1; 1, 99]
 
-            matrix = self._region_data_matrix(data_type, X[data_type])
-            self.X[data_type] = matrix
+            self.X[data_type] = self._region_data_matrix(data_type, X[data_type])
 
-            self.IX[data_type] = self._get_indicator_X(data_type, matrix)
+            self.IX[data_type] = self._get_indicator_X(data_type, self.X[data_type])
             # size TxNxM, now TxNxRxmaxL
             # self.IX is actually  the indicator matrix I(X_nm=t)
             # Now self.IX contains 2 matrices:
@@ -124,8 +126,10 @@ class BasicGeMM(object):
         # For each cell (row), one of the k values will be 1 and the others 0.
         # Then, return the log of this matrix (log_pi_star) of size N rows x K columns
 
+        self.pi_star = self.set_pi_star()
+
         self.lower_bound = [float('-inf')]
-        self.log_likelihood = [float('-inf')]
+        self.log_likelihood = float('-inf')
         self.log_posterior = [float('-inf')]
 
         self._debug_lower_bound = [float('-inf')]
@@ -159,17 +163,17 @@ class BasicGeMM(object):
     def _get_indicator_X(self, data_type, X):
     # for every position that is not missing in X, return 0 if it has state s or 1 otherwise
     # all the missing positions are replaced with 0
-        Y = np.zeros((self.S[data_type], self.N, self.R[data_type], int(self.maxL[data_type])))   # size SxNxM, now SxNxRxmaxL
+        Y = np.zeros((self.S[data_type], self.N, self.R[data_type], int(self.maxL[data_type])), dtype=np.uint8)   # size SxNxM, now SxNxRxmaxL
         # Y = np.zeros((self.S[data_type], self.N, self.M[data_type]))
         total = 0
         for i, s in enumerate(range(self.S[data_type])):
-            Y[i, :, :, :] = (X == s).astype(int)
+            Y[i, :, :, :] = (X == s).astype(np.uint8)
             ti = np.sum(Y[i,:,:,:])
             print("Number of observed ", i, "'s: ", ti)
             total = total + ti
         entries = self.N*self.M[data_type]
         print ("Total number of loci in all cells: ", entries)
-        print ("Missing proportion: ", (entries-np.sum(Y))/entries)
+        print ("Missing proportion: ", (entries-total)/entries)
         return Y
 
 
@@ -226,7 +230,6 @@ class BasicGeMM(object):
 
 
     def _init_alpha_star(self):
-        self.alpha_star = {}
         self.alpha_star = np.ones(self.K)
 
 
@@ -256,8 +259,7 @@ class BasicGeMM(object):
 
         return mu_star
 
-    @property
-    def pi_star(self):
+    def set_pi_star(self):
         return np.exp(self.log_pi_star)
 
     def fit(self, convergence_tolerance=1e-4, debug=False, num_iters=100):
@@ -267,17 +269,17 @@ class BasicGeMM(object):
 
         for i in range(num_iters):
 
-            if (self.Bishop_model_selection is False):
-                # update alpha_star
-                self._update_alpha_star()
-                if debug:
-                    print ('ELBO, diff after update_alpha_star', self._diff_lower_bound())
-
             # update E(I(Gmk=s))
             self._update_mu_star()
 
             if debug:
                 print ('ELBO, diff after update_mu_star', self._diff_lower_bound())
+
+            if (self.Bishop_model_selection is False):
+                # update alpha_star
+                self._update_alpha_star()
+                if debug:
+                    print ('ELBO, diff after update_alpha_star', self._diff_lower_bound())
 
             # update beta_star
             self._update_beta_star()
@@ -387,7 +389,7 @@ class BasicGeMM(object):
 
     def _update_mu_star_d(self, data_type):
 
-        log_mu_star = self._update_mu_star_big_sum (data_type)
+        log_mu_star = self._update_mu_star_big_sum(data_type)
 
         # Now log_mu_star has 3 dimensions: s (2 groups), k (total number of clusters), m (num loci)
         # With 1 region, log_mu_star has 4 dimensions: s, k, r, maxl
@@ -458,7 +460,7 @@ class BasicGeMM(object):
 
         # SxNxKxRxL
         # pi_star_nk + mu_star_skrl
-        data_term = np.exp(self.log_pi_star[np.newaxis, :, :, np.newaxis, np.newaxis] + log_mu_star[:, np.newaxis, :, :, :])
+        data_term = self._get_exp_data_term(self.log_pi_star[np.newaxis, :, :, np.newaxis, np.newaxis] + log_mu_star[:, np.newaxis, :, :, :])
 
 
         # \sum_n \sum_k \sum_m E[I(Z_n=k)] E[I(G_mk=s)] I(X_nm=t)
@@ -468,6 +470,22 @@ class BasicGeMM(object):
         return np.einsum('stnkrl, stnkrl -> st',
                          data_term[:, np.newaxis, :, :, :, :],
                          IX[np.newaxis, :, :, np.newaxis, :, :])
+
+    # faster than np.exp() for 5d array
+    @staticmethod
+    @njit(parallel=True, cache=True)
+    def _get_exp_data_term(log_data):
+        shape = log_data.shape
+        data_term = np.zeros(shape)
+        shape = list(shape)
+        for s in prange(shape[0]):
+            for c in prange(shape[1]):
+                for k in prange(shape[2]):
+                    for r in prange(shape[3]):
+                        for l in prange(shape[4]):
+                            data_term[s][c][k][r][l] = exp(log_data[s][c][k][r][l])
+
+        return data_term
 
     ####################
 
@@ -548,6 +566,7 @@ class BasicGeMM(object):
 
         #print 'log_pi_star before normalize', log_pi_star[cellnum,0:4]
         self.log_pi_star = log_space_normalise(log_pi_star, axis=1)
+        self.pi_star = self.set_pi_star()
         #print 'pi_star after normalize', np.exp(self.log_pi_star[cellnum,0:4])
 
     def _get_log_pi_star_d(self, data_type):
@@ -591,7 +610,6 @@ class BasicGeMM(object):
         e_log_p_term1 = self._compute_e_log_p_term1()   # term 1
         e_log_p_term2 = self._compute_e_log_p_term2()   # term 2
         e_log_p_term3 = self._compute_e_log_p_term3()   # term 3
-
         e_log_p_term4 = self._compute_e_log_p_term4()   # term 4
 
         e_log_p_term5 = 0
@@ -846,7 +864,7 @@ class BasicGeMM(object):
     ###############
 
     def _diff_lower_bound(self):
-        (ELBO, ElogP, ElogQ) = self._compute_lower_bound()
+        (ELBO, ElogP, ElogP_X, ElogQ) = self._compute_lower_bound()
 
         self._debug_lower_bound.append(ELBO)
 
@@ -900,29 +918,34 @@ class BasicGeMM(object):
     ###############
 
     def _compute_log_likelihood(self):
+        loglik = 0
+        for data_type in self.data_types:
+            loglik += self._compute_log_likelihood_helper(self.X[data_type], self.mu_star[data_type], self.gamma_star[data_type], self.N, self.pi_star, self.R[data_type], self.maxL[data_type], self.mean_or_mode)
+        return loglik
+
+    @staticmethod
+    @njit(parallel=True, cache=True)
+    def _compute_log_likelihood_helper(X, mu_star, gamma_star, N, pi_star, R, maxL, mean_or_mode):
         logl = 0
         # first add the likelihood of the methylation data
         # check which is the mode of Z and G
         # log P(X|Z,G,eps) = sum_n sum_r sum_l log  [gamma_star[g_krl,X_nrl]-1 /(gamma_star[g_krl,0]+gamma_star[g_krl,1]-2)]
-        for data_type in self.data_types:
-            X = self.X[data_type]
-            mu_star = self.mu_star[data_type]
-            gamma_star = self.gamma_star[data_type]
-            for n in range(self.N):
-                cluster = np.argmax(self.pi_star[n,])
-                # print 'pi_star for n=', n, 'is ', self.pi_star[n,], ' cluster is ', cluster
-                for r in range(self.R[data_type]):
-                    for l in range(int(self.maxL[data_type])):
-                        if not np.isnan(X[n,r,l]):
-                            epigeno = int(np.argmax(mu_star[:,cluster,r,l]))
-                            # if (epigeno is not int(X[n,r,l])):
-                            #     print ('IS NOT NA n=', n, ' r=', r, ' l=', l, 'X=', X[n,r,l], 'cluster=', cluster)
-                            #     print ('Epigeno is ', epigeno)
-                            #     print ('gamma_star is ', gamma_star[epigeno, int(X[n,r,l])])
-                            if (self.mean_or_mode is "mean"):
-                                logl = logl + np.log(gamma_star[epigeno, int(X[n,r,l])] / (gamma_star[epigeno,0] + gamma_star[epigeno,1]))
-                            #else:
-                            #    logl = logl + np.log((gamma_star[epigeno, int(X[n,r,l])]-1) / (gamma_star[epigeno,0] + gamma_star[epigeno,1]-2))
+        for n in prange(N):
+            cluster = np.argmax(pi_star[n,])
+            # print 'pi_star for n=', n, 'is ', pi_star[n,], ' cluster is ', cluster
+            for r in prange(R):
+                for l in prange(int(maxL)):
+                    X_0 = X[n,r,l]
+                    if not np.isnan(X_0):
+                        epigeno = int(np.argmax(mu_star[:,cluster,r,l]))
+                        # if (epigeno is not int(X_0)):
+                        #     print ('IS NOT NA n=', n, ' r=', r, ' l=', l, 'X=', X_0, 'cluster=', cluster)
+                        #     print ('Epigeno is ', epigeno)
+                        #     print ('gamma_star is ', gamma_star[epigeno, int(X_0)])
+                        if (mean_or_mode == "mean"):
+                            logl += np.log(gamma_star[epigeno, int(X_0)] / (gamma_star[epigeno,0] + gamma_star[epigeno,1]))
+                        #else:
+                        #    logl = logl + np.log((gamma_star[epigeno, int(X[n,r,l])]-1) / (gamma_star[epigeno,0] + gamma_star[epigeno,1]-2))
         return logl
 
     ###############
@@ -941,6 +964,8 @@ class BasicGeMM(object):
         # print('All clusters: ', *all_clusters)
         # print('Length ', len(all_clusters))
 
+        alpha_sum = sum(self.alpha_star[i] for i in all_clusters)
+
         for data_type in self.data_types:
             for n in range(self.N):
                 cluster = np.argmax(self.pi_star[n,:])
@@ -949,7 +974,7 @@ class BasicGeMM(object):
                 # logp = logp + self.log_pi_star[n,cluster]
                 if (self.mean_or_mode is "mean"):
                     if (self.Bishop_model_selection is False):
-                        logp = logp + np.log(self.alpha_star[cluster]/sum(self.alpha_star[i] for i in all_clusters))
+                        logp = logp + np.log(self.alpha_star[cluster]/alpha_sum)
                     else:
                         logp = logp + np.log(self.pi[cluster])
                 #else:
@@ -960,38 +985,63 @@ class BasicGeMM(object):
     ###############
 
     def _compute_log_P_G(self):
-    # We use beta_star, not mu_star
-    # Here include only the k's that were found - No, that doesn't make sense
         logp = 0
         all_clusters = []
+
+        if (self.whichK is "all"):
+            all_clusters = range(self.K)
+        else:
+            # Get the final clusters for each cell
+            for n in prange(self.N):
+                cluster = np.argmax(self.pi_star[n,:])
+                if cluster not in all_clusters:
+                   all_clusters.append(cluster)
+
+        all_clusters = np.array(all_clusters)
+
         for data_type in self.data_types:
             log_mu_star = self.log_mu_star[data_type]
             mu_star = self.get_mu_star(data_type)
-            if (self.whichK is "all"):
-                all_clusters = range(self.K)
-            else:
-                # Get the final clusters for each cell
-                for n in range(self.N):
-                    cluster = np.argmax(self.pi_star[n,:])
-                    if cluster not in all_clusters:
-                       all_clusters.append(cluster)
-            for k in all_clusters:
-                for r in range(self.R[data_type]):
-                    for l in range(int(self.maxL[data_type])):
-                        bests = np.argmax(log_mu_star[:,k,r,l])
-                        # print("k ", k)
-                        # print(" beta star ", self.beta_star[data_type][k][r][bests])
-                        # print(" argmax ", np.argmax(log_mu_star[:,k,r,l]))
-                        if (self.mu_has_k):
-                            if (self.mean_or_mode is "mean"):
-                                logp = logp + np.log(self.beta_star[data_type][k][r][bests]/sum(self.beta_star[data_type][k][r]))
-                            #else:
-                            #    logp = logp + np.log((self.beta_star[data_type][k][r][bests]-1)/(sum(self.beta_star[data_type][k][r])-2))
-                        else:
-                            if (self.mean_or_mode is "mean"):
-                                logp = logp + np.log(self.beta_star[data_type][r][bests]/sum(self.beta_star[data_type][r]))
-                            #else:
-                            #    logp = logp + np.log((self.beta_star[data_type][r][bests]-1)/(sum(self.beta_star[data_type][r])-2))
+            beta_star = self.beta_star[data_type]
+            maxL = self.maxL[data_type]
+            R = self.R[data_type]
+
+            logp += self._compute_log_P_G_helper(
+                log_mu_star,
+                mu_star,
+                beta_star,
+                maxL,
+                R,
+                self.mu_has_k,
+                self.mean_or_mode,
+                all_clusters
+                )
+        return logp
+
+
+    @staticmethod
+    @njit(parallel=True, cache=True)
+    def _compute_log_P_G_helper(log_mu_star, mu_star, beta_star, maxL, R, mu_has_k, mean_or_mode, all_clusters):
+        logp = 0
+    # We use beta_star, not mu_star
+    # Here include only the k's that were found - No, that doesn't make sense
+        for k in all_clusters:
+            for r in prange(R):
+                for l in prange(int(maxL)):
+                    bests = np.argmax(log_mu_star[:,k,r,l])
+                    # print("k ", k)
+                    # print(" beta star ", self.beta_star[data_type][k][r][bests])
+                    # print(" argmax ", np.argmax(log_mu_star[:,k,r,l]))
+                    if (mu_has_k):
+                        if (mean_or_mode == "mean"):
+                            logp += np.log(beta_star[k][r][bests]/np.sum(beta_star[k][r]))
+                        #else:
+                        #    logp = logp + np.log((self.beta_star[data_type][k][r][bests]-1)/(sum(self.beta_star[data_type][k][r])-2))
+                    else:
+                        if (mean_or_mode == "mean"):
+                            logp += np.log(np.max(beta_star[r][bests])/np.sum(beta_star[r]))
+                        #else:
+                        #    logp = logp + np.log((self.beta_star[data_type][r][bests]-1)/(sum(self.beta_star[data_type][r])-2))
         return logp
 
     ###############
@@ -1168,17 +1218,16 @@ class BasicGeMM(object):
         for data_type in self.data_types:
             for cell in range(self.N):
                 # print("Cell ", cell)
-                cell_added = 0
-                unique = 0
+                cell_added = False
                 for r in different_regions:
                     # print("    Region ", r, "of length ", int(self.L[data_type][r]))
                     region = self.X[data_type][cell,r,0:int(self.L[data_type][r])]
-                    print(*region)
+                    # print(*region)
                     if (all(np.isnan(v) for v in region)):
                         empty_regions.append(str(cell)+"_"+str(r))
-                        if (cell_added == 0):
+                        if not cell_added:
                             candidate_cells.append(cell)
-                            cell_added = 1
+                            cell_added = True
                             # print("IS ALL NAN, adding cell ", cell, " with missing region ", r)
             # print("Cells with missing: ", candidate_cells)
             # print("Empty regions: ", empty_regions)
@@ -1236,46 +1285,58 @@ class BasicGeMM(object):
 
     def _get_relevant_bulk_percentages (self, different_regions):
         # select the different regions from the bulk
-        meth_percentages = []
+        meth_percentages = np.array([])
         for data_type in self.data_types:
             for r in different_regions:
                 # print ("Region ", r, " from ", self.regions[data_type]['start'][r], " to ", self.regions[data_type]['end'][r])
                 for cpg in range (self.regions[data_type]['start'][r], self.regions[data_type]['end'][r]+1):
                     # because in the bulk data it starts from 1
                     # print ("    Bulk in cpg ", cpg+1, " is meth ", self.slsbulk_data['meth_reads'][cpg+1], " and unmeth ", self.slsbulk_data['unmeth_reads'][cpg+1])
-                    meth_percentages.append(self.slsbulk_data['meth_reads'][cpg+1]/(self.slsbulk_data['unmeth_reads'][cpg+1]+self.slsbulk_data['meth_reads'][cpg+1]))
-        # print(*meth_percentages)
+                    meth_percentages = np.append(meth_percentages, self.slsbulk_data['meth_reads'][cpg+1]/(self.slsbulk_data['unmeth_reads'][cpg+1]+self.slsbulk_data['meth_reads'][cpg+1]))
+
         return meth_percentages
 
 
     ###############
 
-    def _get_predicted_percentages (self, labels_pred, epigenotype, different_regions):
+    def _get_predicted_percentages(self, labels_pred, epigenotype, different_regions):
     # NOTE: epigenotype is the one from the DIC selection criterion
     #   When I change the prediction
         # select the different regions from the bulk
-        meth_percentages = []
+        meth_percentages = np.array([])
         for data_type in self.data_types:
             for r in different_regions:
-                # print ("Region ", r, " from ", self.regions[data_type]['start'][r], " to ", self.regions[data_type]['end'][r])
-                for cpg in range (self.regions[data_type]['start'][r], self.regions[data_type]['end'][r]+1):
-                    # look through all the cells
-                    num_meth = 0
-                    for cell in range(self.N):
-                        # print ("EPigenotype for  cell ", cell)
-                        # print (" with label ", labels_pred[cell])
-                        # print (" cpg ", cpg)
-                        # print (" is ", epigenotype[labels_pred[cell],cpg])
-                        num_meth = num_meth + epigenotype[labels_pred[cell],cpg]        # this is 0 for unmethylated and 1 for methylated
 
-                    meth_percentages.append(num_meth/self.N)
-        # print("Predicted percentages ", *meth_percentages)
+                region_meth_percentages = self._get_predicted_percentages_helper(
+                    self.regions[data_type]['start'][r],
+                    self.regions[data_type]['end'][r],
+                    self.N,
+                    epigenotype,
+                    np.array(labels_pred)
+                    )
+
+                meth_percentages = np.concatenate((meth_percentages, region_meth_percentages), axis=None)
+
+        return meth_percentages
+
+    @staticmethod
+    @njit(parallel=True, cache=True)
+    def _get_predicted_percentages_helper(start, end, N, epigenotype, labels_pred):
+        length = end - start + 1
+        meth_percentages = np.empty(length)
+        for cpg in prange(start, end + 1):
+            num_meth = 0
+            for cell in prange(N):
+                num_meth += epigenotype[labels_pred[cell], cpg]
+
+            meth_percentages[cpg - start] = num_meth/N
+
         return meth_percentages
 
     ###############
 
-    def _get_bulk_score (self, labels_pred, epigenotype, different_regions, bulk_percentages):
-        pred_percentages = self._get_predicted_percentages (labels_pred, epigenotype, different_regions)
+    def _get_bulk_score(self, labels_pred, epigenotype, different_regions, bulk_percentages):
+        pred_percentages = self._get_predicted_percentages(labels_pred, epigenotype, different_regions)
         bulk_score = mean_absolute_error(bulk_percentages, pred_percentages)
         return bulk_score
 
@@ -1318,14 +1379,14 @@ class BasicGeMM(object):
                         continue
                     current_pred[key] = cc
                     # print ("        Changing cluster for cell ", key, " to ", cc)
-                    new_bulk_score = self._get_bulk_score (current_pred, epigenotype, different_regions, bulk_percentages)
+                    new_bulk_score = self._get_bulk_score(current_pred, epigenotype, different_regions, bulk_percentages)
                     if (new_bulk_score < best_bulk_score):
                         best_bulk_score = new_bulk_score
                         best_pred = np.copy(current_pred)
                         print ("     Changing cluster for cell ", key, " to ", cc, ", New bulk score ", new_bulk_score, " KEEPING IT")
                     elif  (random() >= 0.8):
-                        continue
                         # print ("             Best score ", best_bulk_score, ", Bulk score ", new_bulk_score, " staying with the current prediction anyway")
+                        continue
                     else:
                         current_pred = np.copy(best_pred)
                         # print ("             Best score ", best_bulk_score, ", New bulk score ", new_bulk_score, " THROWING IT")

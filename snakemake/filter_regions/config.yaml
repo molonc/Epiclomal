@@ -1,0 +1,19 @@
+samples:
+  DATA_1:
+    meth_file: '/path/to/final_mean_meth_region_DATA_1.tsv'
+    true_file: '/path/to/DATA_1/true_clone_membership.txt.gz'
+    path_post_processed_CpG_data: '/path/to/DATA_1/outputs/cell_based_CpGs'
+    N_to_keep: 10000
+  DATA_2:
+    meth_file: '/path/to/final_mean_meth_region_DATA_2.tsv'
+    true_file: '/path/to/DATA_2/true_clone_membership.txt.gz'
+    path_post_processed_CpG_data: '/path/to/DATA_2/outputs/cell_based_CpGs'
+    N_to_keep: 10000
+
+output_dir: '/path/to/filter_region_output'
+
+coef_threshold: 0.95
+mean_diff_threshold: 0.05
+
+FILTER_CPG_NO_DATA: 0
+LUODIAMOND: 0

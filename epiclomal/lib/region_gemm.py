@@ -10,14 +10,15 @@ Created on 2017-03-07
 
 from __future__ import division
 
+from numba import njit, prange
 import numpy as np
 import pandas as pd
 import sys
 
-from lib.utils import compute_e_log_dirichlet, compute_e_log_q_dirichlet, compute_e_log_p_dirichlet, \
+from epiclomal.lib.utils import compute_e_log_dirichlet, compute_e_log_q_dirichlet, compute_e_log_p_dirichlet, \
                       compute_e_log_q_discrete, init_log_pi_star, log_space_normalise, safe_multiply
 
-from lib.basic_gemm import BasicGeMM
+from epiclomal.lib.basic_gemm import BasicGeMM
 
 class RegionGeMM(BasicGeMM):
     def __init__(self,
@@ -40,7 +41,7 @@ class RegionGeMM(BasicGeMM):
         for data_type in self.data_types:
             if self.M[data_type] > 500000:
                 print("Data set is too large for region, with ", self.M[data_type], " number of loci, EXITING")
-                sys.exit(0)
+        #         sys.exit(0)
 
     ######################
 
@@ -65,13 +66,23 @@ class RegionGeMM(BasicGeMM):
 
     def _region_data_matrix(self, data_type, X):
     # Here in the regions class I will fill up to 0 the remaining values for each region
-    # TO DO: maybe this reshaping can be done more efficiently
-        matrix = np.empty((self.N, self.R[data_type], int(self.maxL[data_type])))
+        return self._region_data_matrix_helper(
+            self.N, self.R[data_type],
+            int(self.maxL[data_type]),
+            self.Rstart[data_type],
+            self.Rend[data_type],
+            X.values
+            )
+
+    @staticmethod
+    @njit(parallel=True, cache=True)
+    def _region_data_matrix_helper(N, R, maxL, Rstart, Rend, X):
+        matrix = np.empty((N, R, maxL))
         matrix[:] = np.NAN
-        for n in range(self.N):
-            for r in range(self.R[data_type]):
-                for l in range(int(self.Rstart[data_type][r]), int(self.Rend[data_type][r]+1)):
-                    matrix[n,r, int(l - self.Rstart[data_type][r])] = X.values[n,l]
+        for n in prange(N):
+            for r in prange(R):
+                for l in prange(int(Rstart[r]), int(Rend[r])+1):
+                    matrix[n, r, int(l - int(Rstart[r]))] = X[n,l]
         return matrix
 
     ######################
