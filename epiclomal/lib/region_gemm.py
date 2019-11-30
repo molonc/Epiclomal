@@ -30,23 +30,23 @@ class RegionGeMM(BasicGeMM):
                  mu_has_k,
                  Bishop_model_selection,
                  slsbulk_data=None):
-                 
+
         self.Rstart = {}
         self.Rend = {}
-        self.L = {}          
-                 
-        BasicGeMM.__init__(self, gamma_prior, alpha_prior, beta_prior, X, regions, initial_clusters_data, mu_has_k, Bishop_model_selection, slsbulk_data)   
-        
+        self.L = {}
+
+        BasicGeMM.__init__(self, gamma_prior, alpha_prior, beta_prior, X, regions, initial_clusters_data, mu_has_k, Bishop_model_selection, slsbulk_data)
+
         for data_type in self.data_types:
             if self.M[data_type] > 500000:
                 print("Data set is too large for region, with ", self.M[data_type], " number of loci, EXITING")
                 sys.exit(0)
-                         
-    ###################### 
-    
+
+    ######################
+
     def _set_region_params(self, data_type, regions):
     # find the number of regions and the size of each region
-        self.R[data_type] = regions[data_type].shape[0]       # the number of regions   
+        self.R[data_type] = regions[data_type].shape[0]       # the number of regions
         self.L[data_type] = np.zeros(self.R[data_type])
         self.Rstart[data_type] = np.zeros(self.R[data_type])
         self.Rend[data_type] = np.zeros(self.R[data_type])
@@ -56,48 +56,48 @@ class RegionGeMM(BasicGeMM):
             self.L[data_type][index] = row["end"] - row["start"] + 1
         self.maxL[data_type] = np.max(self.L[data_type])
         print ('R, ', self.R[data_type])
-        # print 'L, ', self.L[data_type] 
-        # print 'Rstart ,', self.Rstart[data_type]        
-        # print 'Rend ,', self.Rend[data_type]        
+        # print 'L, ', self.L[data_type]
+        # print 'Rstart ,', self.Rstart[data_type]
+        # print 'Rend ,', self.Rend[data_type]
         print ('maxL, ', self.maxL[data_type])
-       
-    ######################       
-          
+
+    ######################
+
     def _region_data_matrix(self, data_type, X):
     # Here in the regions class I will fill up to 0 the remaining values for each region
-    # TO DO: maybe this reshaping can be done more efficiently 
+    # TO DO: maybe this reshaping can be done more efficiently
         matrix = np.empty((self.N, self.R[data_type], int(self.maxL[data_type])))
         matrix[:] = np.NAN
         for n in range(self.N):
             for r in range(self.R[data_type]):
                 for l in range(int(self.Rstart[data_type][r]), int(self.Rend[data_type][r]+1)):
-                    matrix[n,r, int(l - self.Rstart[data_type][r])] = X.values[n,l]                  
+                    matrix[n,r, int(l - self.Rstart[data_type][r])] = X.values[n,l]
         return matrix
-        
-    ###################### 
-            
-    def _unregion_data_matrix(self, data_type, X):        
+
+    ######################
+
+    def _unregion_data_matrix(self, data_type, X):
     # TO DO
     # this is necessary when we want to compare the imputed values
         return
 
 
-    ######################         
-        
+    ######################
+
     def unregion_mu_star(self, data_type):
-    # transform data back from regioned (index rl) to unregioned (index m)        
+    # transform data back from regioned (index rl) to unregioned (index m)
         mu_star = self.get_mu_star(data_type)
         states = range(self.S[data_type])
         unregioned_mu_star = np.zeros((len(states), self.K, self.M[data_type]))
-        
+
         # this is probably very slow, there may be a more efficient solution
         for s in range(len(states)):
             for k in range (self.K):
                 location = 0
                 for r in range(self.R[data_type]):
-                    length = int(self.L[data_type][r])                    
+                    length = int(self.L[data_type][r])
                     unregioned_mu_star[s,k,location:location+length] = mu_star[s,k,r,range(length)]
                     location = location + length
-                    
-        return unregioned_mu_star                            
-         
+
+        return unregioned_mu_star
+

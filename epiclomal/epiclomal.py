@@ -36,26 +36,26 @@ analysis_parser.add_argument('--config_file', required=True,
 
 analysis_parser.add_argument('--methylation_file', required=True,
                             help='''Path to methylation data input file.''')
-                            
+
 analysis_parser.add_argument('--copynumber_file', default=None,
-                            help='''Path to copy number input file.''')                            
-                            
+                            help='''Path to copy number input file.''')
+
 analysis_parser.add_argument('--regions_file', default=None,
-                            help='''Path to regions input file.''')                            
+                            help='''Path to regions input file.''')
 
 analysis_parser.add_argument('--initial_clusters_file', default=None,
-                            help='''Start from these clusters instead of random clusters.''')  
-                            
+                            help='''Start from these clusters instead of random clusters.''')
+
 analysis_parser.add_argument('--true_clusters_file', default=None,
-                            help='''Path to the true_clusters_file, if known. If given, params.yaml will contain the V-measure for this prediction.''')                            
+                            help='''Path to the true_clusters_file, if known. If given, params.yaml will contain the V-measure for this prediction.''')
 
 analysis_parser.add_argument('--true_prevalences', default=None,
                             help=''' A string with the true prevalences for all the clusters, e.g. 0.33_0.33_0.34''')
-                            
+
 analysis_parser.add_argument('--repeat_id', default=1, type=int,
                             help='''A number >= 0. If there is a column with this number (excluding the first column and starting from 0) in the initial_clusters_file, use that column as initial clusters, else use random initialization.''')
-                            
-# Not used any more                            
+
+# Not used any more
 analysis_parser.add_argument('--bulk_file', default=None,
                             help='''A file with 3 columns: locus, #methylated reads, #unmethylated reads. The beta prior will be initialized with these values''')
 
@@ -68,7 +68,7 @@ analysis_parser.add_argument('--slsbulk_iterations', default=10,
 analysis_parser.add_argument('--out_dir', default=None,
                             help='''Path where output files will be written.''')
 
-analysis_parser.add_argument('--mu_has_k', type=str2bool, default=True, 
+analysis_parser.add_argument('--mu_has_k', type=str2bool, default=True,
                             help='''True or False depending on whether we want mu to depend on k or not''')
 
 analysis_parser.add_argument('--convergence_tolerance', default=1e-4, type=float)
@@ -82,33 +82,33 @@ analysis_parser.add_argument('--seed', default=None, type=int,
 analysis_parser.add_argument('--labels_file', default=None,
                              help='''Path of file with initial labels to use.''')
 
-analysis_parser.add_argument('--Bishop_model_selection', type=str2bool, default=False, 
+analysis_parser.add_argument('--Bishop_model_selection', type=str2bool, default=False,
                             help='''True or False depending on whether we want to apply Corduneanu_Bishop model selection''')
 
-analysis_parser.add_argument('--check_uncertainty', type=str2bool, default=False, 
+analysis_parser.add_argument('--check_uncertainty', type=str2bool, default=False,
                             help='''True or False depending on whether we want to check whether the uncertainty is estimated correctly''')
 
 
-#---------------------------------------------------------------------------------------------------------------------- 
+#----------------------------------------------------------------------------------------------------------------------
 basic_parser = subparsers.add_parser('Basic-GeMM', parents=[analysis_parser],
                                        help='''Analyse single cell methylation data using the Basic-GeMM model.''')
 
 basic_parser.set_defaults(func=run_basic_gemm_model)
 
-#---------------------------------------------------------------------------------------------------------------------- 
+#----------------------------------------------------------------------------------------------------------------------
 basic_parser = subparsers.add_parser('Basic-BayesPy', parents=[analysis_parser],
                                        help='''Analyse single cell methylation data using the Basic model with BayesPy.''')
 
 basic_parser.set_defaults(func=run_basic_bayespy_model)
 
-#---------------------------------------------------------------------------------------------------------------------- 
+#----------------------------------------------------------------------------------------------------------------------
 region_parser = subparsers.add_parser('Region-GeMM', parents=[analysis_parser],
                                        help='''Analyse single cell methylation data using the Region-GeMM model.''')
 
 region_parser.set_defaults(func=run_region_gemm_model)
 
 
-#---------------------------------------------------------------------------------------------------------------------- 
+#----------------------------------------------------------------------------------------------------------------------
 # the regions parser will add more input arguments
 # doublet_parser = subparsers.add_parser('run_doublet_model', parents=[analysis_parser, genotyper_parser],
 #                                        help='''Analyse single cell data using the single cell genotyper model accounting for doublets.''')

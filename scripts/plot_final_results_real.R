@@ -1,6 +1,6 @@
 # plotting Vmeasure, Hamming Distance, number of clusters, cluster prevalence mean absolute error and mean squared error
 
-#.libPaths(c("/home/mandronescu/R/x86_64-pc-linux-gnu-library/3.2", 
+#.libPaths(c("/home/mandronescu/R/x86_64-pc-linux-gnu-library/3.2",
 #            "/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos6/3.2", "/clusterapp/software/linux-x86_64-centos6/R-3.2.3/lib64/R/library","/extscratch/shahlab/dalai/R/x86_64-pc-linux-gnu-library-centos6/3.3"))
 
 
@@ -19,7 +19,7 @@ library(stringr)
 #     if(length(script.dir) > 1) stop("can't determine script dir: more than one '--file' argument detected")
 #     return(script.dir)
 # }
-# 
+#
 # scriptPath <- getScriptPath()
 
 #source(paste0(scriptPath, "/plot_functions.R"))
@@ -43,8 +43,8 @@ datasets <- c("InHouse",
               "Hou2016",
               "Luo2017",
               "Farlik2016")
-ntrue_clusters <- c(3,2,2,21,6)              
-              
+ntrue_clusters <- c(3,2,2,21,6)
+
 datapaths <- c("/shahlab/mandronescu/EPI-112_inhouse_data/FINAL_RESULTS",
                "/shahlab/mandronescu/EPI-70_Smallwood2014/FINAL_RESULTS",
                "/shahlab/mandronescu/EPI-105_scTrio/FINAL_RESULTS",
@@ -58,7 +58,7 @@ simplepaths <- c("/shahlab/mandronescu/EPI-112_inhouse_data/OUTPUT_epiclomal_INH
 
 # each replicate file should be in inputs, for example inputs/Smallwood2014_replicates.txt
 
-args <- parser$parse_args() 
+args <- parser$parse_args()
 
 print(args)
 
@@ -80,7 +80,7 @@ all_regions_criterion <- "0_1_0.01"
 
 collect_data <- function(model, criterion1, criterion2, measure_name){
   # measure_name can be HD, Vmeasure, nclusters, cp_error
-  
+
   if (measure_name == "HD") {
     column <- "mean"
   } else if (measure_name == "Vmeasure") {
@@ -93,14 +93,14 @@ collect_data <- function(model, criterion1, criterion2, measure_name){
     column <- "clone_prev_MAE"
   } else if (measure_name == "clone_prev_MSE") {
     column <- "clone_prev_MSE"
-  }    
-  
+  }
+
   variable <- datasets
   # variable is the value of the changed variable, for example if we are varying misspb, variable is 0.5, 0.6, 0.7, 0.8, 0.9, 0.95
-  
+
   savedfile <- paste0(outdir,"/data_",measure_name,"_",criterion1,"__",criterion2,".Rda")
-  #print(savedfile) 
-  
+  #print(savedfile)
+
  if (file.exists(savedfile)) {
    print("File already exists, loading it")
    load(savedfile)
@@ -112,64 +112,64 @@ collect_data <- function(model, criterion1, criterion2, measure_name){
 
     replicate <- NULL
     imputed <- NULL
-    
+
     crash <- NULL
-    
+
     for(m in 1:length(model)){
       for(j in 1:length(variable)){
         replicate_file <- paste0("inputs/", variable[j], "_replicates.txt")
         replicates <- read.table (replicate_file, header=FALSE, sep="\t")
-        
+
         #print(replicates)
-  
+
         number_replicates <- nrow(replicates)
         print(paste0("Model ", model[m], " data set ", variable[j], " number of replicates ", number_replicates))
-        
+
         for(i in 1:number_replicates){
         if (model[m] == "HammingClust" || model[m] == "DensityCut" || model[m] == "PearsonClust" || model[m] == "EuclideanClust") {
           #if (model[m] == "PBALclust" || model[m] == "densitycut" || model[m] == "Pearsonclust" || model[m] == "Hclust") {
             if (length(grep(all_regions_criterion, replicates[i,])) > 0) {
                 results_file <- paste0(simplepaths[j],replicates[i,],"_epiclomal_real_task1/outputs/simple_hclust/results_", model[m], ".txt")
-            }                
+            }
             else {
                 results_file <- paste0(simplepaths[j],replicates[i,],"_epiclomal_real/outputs/simple_hclust/results_", model[m], ".txt")
-            }                
-          } else {   
+            }
+          } else {
             # Use the second (granular) criterion for Luo and Farlik
-            if (datasets[j] == "Luo2017" | datasets[j] == "Farlik2016") {  
+            if (datasets[j] == "Luo2017" | datasets[j] == "Farlik2016") {
                 rep <- replicates[i,]
                 rep <- gsub("_K10","",rep)
                 rep <- gsub("_K30","",rep)
                 results_file <- paste0(datapaths[j],"/",rep,"_",model[m],"/",criterion2,"/all_results_bestrun_",model[m],".tsv")
-            } else {    
+            } else {
                 rep <- gsub("_K10","",replicates[i,])
                 results_file <- paste0(datapaths[j],"/",rep,"_",model[m],"/",criterion1,"/all_results_bestrun_",model[m],".tsv")
             }
-          }    
-          print (paste0('Results file is ', results_file))                    
-          
-          t <- try(read.table(file=results_file,sep="\t",header=TRUE))   
-          if("try-error" %in% class(t)) { 
+          }
+          print (paste0('Results file is ', results_file))
+
+          t <- try(read.table(file=results_file,sep="\t",header=TRUE))
+          if("try-error" %in% class(t)) {
                 ### could have an alternativeFunction() here
                 print("can't find file, trying with imputation")
                 results_file <- gsub("simple_hclust", "simple_hclust_imputed", results_file)
                 print (paste0('Imputed Results file is ', results_file))
-                
+
                 # Adding a star to label to show that it is using imputed values
                 # replicates[i,] <- paste0(replicates[i,]," *")
-                
+
                 imputed <- c(imputed, " *")
-                
-                t <- try(read.table(file=results_file,sep="\t",header=TRUE))   
+
+                t <- try(read.table(file=results_file,sep="\t",header=TRUE))
                 if("try-error" %in% class(t)) {     # neither non-imputed nor imputed exists
                     print("can't find impute file")
-                    crash <- c(crash,0)            
-                    measure <- c(measure,NA)            
+                    crash <- c(crash,0)
+                    measure <- c(measure,NA)
                     VAR <- c(VAR,variable[j])
-                    method <- c(method,model[m]) 
-                    replicate <- c(replicate,as.character(replicates[i,])) 
+                    method <- c(method,model[m])
+                    replicate <- c(replicate,as.character(replicates[i,]))
                     print(method)
-                    print(replicate)                
+                    print(replicate)
                 } else {  # imputed variant exists
                     print ("Found imputed file")
                     f <- read.table(file=results_file,sep="\t",header=TRUE)
@@ -177,61 +177,61 @@ collect_data <- function(model, criterion1, criterion2, measure_name){
                     # correct for the number of cluster differential
                     if (measure_name == "nclusters2") {
                         this_measure <- f[,column] - ntrue_clusters[j]
-                    }                                        
-                    crash <- c(crash,1)            
+                    }
+                    crash <- c(crash,1)
                     measure <- c(measure, this_measure)
                     VAR <- c(VAR,variable[j])
-                    method <- c(method,model[m]) 
-                    replicate <- c(replicate,as.character(replicates[i,])) 
+                    method <- c(method,model[m])
+                    replicate <- c(replicate,as.character(replicates[i,]))
                     print(method)
-                    print(replicate)   
-                }                            
+                    print(replicate)
+                }
           } else {
                 f <- read.table(file=results_file,sep="\t",header=TRUE)
                 this_measure <- f[,column]
                 # correct for the number of cluster differential
                 if (measure_name == "nclusters2") {
                     this_measure <- f[,column] - ntrue_clusters[j]
-                }                   
-                crash <- c(crash,1)            
+                }
+                crash <- c(crash,1)
                 measure <- c(measure, this_measure)
                 VAR <- c(VAR,variable[j])
-                method <- c(method,model[m]) 
-                replicate <- c(replicate,as.character(replicates[i,]))            
+                method <- c(method,model[m])
+                replicate <- c(replicate,as.character(replicates[i,]))
                 imputed <- c(imputed, "")
                 print(method)
-                print(replicate)          
-          }      
+                print(replicate)
+          }
         }
       }
     }
-    
+
     # make the measure be at least some small value so we can see it
     measure[measure<0.02] <- 0.02
-    
+
     big_df <- cbind(as.data.frame(measure),as.data.frame(crash),VAR,method,replicate, imputed)
     colnames(big_df) <- c("Measure","crash","VAR","method","replicate","imputed")
 
     big_df$replicate <- as.character(big_df$replicate)
-    
+
     str(big_df)
-    
+
     big_df$VAR <- factor(big_df$VAR,levels=variable)
-    
+
     print(str(big_df))
-       
+
     # Now saving the data frame
     save(big_df, crash, file=savedfile)
-  }  # end make the data files  
+  }  # end make the data files
   return (list("big_df"=big_df, "crash"=crash))
-}  
+}
 
 
 
 xlsfile <- paste0(outdir,"/SourceData.xlsx")
 if (file.exists(xlsfile)) {
     file.remove(xlsfile)
-} 
+}
 
 #############################
 ### plots clone_prev_MAE ####

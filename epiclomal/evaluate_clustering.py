@@ -23,8 +23,8 @@ parser.add_argument('--results_file', required=True,
 
 # parser.add_argument('--column', default=2, type=int,
 #                     help='Default is the second column, or set which column to consider')
-                    
-                    
+
+
 
 args = parser.parse_args()
 # print(args.true_clusters_file)
@@ -48,7 +48,7 @@ else:
     # select the last column using -1, so not using --column any more
     for value in pred_clusters.iloc[:,-1]:
         labels_pred.append(value)
-      
+
 print (*labels_pred)
 
 # now read the true clusters file
@@ -85,7 +85,7 @@ if args.true_prevalences == "None":
 
 else:
     print("Using given true prevalences")
-    prevs = args.true_prevalences.split("_")    
+    prevs = args.true_prevalences.split("_")
     for n in range(ncells):
         prev_true.append(float(prevs[labels_true[n]-1]))
 
@@ -94,7 +94,7 @@ else:
 prev_pred = []
 for n in range(ncells):
     prev_pred.append(sum(np.equal(labels_pred,labels_pred[n]))/ncells)
-    
+
 clone_prev_MAE = mean_absolute_error(prev_true, prev_pred)
 clone_prev_MSE = mean_squared_error(prev_true, prev_pred)
 

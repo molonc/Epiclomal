@@ -20,7 +20,7 @@ hcluster <- hclust(dist(x,method="euclidean"),method = "complete")
 # defining some clusters
 mycl <- cutree(hcluster, k=2:10)
 
-res <- NbClust(x, distance = "euclidean", min.nc=2, max.nc=8, 
+res <- NbClust(x, distance = "euclidean", min.nc=2, max.nc=8,
              method = "complete", index = "ch")
 res$All.index
 res$Best.nc
@@ -35,7 +35,7 @@ ch.index <- function(x, cl) {
       centers[i, ] <- mean(x[cl == i, ])
     }
     if (is.null(dim(x[cl == i, ]))) {
-      bb <- matrix(x[cl == i, ], byrow = FALSE, nrow = 1, 
+      bb <- matrix(x[cl == i, ], byrow = FALSE, nrow = 1,
                    ncol = ncol(x))
       centers[i, ] <- apply(bb, 2, mean)
     }
@@ -55,17 +55,17 @@ ch.index <- function(x, cl) {
   }
   wgss <- sum(withins)
   bgss <- allmeandist - wgss
-  
+
   ### calculating bgss ## between cluster variation
   bgss_star <- 0
   for(i in 1:k){
     bgss_star <- bgss_star + (sum(cl==i)*((sum((centers[i,] - allmean)^2,na.rm=TRUE))))
   }
-  
+
   ### bgss_star is the same as bgss if there's no missing data!
-  
+
   ch <- (bgss/(k-1))/(wgss/(n-k))
-  
+
   results <- ch
   return(results)
 }

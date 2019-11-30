@@ -1,13 +1,15 @@
 
 suppressMessages(library("argparse"))
 
+RSCRIPT <- Sys.getenv("RSCRIPT")
+
 # create parser object
 parser <- ArgumentParser()
 
 # specify our desired options
 # by default ArgumentParser will add a help option
 
-parser$add_argument("--input_dir", type="character", help="Input directory of epiclomal results") 
+parser$add_argument("--input_dir", type="character", help="Input directory of epiclomal results")
 parser$add_argument("--output_dir", type="character", help="Output directory of the evaluation results")
 parser$add_argument("--model_name", type="character", help="A name for the model")
 parser$add_argument("--hdist_software", type="character", default=NULL, help="Full path of software that calculates hamming distance")
@@ -17,7 +19,7 @@ parser$add_argument("--regions_file", type="character", default=NULL, help="Inpu
 parser$add_argument("--true_clusters_file", type="character", default=NULL, help="File with the true clusters, if known")
 parser$add_argument("--true_epigenotypes_file", type="character", default=NULL, help="File with the true epigenotypes, if known")
 # GAIN_THRESHOLD <- 0.05
-args <- parser$parse_args() 
+args <- parser$parse_args()
 print(args)
 
 # args <- commandArgs(TRUE)
@@ -52,7 +54,7 @@ elbow_finder <- function(x_values, y_values) {
     distances <- c()
     for(i in 1:length(x_values)) {
       distances <- c(distances, abs(coef(fit)[2]*x_values[i] - y_values[i] + coef(fit)[1]) / sqrt(coef(fit)[2]^2 + 1^2))
-    }    
+    }
 
     # Max distance point
     x_max_dist <- x_values[which.max(distances)]
@@ -75,13 +77,13 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
     # criterion can be "lower_bound" or "log_posterior"
     output <- paste0(output,"/",criterion,"_gainthr", GAIN_THRESHOLD)
     dir.create(output, showWarnings=FALSE, recursive=TRUE)
-    
+
     # input can be actually a list of directories. Then look through all of them and compute the measure
     directories <- Sys.glob(input)
     files <- NULL
     # NOTE: This may be very slow for many files
-    for (dir in directories) {    
-        files <- c(files, list.files(dir, recursive = TRUE, pattern = "params.yaml", full.names = TRUE))        
+    for (dir in directories) {
+        files <- c(files, list.files(dir, recursive = TRUE, pattern = "params.yaml", full.names = TRUE))
     }
 
     lines <- lapply(files, readLines)
@@ -90,9 +92,9 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
 
     run <- NULL
     # NOTE: This may be very slow for many files
-    for (dir in directories) { 
+    for (dir in directories) {
         run <- c(run, list.files(dir, recursive = TRUE, pattern = "cluster_posteriors.tsv.gz", full.names = TRUE))
-    }        
+    }
     #print (run)
     # dir <- paste0(getwd(), "/", input, "/", run)
     converged <- sapply(sapply(lines, grep, pattern = "converged: true", value = TRUE), length)
@@ -102,21 +104,21 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
     } else {
         measure <- criterion
     }
-    
+
     score <- as.numeric(sub(measure, "", sapply(lines, grep, pattern = measure, value = TRUE)))
-    # elbo <- as.numeric(sub(paste0(criterion,": "), "", sapply(lines, grep, pattern = criterion, value = TRUE)))    
+    # elbo <- as.numeric(sub(paste0(criterion,": "), "", sapply(lines, grep, pattern = criterion, value = TRUE)))
     # Now elbo variable can be the elbo (lower_bound) or the log_posterior (unnormalized)
     cpu_time <- as.numeric(sub("CPU_time_seconds: ", "", sapply(lines, grep, pattern = "CPU_time_seconds", value = TRUE)))
-    memory <- as.numeric(sub("Max_memory_MB: ", "", sapply(lines, grep, pattern = "Max_memory_MB", value = TRUE)))    
+    memory <- as.numeric(sub("Max_memory_MB: ", "", sapply(lines, grep, pattern = "Max_memory_MB", value = TRUE)))
     all_vmeasure <- as.numeric(sub("Vmeasure: ", "", sapply(lines, grep, pattern = "Vmeasure", value = TRUE)))
     nclusters_pred <- as.numeric(sub("nclusters: ", "", sapply(lines, grep, pattern = "nclusters", value = TRUE)))
     # for clone_prev_MAE, I may also have slsbulk_clone_prev_MAE
     clone_prev_MAE <- as.numeric(sub("clone_prev_MAE: ", "", sapply(lines, grep, pattern = "^clone_prev_MAE", value = TRUE)))
-    clone_prev_MSE <- as.numeric(sub("clone_prev_MSE: ", "", sapply(lines, grep, pattern = "^clone_prev_MSE", value = TRUE)))    
+    clone_prev_MSE <- as.numeric(sub("clone_prev_MSE: ", "", sapply(lines, grep, pattern = "^clone_prev_MSE", value = TRUE)))
     slsbulk_vmeasure <- as.numeric(sub("slsbulk_vmeasure: ", "", sapply(lines, grep, pattern = "slsbulk_vmeasure", value = TRUE)))
     slsbulk_clone_prev_MAE <- as.numeric(sub("slsbulk_clone_prev_MAE: ", "", sapply(lines, grep, pattern = "slsbulk_clone_prev_MAE", value = TRUE)))
-    slsbulk_clone_prev_MSE <- as.numeric(sub("slsbulk_clone_prev_MSE: ", "", sapply(lines, grep, pattern = "slsbulk_clone_prev_MSE", value = TRUE)))   
-    uncertainty <- as.numeric(sub("uncertainty_true_positive_rate: ", "", sapply(lines, grep, pattern = "uncertainty_true_positive_rate", value = TRUE))) 
+    slsbulk_clone_prev_MSE <- as.numeric(sub("slsbulk_clone_prev_MSE: ", "", sapply(lines, grep, pattern = "slsbulk_clone_prev_MSE", value = TRUE)))
+    uncertainty <- as.numeric(sub("uncertainty_true_positive_rate: ", "", sapply(lines, grep, pattern = "uncertainty_true_positive_rate", value = TRUE)))
 
     table_all <- data.frame(converged, score, run, cpu_time, memory, nclusters_pred, all_vmeasure, clone_prev_MAE, clone_prev_MSE, slsbulk_vmeasure, slsbulk_clone_prev_MAE, slsbulk_clone_prev_MSE, uncertainty)
 
@@ -130,16 +132,16 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
     ntotal <- nrow(table_all)
     nconv <- sum(table_all[,1])
     if (criterion == "DIC_measure: " || criterion == "DIC_LINE_ELBOW: ")  {
-    
+
         # print('Taking min')
         # best_score <- min(table_all[,2])
         # bestrow <- which.min(table_all[,2])
-        
+
         table_per_cluster = data.frame()
         # find the unique number of clusters
-        for ( k in sort(unique(table_all[,6])))   {        
+        for ( k in sort(unique(table_all[,6])))   {
             # print (k)
-            rows <- table_all[which(table_all[,6]==k),]            
+            rows <- table_all[which(table_all[,6]==k),]
             # print(rows)
             minofk_score <- min(rows[,2])
             minofk_row <- rows[which.min(rows[,2]),]
@@ -152,26 +154,26 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
         print(table_per_cluster)
         dfile <- paste0(output, "/", flag, "_results_perclusterruns_", model, ".tsv")
         write.table(table_per_cluster, file = dfile, quote = FALSE, sep = "\t", row.names = FALSE)
-        
-        # also plot the v-measure versus the number of predicted clusters to see if we get better V-measure when we choose a different number of clusters       
+
+        # also plot the v-measure versus the number of predicted clusters to see if we get better V-measure when we choose a different number of clusters
         pdf(paste0(output,"/Vmeasure_vs_nclusters.pdf"),height=7,width=9)
         x <- table_per_cluster[,c("nclusters_pred")]
         y <- table_per_cluster[,c("all_vmeasure")]
-                
+
         # type='o' means it plots both points and lines overplotted
         matplot(x,y,lty=1,type='o',lwd=c(4),col=c(4), pch=19,
             ylab="V-measure for run with best score",
             xlab="Number of clusters",
-            cex.axis=1.2,cex.lab=1.2)         
-        dev.off()        
-        
-        print(paste0("Number of rows in table per cluster is ", nrow(table_per_cluster)))    
-            
+            cex.axis=1.2,cex.lab=1.2)
+        dev.off()
+
+        print(paste0("Number of rows in table per cluster is ", nrow(table_per_cluster)))
+
         if (nrow(table_per_cluster) == 1) {
             best_score <- table_per_cluster[1,2]
-            bestrow <- table_per_cluster[1,]            
+            bestrow <- table_per_cluster[1,]
         } else {
-            if (criterion == "DIC_measure: ") { 
+            if (criterion == "DIC_measure: ") {
                 for ( k in 1:(nrow(table_per_cluster)-1)) {
                     gain <- (table_per_cluster[k,2]-table_per_cluster[k+1,2])/table_per_cluster[k,2]
                     print(paste0("Gain ", gain))
@@ -181,11 +183,11 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
                         break
                     } else {
                         best_score <- table_per_cluster[k+1,2]
-                        bestrow <- table_per_cluster[k+1,]                                    
+                        bestrow <- table_per_cluster[k+1,]
                     }
                     # TODO: If nothing was found, it means we have to run with more clusters
                 }
-            }    
+            }
             if (criterion == "DIC_LINE_ELBOW: ")  {
                 print ("Doing DIC LINE ELBOW")
                 print (table_per_cluster)
@@ -198,17 +200,17 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
                     gain <- (table_per_cluster[k,2]-table_per_cluster[k+1,2])/table_per_cluster[k,2]
                     if (gain < THRESHOLD[2]) {    # a very small one for this criterion
                         break
-                    }                        
+                    }
                     print(paste0("Gain ", gain, " adding it to the DIC LINE"))
                     gain_vector <- c(gain_vector, gain)
                     x_elbow <- c(x_elbow, table_per_cluster[k+1,c("nclusters_pred")])
-                    y_elbow <- c(y_elbow, table_per_cluster[k+1,c("score")])                              
-                } 
+                    y_elbow <- c(y_elbow, table_per_cluster[k+1,c("score")])
+                }
                 gfile <- paste0(output, "/", flag, "_results_gain_", model, ".tsv")
                 gtable <- data.frame()
                 gtable <- cbind(x_elbow, y_elbow, gain_vector)
-                write.table(gtable, file = gfile, quote = FALSE, sep = "\t", row.names = FALSE)                
-                
+                write.table(gtable, file = gfile, quote = FALSE, sep = "\t", row.names = FALSE)
+
                 print ("x_elbow and y_elbow")
                 print (x_elbow)
                 print (y_elbow)
@@ -216,29 +218,29 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
                 # If there is only 1 point, that is the best cluster
                 if (length(x_elbow) == 1) {
                     best_nclusters <- x_elbow[1]
-                } 
+                }
 
-                # SOmetimes there is more than one very large gain, remove the first 
-                if (length(gain_vector) >= 3) {                
+                # SOmetimes there is more than one very large gain, remove the first
+                if (length(gain_vector) >= 3) {
                     if (gain_vector[2] >= 0.2 && gain_vector[3] >= 0.2) {
-                        # eliminate the first one                    
+                        # eliminate the first one
                         x_elbow <- x_elbow[2:length(x_elbow)]
                         y_elbow <- y_elbow[2:length(y_elbow)]
                     }
-                }    
+                }
                 print ("x_elbow and y_elbow 2")
                 print (x_elbow)
-                print (y_elbow)                
-                # Now check that there is at least one gain that is >= THRESHOLD[1]                
+                print (y_elbow)
+                # Now check that there is at least one gain that is >= THRESHOLD[1]
                 # MA 10 May 2018: leaving THRESHOLD[1] below, but we may not need this to be different from the second threshold
                 if (sum(gain_vector >= THRESHOLD[1]) >= 1) {
                     # add one more point for elbow_finder
                     x_elbow <- c(x_elbow, x_elbow[-1]+1)
                     y_elbow <- c(y_elbow, y_elbow[-1])
-                    best_nclusters <- elbow_finder(x_elbow, y_elbow)                                    
+                    best_nclusters <- elbow_finder(x_elbow, y_elbow)
                 } else {
                     best_nclusters <- x_elbow[1]
-                }    
+                }
                 bestrow <- table_per_cluster[table_per_cluster$nclusters_pred == best_nclusters,]
                 best_score <- table_per_cluster[table_per_cluster$nclusters_pred == best_nclusters,c("score")]
                 print("Best row")
@@ -246,36 +248,36 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
             }
         }
         ## Now plotting a graph that shows the DIC measures
-        
+
         pdf(paste0(output,"/DIC_selection.pdf"),height=7,width=9)
         x <- table_per_cluster[,c("nclusters_pred")]
         # y <- table_per_cluster[,c("score")/as.numeric(table_per_cluster[1,c("score")])]
         y <- table_per_cluster[,c("score")]
-                
+
         # type='o' means it plots both points and lines overplotted
         matplot(x,y,lty=1,type='o',lwd=c(4),col=c(4), pch=19,
             ylab="DIC measure - proportion",
             xlab="Number of clusters",
             #xaxt="n",
-            cex.axis=1.2,cex.lab=1.2)    
-        #points(x, cex = 1.5, col = "dark red")            
+            cex.axis=1.2,cex.lab=1.2)
+        #points(x, cex = 1.5, col = "dark red")
         bestcluster <- bestrow[,6]
         print(paste0('Best cluster is ', bestcluster))
         abline(v=bestcluster, col="red")
         if (criterion == "DIC_LINE_ELBOW: ") {
             abline(v=max(x_elbow), col="green")
         }
-        axis(1, y)  
+        axis(1, y)
         grid()
 
-        dev.off()            
-        
-                 
+        dev.off()
+
+
     } else {
         print('Taking max')
         best_score <- max(table_all[,2])
         bestrow <- table_all[which.max(table_all[,2]),]
-    }        
+    }
     cpu_total <- sum(table_all[,4])     # TOTAL CPU TIME
     memory <- bestrow[,5]      # MEMORY ONLY OF THE BEST RUN
     nclusters_pred <- bestrow[,6]
@@ -295,10 +297,10 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
     print (table_best)
 
     # Now call the visualization software
-    visline <- paste0("--out_directory=", output, 
-                    " --methylation_file=", meth_file, 
-                    " --regions_file=", regions_file, 
-                    " --inferred_clusters_file=", clMAPfile) 
+    visline <- paste0("--out_directory=", output,
+                    " --methylation_file=", meth_file,
+                    " --regions_file=", regions_file,
+                    " --inferred_clusters_file=", clMAPfile)
 
     if (!is.null(true_clusters_file))
     {
@@ -307,22 +309,22 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
         true_clusters <- true_clusters_all[["epigenotype_id"]]
         nclusters_true <- length(unique(true_clusters))
         print(paste0("Number of true clusters: ", nclusters_true))
-    
+
         best_vmeasure <- bestrow[,7]
         clone_prev_MAE <- bestrow[,8]
         clone_prev_MSE <- bestrow[,9]
         slsbulk_vmeasure <- bestrow[,10]
         slsbulk_clone_prev_MAE <- bestrow[,11]
-        slsbulk_clone_prev_MSE <- bestrow[,12]    
+        slsbulk_clone_prev_MSE <- bestrow[,12]
         uncertainty <- bestrow[,13]
-    
+
         print(paste0('Vmeasure is ', best_vmeasure))
         table_best <- cbind (table_best, nclusters_true, best_vmeasure, clone_prev_MAE, clone_prev_MSE, slsbulk_vmeasure, slsbulk_clone_prev_MAE, slsbulk_clone_prev_MSE, uncertainty)
         # print ('Table with vmeasure')
         # print (table_best)
-    
+
         visline <- paste0(visline, " --true_clusters_file=", true_clusters_file)
-    
+
         if (!is.null(true_epigenotypes_file))
         {
             houtfile <- paste0(output, "/", flag, "_hdist_bestrun_", model, ".tsv")
@@ -337,10 +339,10 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
             args <- hargs
             hline <- paste0("--output_file=", houtfile, " --true_epigenotype_file=", true_epigenotypes_file,
                     " --true_membership_file=", true_clusters_file, " --estimated_epigenotype_file=", epiMAPfile,
-                    " --estimated_membership_file=", clMAPfile, " --methylation_file=", meth_file, 
+                    " --estimated_membership_file=", clMAPfile, " --methylation_file=", meth_file,
                     " --regions_file=", regions_file)
             print ("Calling the hamming distance software")
-            command <- paste0 ("/gsc/software/linux-x86_64-centos6/R-3.5.0/bin/Rscript ", hdist_software, " ", hline)
+            command <- paste0 ("RSCRIPT ", hdist_software, " ", hline)
             print(command)
             system(command)
             # source (hdist_software)
@@ -355,13 +357,13 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
             print('Table after hdist')
             print(table_best)
         }
-    } 
+    }
 
     write.table(table_best, file=sfile, quote = FALSE, sep = "\t", row.names = FALSE)
 
     # Order will be by predicted
     print ("Calling the visualization software")
-    command <- paste0 ("Rscript ", visualization_software, " ", visline, " --order_by_true=0 --name=", flag, "_bestrun_order_pred")
+    command <- paste0 ("RSCRIPT ", visualization_software, " ", visline, " --order_by_true=0 --name=", flag, "_bestrun_order_pred")
     print(command)
     system(command)
 
@@ -370,11 +372,11 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD)  {
     if (!is.null(true_clusters_file))
     {
         print ("Calling the visualization software the second time")
-        command <- paste0 ("/gsc/software/linux-x86_64-centos6/R-3.5.0/bin/Rscript ", visualization_software, " ", visline, " --order_by_true=1 --name=", flag, "_bestrun_order_true")
+        command <- paste0 ("RSCRIPT ", visualization_software, " ", visline, " --order_by_true=1 --name=", flag, "_bestrun_order_true")
         #command <- paste0 ("Rscript ", visualization_software, " ", visline, " --order_by_true=1 --name=InHouse")
         print(command)
-        system(command)  
-    }    
+        system(command)
+    }
 }   # end function run_eval
 
 ######################################
@@ -402,4 +404,4 @@ run_eval (input, "all", "DIC_measure", 0.05)
 #run_eval (input, "init_hdist")
 
 
-    
+
