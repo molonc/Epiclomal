@@ -15,7 +15,7 @@ parser <- ArgumentParser()
 
 parser$add_argument("--output_directory", type="character", help="Path to the output directory")
 parser$add_argument("--data_ID", type="character", help="Some identification for the data, e.g., Smallwood2014_CGI")
-parser$add_argument("--post_processed_CpG_data_file", type="character",help="Path to cell file containing the methylation data for each CpG in the reference genome for the regions considered")
+parser$add_argument("--path_post_processed_CpG_data", type="character",help="Path to cell file containing the methylation data for each CpG in the reference genome for the regions considered")
 parser$add_argument("--cell_ID", type="character", help="Cell ID")
 
 args <- parser$parse_args()
@@ -25,6 +25,8 @@ print(args)
 # ============================
 # Auxiliary Functions
 # ============================
+
+is.wholenumber <- function(x, tol = .Machine$double.eps^0.5)  abs(x - round(x)) < tol
 
 miss.prop.function <- function(x){
 
@@ -48,13 +50,12 @@ ave.cov.function <- function(x1,x2){
 outdir <- args$output_directory
 
 # Finding the input file from the path and cell_id
-input_file <- args$post_processed_CpG_data_file
+input_file <- Sys.glob(file.path(args$path_post_processed_CpG_data, paste0("*", args$cell_ID, "*.tsv")))
 print("Input file for this cell is")
 print(input_file)
 
 tmp <- read.csv(input_file,sep="\t",header=TRUE)
 
-print(dim(tmp))
   ### using a smaller set when testing
   # tmp <- tmp[1:1000,]
 

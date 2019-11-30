@@ -14,7 +14,6 @@
 
 
 library("argparse")
-suppressMessages(library("REpiclomal"))
 suppressMessages(library("Matrix"))
 suppressMessages(library("MCMCpack")) # for generating values from a Dirichlet distribution
 
@@ -56,6 +55,7 @@ parser$add_argument("--output_dir", type="character", default="output", help="En
 parser$add_argument("--given_dir_complete", type="integer", default=0, help="If this is 0, it creates a long output dir name with the input parameters, if it is 1, the output dir is output_dir ")
 
 parser$add_argument("--plot_data", type="character", default=0, help="If this is 1, use the visualization software to plot the data")
+parser$add_argument("--visualization_software", type="character", default=NULL, help="Use this visualization software to plot the data if requested")
 
 parser$add_argument("--prop_add_var", type="character", default="0_0.5", help="Proportion (0-1) of non-flipped regions to have their methylation calls changed with prob = 0.5, default is to NO cell to cell variability")
 
@@ -763,13 +763,20 @@ if( args$bulk_depth != 0 ){
 if (args$plot_data == 1) {
 
   print("PLOTTING GENERATED DATA")
+
   meth_file =  paste0(output_dir, "/data_incomplete",".tsv")
-  visualization(out_dir=output_dir,
-    input_CpG_data_file=paste0(meth_file, ".gz"),
-    input_regions_file=paste0(reg_file, ".gz"),
-    name="data",
-    true_clusters_file=paste0(clone_file, ".gz"),
-    regions_to_plot=paste0(output_dir, "/flipped_regions.tsv"))
+  visline <- paste0("--out_directory=", output_dir,
+                    " --methylation_file=", paste0(meth_file,".gz"),
+                    " --regions_file=", paste0(reg_file,".gz"),
+                    " --name=data",
+                    " --true_clusters_file=", paste0(clone_file,".gz"),
+                    " --regions_to_plot=", paste0(output_dir, "/flipped_regions.tsv"))
+  # TO DO: allow inferred_clusters_file to be NULL. For now just using true.
+
+  #command <- paste0 ("/gsc/software/linux-x86_64-centos5/R-3.3.0/bin/Rscript ", args$visualization_software, " ", visline)
+  command <- paste0 ("Rscript ", args$visualization_software, " ", visline)
+  print(command)
+  system(command)
 
 }
 
