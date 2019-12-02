@@ -12,8 +12,6 @@ suppressMessages(library(ggplot2))
 suppressMessages(library(gridExtra))
 suppressMessages(library(plyr))
 suppressMessages(library(pheatmap))
-suppressMessages(library(doParallel))
-suppressMessages(library(bigstatsr))
 
 #======================
 # arguments
@@ -339,36 +337,26 @@ cell_stats <- read.csv(paste0(args$path_stats_region_data,"/",all_stats_cell_fil
 cell_stats$region_id <- factor(cell_stats$region_id,levels=as.character(unique(cell_stats$region_id)))
 no_regions <- dim(cell_stats)[1]
 
-region_mean_meth <- FBM(no_regions, length(all_stats_cell_files))
-region_miss_prop <- FBM(no_regions, length(all_stats_cell_files))
-region_IQR_meth <- FBM(no_regions, length(all_stats_cell_files))
+region_mean_meth <- NULL
+region_miss_prop <- NULL
+region_IQR_meth <- NULL
 cell_ID <- NULL
 
-numCores <- ceiling(detectCores()/5)
-print(paste("number of cores available", numCores))
-cl <- makeCluster(numCores)
-registerDoParallel(cl)
-
-cell_ID <- foreach (f = 1:length(all_stats_cell_files), .combine = c) %dopar% {
+for(f in 1:length(all_stats_cell_files)){
 
   print(f)
 
   cell_stats <- read.csv(paste0(args$path_stats_region_data,"/",all_stats_cell_files[f]),sep="\t",header=TRUE)
 
+  cell_ID <- c(cell_ID, as.character(unique(cell_stats$cell_id)))
+
   cell_stats$region_id <- factor(cell_stats$region_id,levels=as.character(unique(cell_stats$region_id)))
 
-  region_mean_meth[,f] = cell_stats$region_mean
-  region_miss_prop[,f] = cell_stats$region_miss
-  region_IQR_meth[,f] = cell_stats$region_IQR
-
-  as.character(unique(cell_stats$cell_id))
+  region_mean_meth <- cbind(region_mean_meth,cell_stats$region_mean)
+  region_miss_prop  <- cbind(region_miss_prop,cell_stats$region_miss)
+  region_IQR_meth <- cbind(region_IQR_meth,cell_stats$region_IQR)
 
 }
-stopCluster(cl)
-
-region_mean_meth <- as.matrix(region_mean_meth[])
-region_miss_prop <- as.matrix(region_miss_prop[])
-region_IQR_meth <- as.matrix(region_IQR_meth[])
 
 colnames(region_mean_meth) <- cell_ID
 rownames(region_mean_meth) <- as.character(cell_stats$region_id)

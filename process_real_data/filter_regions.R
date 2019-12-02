@@ -51,7 +51,6 @@ set_annotation_row <- function(data) {
     return(annotation_row)
 }
 
-
 set_index_gaps <- function(data) {
     index <- 1:dim(data)[1]
     index_gaps <- index[!duplicated(data[order(data),])] - 1
@@ -59,42 +58,47 @@ set_index_gaps <- function(data) {
     return(index_gaps)
 }
 
-# # find correlated regions to remove, outdated, using c++ version
-# find_correlated_regions <- function(mean_meth_matrix, coef_t) {
-#     regions_to_remove <- NULL
-#     region_weights <- data.frame(region=colnames(mean_meth_matrix))
-#     region_weights$weight <- 1
-#     for (r1 in 1:(ncol(mean_meth_matrix) - 1)) {
-#         # print(r1)
-#         if (colnames(mean_meth_matrix)[r1] %in% regions_to_remove) {
-#             # print("r1 already in regions_to_remove")
-#             next
-#         }
-#         for (r2 in (r1+1):ncol(mean_meth_matrix)) {
-#             # print(r2)
-#             if (colnames(mean_meth_matrix)[r2] %in% regions_to_remove) {
-#                 # print(paste(r2, "already in regions_to_remove"))
-#                 next
-#             } else {
+# find correlated regions to remove, outdated, using c++ version
+find_correlated_regions <- function(mean_meth_matrix, coef_t) {
+    correlated_regions <- data.frame(region=colnames(mean_meth_matrix))
+    correlated_regions$keep_region <- TRUE
+    correlated_regions$weight <- 1
 
-#                 pearson_corr <- cor(mean_meth_matrix[,r1], mean_meth_matrix[,r2], method = "pearson", use = "na.or.complete")
+    for (r1 in 1:(ncol(mean_meth_matrix) - 1)) {
+        # print(r1)
+        if (!correlated_regions[r1, 'keep_region']) {
+            # print("r1 already in regions_to_remove")
+            next
+        }
+        for (r2 in (r1+1):ncol(mean_meth_matrix)) {
+            # print(r2)
+            if (!correlated_regions[r2, 'keep_region']) {
+                # print(paste(r2, "already in regions_to_remove"))
+                next
+            } else {
 
-#                 if (!is.na(pearson_corr) && ((pearson_corr > coef_t) || (pearson_corr < (-1 * coef_t)))) {
-#                     #remove region with greater NAs
-#                     if (sum(is.na(mean_meth_matrix[,r2])) >= sum(is.na(mean_meth_matrix[,r1]))) {
-#                         regions_to_remove <- append(regions_to_remove, colnames(mean_meth_matrix)[r2])
-#                         region_weights[r1, 'weight'] <- region_weights[r1, 'weight'] + region_weights[r2, 'weight']
-#                     } else {
-#                         regions_to_remove <- append(regions_to_remove, colnames(mean_meth_matrix)[r1])
-#                         region_weights[r2, 'weight'] <- region_weights[r1, 'weight'] + region_weights[r2, 'weight']
-#                         break
-#                     }
-#                 }
-#             }
-#         }
-#     }
-#     return(list("regions_to_remove" = regions_to_remove, "region_weights" = region_weights))
-# }
+                pearson_corr <- cor(mean_meth_matrix[,r1], mean_meth_matrix[,r2], method = "pearson", use = "na.or.complete")
+
+                if (is.na(pearson_corr)) {
+                    next
+                }
+
+                if ((pearson_corr > coef_t) || (pearson_corr < (-1 * coef_t))) {
+                    #remove region with greater NAs
+                    if (sum(is.na(mean_meth_matrix[,r2])) >= sum(is.na(mean_meth_matrix[,r1]))) {
+                        correlated_regions[r2, 'keep_region'] <- TRUE
+                        correlated_regions[r1, 'weight'] <- correlated_regions[r1, 'weight'] + correlated_regions[r2, 'weight']
+                    } else {
+                        correlated_regions[r1, 'keep_region'] <- TRUE
+                        correlated_regions[r2, 'weight'] <- correlated_regions[r1, 'weight'] + correlated_regions[r2, 'weight']
+                        break
+                    }
+                }
+            }
+        }
+    }
+    return(correlated_regions)
+}
 
 find_most_variant_regions <- function(data, N) {
     data <- data[, order(-apply(data, 2, var, na.rm=TRUE))]
@@ -127,11 +131,24 @@ plot_heatmap <- function(data, filename, main, annotation_row, index_gaps) {
 
 main <- function(mean_meth_file, true_file, outdir, coef_t, mean_diff_threshold) {
     mean_meth_matrix <- load_mean_meth(mean_meth_file)
-    print(paste("Number of cells", dim(mean_meth_matrix)[1]))
-    print(paste("Number of regions", dim(mean_meth_matrix)[2]))
+
+    c <- dim(mean_meth_matrix)[1]
+    r <- dim(mean_meth_matrix)[2]
+    print(paste("Number of cells", c))
+    print(paste("Number of regions", r))
 
     print("Finding and removing highly correlated regions")
-    correlated_regions <- find_correlated_regions_LV(mean_meth_matrix, coef_t)
+
+    # C++ implementation of Pearson correlation coefficient is slower than R when there are a lot of cells (~10x)
+    # this results in slower filtering in C++ than R. Most efficiency gained from C++ implementation over regions.
+    # until a faster implementation of Pearson correlation coefficient can be done in C++, use this conditional
+    if(c < 1000 || (r/c > 500)) {
+        print("mean_meth_matrix is wide, use C++ filtering")
+        correlated_regions <- find_correlated_regions_cpp(mean_meth_matrix, coef_t)
+    } else {
+        print("mean_meth_matrix is long, use R filtering")
+        correlated_regions <- find_correlated_regions(mean_meth_matrix, coef_t)
+    }
 
     redundant_matrix <- mean_meth_matrix[, !correlated_regions$keep_region]
     non_redundant_matrix <- mean_meth_matrix[, correlated_regions$keep_region]
