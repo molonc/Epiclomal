@@ -257,47 +257,51 @@ print("End of extracting region info")
 
 ### TO TEST
 
-if((args$nloci_cutoff > 1 )){
-  doThis <- TRUE}else{
-  doThis <- FALSE
-    }
-
-if(doThis == TRUE){
+if(args$nloci_cutoff > 1){
 
   print("checking missing proportion per cell")
 
   miss_prop_per_cell <- NULL
 
-  for (c in 1: length(all_CpG_cell_files)){
+  cached_data <- paste0(outdir, '/missing_prop_per_cell.Rda.gz')
+  if (file.exists(cached_data)) {
+    load(cached_data)
+    print("loading cached missing proportion per cell")
+  } else {
+    for (c in 1: length(all_CpG_cell_files)){
 
-    print(c)
+      print(all_CpG_cell_files[c])
 
-    tmp <- read.csv(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[c]),sep="\t",header=TRUE)
+      tmp <- read.csv(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[c]),sep="\t",header=TRUE)
 
-    if(c == 1){
-      num_loci_unfiltered <- dim(tmp)[1]
+      if(c == 1){
+        num_loci_unfiltered <- dim(tmp)[1]
 
-      # CpG_nodata <- as.vector(matrix(0,num_loci_unfiltered,1))
+        # CpG_nodata <- as.vector(matrix(0,num_loci_unfiltered,1))
 
-      CpG_nodata_df <- as.data.frame(as.character(tmp$region_id))
+        CpG_nodata_df <- as.data.frame(as.character(tmp$region_id))
 
-      colnames(CpG_nodata_df) <- c("region_id")
+        colnames(CpG_nodata_df) <- c("region_id")
 
-      CpG_nodata_df$region_id <- as.character(CpG_nodata_df$region_id)
+        CpG_nodata_df$region_id <- as.character(CpG_nodata_df$region_id)
 
-      CpG_nodata_df$CpG_nodata <- as.vector(matrix(0,num_loci_unfiltered,1))
+        CpG_nodata_df$CpG_nodata <- as.vector(matrix(0,num_loci_unfiltered,1))
+
+      }
+
+      CpG_nodata_df$CpG_nodata[!is.na((tmp$meth_frac))] <- 1
+
+      #print(head(CpG_nodata_df$CpG_nodata[!is.na((tmp$meth_frac))]))
+
+      print(paste("CpG sites with no data", sum(CpG_nodata_df$CpG_nodata == 0)))
+
+      miss_prop_per_cell <- c(miss_prop_per_cell,sum(is.na(tmp$meth_frac))/num_loci_unfiltered)
 
     }
-
-    CpG_nodata_df$CpG_nodata[!is.na((tmp$meth_frac))] <- 1
-
-    #print(head(CpG_nodata_df$CpG_nodata[!is.na((tmp$meth_frac))]))
-
-    print(sum(CpG_nodata_df$CpG_nodata == 0))
-
-    miss_prop_per_cell <- c(miss_prop_per_cell,sum(is.na(tmp$meth_frac))/num_loci_unfiltered)
-
+    save(num_loci_unfiltered, CpG_nodata_df, miss_prop_per_cell, file = cached_data, compress = "gzip")
+    }
   }
+
 
   print("Number of loci with no data across all cells = ")
   print(sum(CpG_nodata_df$CpG_nodata == 0))
@@ -333,30 +337,39 @@ if(doThis == TRUE){
 
 print("Creating matrices with region-based info - IQR, mean methylation, missing proportion")
 
-cell_stats <- read.csv(paste0(args$path_stats_region_data,"/",all_stats_cell_files[1]),sep="\t",header=TRUE)
-cell_stats$region_id <- factor(cell_stats$region_id,levels=as.character(unique(cell_stats$region_id)))
-no_regions <- dim(cell_stats)[1]
-
 region_mean_meth <- NULL
 region_miss_prop <- NULL
 region_IQR_meth <- NULL
 cell_ID <- NULL
 
-for(f in 1:length(all_stats_cell_files)){
+cached_data <- paste0(outdir, '/region_based_stats.Rda.gz')
+if (file.exists(cached_data)){
+  print("loading cached region based stats")
+  load(cached_data)
+} else {
+  for(f in 1:length(all_stats_cell_files)){
 
-  print(f)
+    print(all_stats_cell_files[f])
 
-  cell_stats <- read.csv(paste0(args$path_stats_region_data,"/",all_stats_cell_files[f]),sep="\t",header=TRUE)
+    cell_stats <- read.csv(paste0(args$path_stats_region_data,"/",all_stats_cell_files[f]),sep="\t",header=TRUE)
 
-  cell_ID <- c(cell_ID, as.character(unique(cell_stats$cell_id)))
+    print(as.character(unique(cell_stats$cell_id)))
+    cell_ID <- c(cell_ID, as.character(unique(cell_stats$cell_id)))
 
-  cell_stats$region_id <- factor(cell_stats$region_id,levels=as.character(unique(cell_stats$region_id)))
+    cell_stats$region_id <- factor(cell_stats$region_id,levels=as.character(unique(cell_stats$region_id)))
 
-  region_mean_meth <- cbind(region_mean_meth,cell_stats$region_mean)
-  region_miss_prop  <- cbind(region_miss_prop,cell_stats$region_miss)
-  region_IQR_meth <- cbind(region_IQR_meth,cell_stats$region_IQR)
-
+    region_mean_meth <- cbind(region_mean_meth,cell_stats$region_mean)
+    region_miss_prop  <- cbind(region_miss_prop,cell_stats$region_miss)
+    region_IQR_meth <- cbind(region_IQR_meth,cell_stats$region_IQR)
+  }
+  save(cell_ID, region_mean_meth, region_miss_prop, region_IQR_meth, cell_stats, file = cached_data, compress = "gzip")
 }
+
+print(length(cell_ID))
+print(length(cell_stats$region_id))
+print(dim(region_mean_meth))
+print(dim(region_miss_prop))
+print(dim(region_IQR_meth))
 
 colnames(region_mean_meth) <- cell_ID
 rownames(region_mean_meth) <- as.character(cell_stats$region_id)
@@ -370,9 +383,11 @@ rownames(region_IQR_meth) <- as.character(cell_stats$region_id)
 no_data_function <- function(x){
   if(sum(x == 1) == length(x)){
     a <- TRUE
-  }else{
-    a <- FALSE}
-  return(a)}
+  } else {
+    a <- FALSE
+  }
+  return(a)
+}
 
 ### regions with no data across all cells
 regions_no_data_index <- apply(region_miss_prop,1,no_data_function)
@@ -472,10 +487,7 @@ dev.off()
 tmp1 <- as.character(rownames(mean_miss_prop))
 tmp2 <- as.vector(mean_miss_prop)
 
-tmp3 <- data.frame(tmp1,tmp2)
-colnames(tmp3) <- c("region_id","miss_prop")
-
-tmp3$region_id <- as.character(tmp3$region_id)
+tmp3 <- data.frame(region_id = as.character(tmp1), miss_prop = tmp2)
 
 mean_miss_prop <- tmp3
 
@@ -486,10 +498,7 @@ rm(tmp1,tmp2,tmp3)
 tmp1 <- as.character(rownames(number_cells_miss_cutoff))
 tmp2 <- as.vector(number_cells_miss_cutoff)
 
-tmp3 <- data.frame(tmp1,tmp2)
-colnames(tmp3) <- c("region_id","number_cells_cutoff")
-
-tmp3$region_id <- as.character(tmp3$region_id)
+tmp3 <- data.frame(region_id = as.character(tmp1), number_cells_cutoff = tmp2)
 
 number_cells_miss_cutoff <- tmp3
 
@@ -561,7 +570,7 @@ if (args$nloci_cutoff > 1 ){
 
   if ( (args$filter_regions_same_meth == 1) ) {
 
-    print("Applying new filter")
+    print("Filtering regions with same methylation")
 
     index_same <- same_meth
 
@@ -895,7 +904,7 @@ if (args$nloci_cutoff <= 1 ) {
 
   print("applying missing proportion and IQR filters")
 
-    if(args$num_cells_cutoff == 0) {
+  if(args$num_cells_cutoff == 0) {
 
     ###################################################################################
     ### finding regions with less than a certain amount of data missing across all  ###
@@ -958,9 +967,6 @@ if (args$nloci_cutoff <= 1 ) {
   ### Plot heatmaps for filtered IQR, mean methylation and missing proportion ####
   ################################################################################
 
-  doThis <- TRUE
-  if(doThis == TRUE){
-
   ### Filtered IQR matrix
 
   print(dim(region_IQR_meth))
@@ -997,45 +1003,6 @@ if (args$nloci_cutoff <= 1 ) {
 
   }
 
-  }
-
-  #########################################################
-  ### Region based stats and plots for filtered data ######
-  #########################################################
-
-  doThis <- FALSE
-  if(doThis == TRUE){
-
-  filtered_regions <- IQR_meth_tmp[index_IQR,]$region_id
-
-  print("Extracting region info for filtered data")
-
-  tmp0 <- read.csv(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[1]),sep="\t",header=TRUE)
-
-  tmp0 <- tmp0[,1:8]
-
-  r_index <- !duplicated(tmp0$region_id) ### we need at least more than one region
-
-  tmp <- tmp0[r_index,]
-
-  rm(r_index)
-
-  tmp2 <- tmp[index_miss,]
-
-  tmp3 <- tmp2[index_IQR,]
-
-  print(head(tmp3))
-  print(dim(tmp3))
-  print(head(filtered_regions))
-  print(length(filtered_regions))
-
-  number_regions_single_CpG <- extraction_region_info_f(region_info=tmp3,type="filtered") ## returns a number and produces plots and tables
-  print("Number of regions with only one CpG - filtered data")
-  print(number_regions_single_CpG)
-
-  #region_distance_CpGs_f(CpG_based_data = tmp0,type="filtered") ## produces plots
-
-  }
 
 }
 

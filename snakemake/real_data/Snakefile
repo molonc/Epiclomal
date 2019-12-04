@@ -13,6 +13,9 @@ run=list(range(0,config["NUM_EPI_ITERS"]))
 
 default_mem=12
 
+if not os.path.exists(LOG_DIR):
+    os.makedirs(LOG_DIR)
+
 rule all:
     input:
         EVAL_BASIC_DIR,
@@ -22,20 +25,8 @@ rule all:
         '.pearson_eval',
         '.densitycut_eval'
 
-rule init_dir:
-    output:
-        directory(LOG_DIR)
-    resources:
-        h_vmem=default_mem
-    params:
-        qsub_out='tmp',
-        qsub_err='tmp'
-    shell:
-        'mkdir -p {LOG_DIR}'
-
 rule preprocess:
     input:
-        LOG_DIR,
         meth_file=config['METH_FILE'],
         regions_file=config['REGION_FILE']
     output:
