@@ -35,7 +35,7 @@ outdir <- args$output_directory
 
 all_CpG_cell_files <- list.files(args$path_post_processed_CpG_data, pattern = "*.tsv*")
 
-print(all_CpG_cell_files)
+# print(all_CpG_cell_files)
 
 ###########################
 ### Auxiliary Functions ###

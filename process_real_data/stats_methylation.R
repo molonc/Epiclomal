@@ -12,6 +12,8 @@ suppressMessages(library(ggplot2))
 suppressMessages(library(gridExtra))
 suppressMessages(library(plyr))
 suppressMessages(library(pheatmap))
+suppressMessages(library(doParallel))
+suppressMessages(library(bigstatsr))
 
 #======================
 # arguments
@@ -337,9 +339,13 @@ if(args$nloci_cutoff > 1){
 
 print("Creating matrices with region-based info - IQR, mean methylation, missing proportion")
 
-region_mean_meth <- NULL
-region_miss_prop <- NULL
-region_IQR_meth <- NULL
+cell_stats <- read.csv(paste0(args$path_stats_region_data,"/",all_stats_cell_files[1]),sep="\t",header=TRUE)
+cell_stats$region_id <- factor(cell_stats$region_id,levels=as.character(unique(cell_stats$region_id)))
+num_regions <- dim(cell_stats)[1]
+
+region_mean_meth <- FBM(num_regions, length(all_stats_cell_files))
+region_miss_prop <- FBM(num_regions, length(all_stats_cell_files))
+region_IQR_meth <- FBM(num_regions, length(all_stats_cell_files))
 cell_ID <- NULL
 
 cached_data <- paste0(outdir, '/region_based_stats.Rda.gz')
@@ -347,21 +353,31 @@ if (file.exists(cached_data)){
   print("loading cached region based stats")
   load(cached_data)
 } else {
-  for(f in 1:length(all_stats_cell_files)){
+  numCores <- ceiling(detectCores()/5)
+  print(paste("number of cores available", numCores))
+  cl <- makeCluster(numCores)
+  registerDoParallel(cl)
+
+  cell_ID <- foreach (f = 1:length(all_stats_cell_files), .combine = c) %dopar% {
 
     print(all_stats_cell_files[f])
 
     cell_stats <- read.csv(paste0(args$path_stats_region_data,"/",all_stats_cell_files[f]),sep="\t",header=TRUE)
 
     print(as.character(unique(cell_stats$cell_id)))
-    cell_ID <- c(cell_ID, as.character(unique(cell_stats$cell_id)))
 
     cell_stats$region_id <- factor(cell_stats$region_id,levels=as.character(unique(cell_stats$region_id)))
 
-    region_mean_meth <- cbind(region_mean_meth,cell_stats$region_mean)
-    region_miss_prop  <- cbind(region_miss_prop,cell_stats$region_miss)
-    region_IQR_meth <- cbind(region_IQR_meth,cell_stats$region_IQR)
+    region_mean_meth[,f] = cell_stats$region_mean
+    region_miss_prop[,f] = cell_stats$region_miss
+    region_IQR_meth[,f] = cell_stats$region_IQR
+    as.character(unique(cell_stats$cell_id))
   }
+  stopCluster(cl)
+
+  region_mean_meth <- as.matrix(region_mean_meth[])
+  region_miss_prop <- as.matrix(region_miss_prop[])
+  region_IQR_meth <- as.matrix(region_IQR_meth[])
   save(cell_ID, region_mean_meth, region_miss_prop, region_IQR_meth, cell_stats, file = cached_data, compress = "gzip")
 }
 
