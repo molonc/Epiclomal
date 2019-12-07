@@ -282,8 +282,7 @@ write_data_file <- function (data_matrix, output_file, index="cell_id") {
   cat(sapply(c(index,1:ncol(data_matrix)), toString), file=output_file, sep="\t")
   cat("\n", file=output_file, append=TRUE)
   rownames(data_matrix) <- c(1:nrow(data_matrix))
-  write.table (data_matrix, output_file , sep="\t", col.names=FALSE, quote=FALSE, append=TRUE)
-  system(paste0("gzip --force ", output_file))
+  write.table (data_matrix, gzfile(output_file) , sep="\t", col.names=FALSE, quote=FALSE, append=TRUE)
 }
 
 # END FUNCTIONS
@@ -299,12 +298,12 @@ print(paste0("Output dir is: ", output_dir))
 
 dir.create(output_dir, showWarnings = TRUE)
 # add a data subdirectory
-output_dir <- paste0(output_dir, "/data")
+output_dir <- file.path(output_dir, "data")
 dir.create(output_dir, showWarnings = TRUE)
 
 
 ### WE NEED TO SAVE mu_array or at least the seed that generates it
-save(mu_array,file=paste0(output_dir, "/mu_array.Rdata"))
+save(mu_array,file=file.path(output_dir, "mu_array.Rdata"))
 
 
 ### SAVE region coordinates
@@ -314,18 +313,17 @@ if (args$verbose)   {
   print ("Region coordinates")
   print (reg_coord)
 }
-reg_file <- paste0(output_dir, "/regions_file.tsv")
+reg_file <- gzfile(file.path(output_dir, "regions_file.tsv.gz"))
 # write_data_file(as.matrix(reg_coord)-1, reg_file, index="region_id")
 # write_data_file(reg_coord, reg_file, index="region_id")
 # adding start and end to the header, and I want the regions ids to start from 0 -- MAYBE WE SHOULD DO THIS FOR THE OTHER IDS??
 tmp <- cbind(1:nrow(reg_coord)-1,reg_coord)
 colnames(tmp) <- c("region_id","start","end")
 write.table (tmp, reg_file, sep="\t", row.names=FALSE, quote=FALSE)
-system(paste0("gzip --force ", reg_file))
 rm(tmp)
 
 # Measuring the time with Rprof. For more details see http://stackoverflow.com/questions/6262203/measuring-function-execution-time-in-r
-#Rprof ( tf <- paste0(output_dir, "/log.log"),  memory.profiling = TRUE )
+#Rprof ( tf <- file.path(output_dir, "log.log"),  memory.profiling = TRUE )
 
 # Create the genotype matrix, that is, the vectors G_k's for k=1,...,K
 # ==========================
@@ -373,7 +371,7 @@ if (args$phylogenetic_generation == 0){
 
   # NOW write the matrix with each clone genotype into a file
   # ========================================
-  geno_file <- paste0(output_dir, "/true_clone_epigenotypes.tsv")
+  geno_file <- file.path(output_dir, "true_clone_epigenotypes.tsv.gz")
   write_data_file(genotype_matrix, geno_file)
 
 }
@@ -463,7 +461,7 @@ if (args$phylogenetic_generation == 1){
   print ("All the flipped regions are")
   print (flipped_regions)
   # Write the flipped regions to a file
-  write (flipped_regions, file=paste0(output_dir, "/flipped_regions.tsv"))
+  write (flipped_regions, file=file.path(output_dir, "flipped_regions.tsv"))
 
 
   if (args$verbose) {
@@ -475,7 +473,7 @@ if (args$phylogenetic_generation == 1){
 
   # NOW write the matrix with each clone genotype into a file
   # ========================================
-  geno_file <- paste0(output_dir, "/true_clone_epigenotypes.tsv")
+  geno_file <- file.path(output_dir, "true_clone_epigenotypes.tsv.gz")
   write_data_file(genotype_matrix, geno_file)
 
 }
@@ -528,9 +526,8 @@ cell_id_sample_id <- cell_id
 
 tmp <- cbind(cell_id_sample_id,Z)
 colnames(tmp) <- c("cell_id","epigenotype_id")
-clone_file <- paste0(output_dir, "/true_clone_membership",".tsv")
+clone_file <- gzfile(file.path(output_dir, "true_clone_membership.tsv.gz"))
 write.table (tmp, clone_file, sep="\t", row.names=FALSE, quote=FALSE)
-system(paste0("gzip --force ", clone_file))
 rm(tmp)
 
 ##################
@@ -563,12 +560,12 @@ sd_read_size = as.double(unlist(strsplit(args$read_size, split="_")))[2]
 #Rprof(tmp_prof <- tempfile(),line.profiling=TRUE)
 
 if (args$saveall) {
-  cat(sapply(c("cell_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_complete",".tsv"), sep="\t")
-  cat("\n", file=paste0(output_dir, "/data_complete",".tsv"), append=TRUE)
+  cat(sapply(c("cell_id",1:ncol(genotype_matrix)), toString), file= file.path(output_dir, "data_complete.tsv"), sep="\t")
+  cat("\n", file=file.path(output_dir, "data_complete.tsv"), append=TRUE)
 }
 
-cat(sapply(c("cell_id",1:ncol(genotype_matrix)), toString), file= paste0(output_dir, "/data_incomplete",".tsv"), sep="\t")
-cat("\n", file=paste0(output_dir, "/data_incomplete",".tsv"), append=TRUE)
+cat(sapply(c("cell_id",1:ncol(genotype_matrix)), toString), file= file.path(output_dir, "data_incomplete.tsv"), sep="\t")
+cat("\n", file=file.path(output_dir, "data_incomplete.tsv"), append=TRUE)
 
 ########################################
 ### adding cell to cell variability  ###
@@ -602,7 +599,7 @@ for (n in 1:length(cell_id_sample_id)){
   ##########################
 
   if (args$saveall) {
-    write.table(t(as.matrix(c(cell_id_sample_id[n],cell_n))), paste0(output_dir, "/data_complete",".tsv") , sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE)
+    write.table(t(as.matrix(c(cell_id_sample_id[n],cell_n))), file.path(output_dir, "data_complete.tsv") , sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE)
   }
 
   ###########################
@@ -686,15 +683,15 @@ for (n in 1:length(cell_id_sample_id)){
   vect_data_new[is.na(vect_data_new)] <- ""
 
 
-  write.table(t(as.matrix(c(cell_id_sample_id[n],vect_data_new))), paste0(output_dir, "/data_incomplete",".tsv") , sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE)
+  write.table(t(as.matrix(c(cell_id_sample_id[n],vect_data_new))), file.path(output_dir, "data_incomplete.tsv") , sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE)
 
 }
 
 if (args$saveall) {
-  system(paste0("gzip --force ", paste0(output_dir, "/data_complete",".tsv")))
+  system(paste0("gzip --force ", file.path(output_dir, "data_complete.tsv")))
 }
 
-system(paste0("gzip --force ", paste0(output_dir, "/data_incomplete",".tsv") ))
+system(paste0("gzip --force ", file.path(output_dir, "data_incomplete.tsv") ))
 
 #print("SUMMARY Rprof for generating cells")
 #Rprof()
@@ -726,7 +723,7 @@ if( args$bulk_depth != 0 ){
       ######################################
       ## saving complete data per sample ###
       ######################################
-      #write.table(t(as.matrix(cell_n)), paste0(output_dir, "/bulk_cell_data_complete","_sample_",s,".tsv"),sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE)
+      #write.table(t(as.matrix(cell_n)), file.path(output_dir, "bulk_cell_data_complete","_sample_",s,".tsv"),sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE)
 
       rm(cell_n)
 
@@ -742,13 +739,13 @@ if( args$bulk_depth != 0 ){
       print(head(bulk_data))
     }
 
-    write.table(bulk_data, paste0(output_dir, "/bulk_data","_sample_",s,".tsv"),sep="\t",row.names=FALSE, col.names=TRUE, quote=FALSE, append=FALSE)
+    write.table(bulk_data, file.path(output_dir, paste0("bulk_data_sample_",s,".tsv")),sep="\t",row.names=FALSE, col.names=TRUE, quote=FALSE, append=FALSE)
 
     rm(Z)
 
-    #system(paste0("gzip --force ", paste0(output_dir, "/bulk_cell_data_complete","_sample_",s,".tsv")))
+    #system(paste0("gzip --force ", file.path(output_dir, "bulk_cell_data_complete","_sample_",s,".tsv")))
 
-    system(paste0("gzip --force ", paste0(output_dir, "/bulk_data","_sample_",s,".tsv")))
+    system(paste0("gzip --force ", file.path(output_dir, paste0("bulk_data_sample_",s,".tsv"))))
 
   }
 
@@ -763,13 +760,13 @@ if( args$bulk_depth != 0 ){
 if (args$plot_data == 1) {
 
   print("PLOTTING GENERATED DATA")
-  meth_file =  paste0(output_dir, "/data_incomplete",".tsv")
+  meth_file <- file.path(output_dir, "data_incomplete.tsv.gz")
   visualization(out_dir=output_dir,
-    input_CpG_data_file=paste0(meth_file, ".gz"),
-    input_regions_file=paste0(reg_file, ".gz"),
+    input_CpG_data_file=paste0(meth_file),
+    input_regions_file=paste0(reg_file),
     name="data",
-    true_clusters_file=paste0(clone_file, ".gz"),
-    regions_to_plot=paste0(output_dir, "/flipped_regions.tsv"))
+    true_clusters_file=paste0(clone_file),
+    regions_to_plot=file.path(output_dir, "flipped_regions.tsv"))
 
 }
 

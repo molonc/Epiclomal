@@ -38,7 +38,7 @@
 #' rm(data)
 #'
 load_data <- function(outdir, input_CpG_data_file, input_regions_file, use_cache) {
-  cached_data <- paste0(outdir, '/', gsub(".tsv.gz", ".RDa.gz", basename(input_CpG_data_file)))
+  cached_data <- file.path(outdir, gsub(".tsv.gz", ".RDa.gz", basename(input_CpG_data_file)))
   print(cached_data)
   if (file.exists(cached_data) & use_cache) {
     print("loading cached data")
@@ -109,7 +109,7 @@ densitycut.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, max_PC=
   if (R > 1) {
     print("More than one region, region based densityCut")
     if (impute == 1) {
-      imputed_file <- paste0(outdir, "/region_based_imputed.RDa.gz")
+      imputed_file <- file.path(outdir, "region_based_imputed.RDa.gz")
       if (file.exists(imputed_file) & use_cache) {
         print ("Reading the imputed file")
         load(imputed_file)
@@ -150,7 +150,7 @@ densitycut.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, max_PC=
     checking_warning <- capture.output(cluster.out)
 
     if (checking_warning[1] == "WARNING! not converged ") {
-      ofile <- gzfile(paste0(outdir, "/DensityCut_clusters_Region_based_maxPC_", Max_K, ".tsv.gz"))
+      ofile <- gzfile(file.path(outdir, paste0("DensityCut_clusters_Region_based_maxPC_", Max_K, ".tsv.gz")))
       write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE, row.names=FALSE)
       stop("densitycut didn't converge, not saving results")
     } else {
@@ -160,7 +160,7 @@ densitycut.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, max_PC=
       possible_clusters <- as.data.frame(possible_clusters)
       colnames(possible_clusters) <- c("cell_id", "DensityCut")
 
-      ofile <- gzfile(paste0(outdir, "/DensityCut_clusters_Region_based_maxPC_", Max_K, ".tsv.gz"))
+      ofile <- gzfile(file.path(outdir, paste0("DensityCut_clusters_Region_based_maxPC_", Max_K, ".tsv.gz")))
       write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE, row.names=FALSE)
 
       inf_clustrs_order <- order(as.integer(cluster.out$cluster))
@@ -173,7 +173,7 @@ densitycut.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, max_PC=
         annotation_row$`inferred clusters` <- as.factor(annotation_row$`inferred clusters`)
         rownames(annotation_row) <- rownames(mean_meth_matrix)
 
-        plot_file <- paste0(outdir, "/DensityCut_PLOT.pdf")
+        plot_file <- file.path(outdir, "DensityCut_PLOT.pdf")
         if (!file.exists(plot_file)) {
           pheatmap(mean_meth_matrix[inf_clustrs_order,], clusters_row=FALSE, cluster_cols=FALSE,
             cellwidth=8, cellheight=8, fontsize=8,
@@ -230,7 +230,7 @@ euclidean.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, index_ty
 
     print("One region, CpG based hiearchical clustering")
 
-    pairwisedist_file <- paste0(outdir, "/pairwisedist.RDa.gz")
+    pairwisedist_file <- file.path(outdir, "pairwisedist.RDa.gz")
     if (file.exists(pairwisedist_file) & use_cache) {
       print("Loading previously calculated pairwise dist")
       load(pairwisedist_file)
@@ -259,7 +259,7 @@ euclidean.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, index_ty
         hcluster_Nb <- t
       }
 
-      write.table(error_ch_index, file=paste0(outdir, "/EuclideanClust_bestpartition_crash.tsv"), row.names=FALSE, col.names=FALSE)
+      write.table(error_ch_index, file=file.path(outdir, "EuclideanClust_bestpartition_crash.tsv"), row.names=FALSE, col.names=FALSE)
 
       if (error_ch_index == 0) {
         best_cluster <- hcluster_Nb$Best.partition
@@ -267,24 +267,24 @@ euclidean.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, index_ty
         colnames(possible_clusters) <- c(colnames(possible_clusters)[1:(dim(possible_clusters)[2]-1)], paste0("EuclideanClust_best_cluster_", hcluster_Nb$Best.nc[1]))
       }
 
-      ofile <- gzfile(paste0(outdir, "/EuclideanClust_cell_order_CpG_based_maxk_", Max_K, ".tsv.gz"))
+      ofile <- gzfile(file.path(outdir, paste0("EuclideanClust_cell_order_CpG_based_maxk_", Max_K, ".tsv.gz")))
       write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
     } else {
       print("Some pairs of cells have no CpG with data in common")
       hclust_CpG_crash <- 1
     }
 
-    ofile <- gzfile(paste0(outdir, "/EuclideanClust_clusters_CpG_based_maxk_", Max_K, ".tsv.gz"))
+    ofile <- gzfile(file.path(outdir, paste0("EuclideanClust_clusters_CpG_based_maxk_", Max_K, ".tsv.gz")))
     write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE, row.names=FALSE)
 
-    write.table(hclust_CpG_crash, file=paste0(outdir, "/EuclideanClust_crash.tsv"), row.names=FALSE, col.names=FALSE)
+    write.table(hclust_CpG_crash, file=file.path(outdir, "EuclideanClust_crash.tsv"), row.names=FALSE, col.names=FALSE)
     return(possible_clusters)
   }
 
   if (R > 1) {
     print("More than one region, region based hiearchical clustering")
     if (impute == 1) {
-      imputed_file <- paste0(outdir, "/EuclideanClust_mean_meth_matrix.Rda.gz")
+      imputed_file <- file.path(outdir, paste0("EuclideanClust_mean_meth_matrix.Rda.gz"))
       if (file.exists(imputed_file) & use_cache) {
         print("Reading the imputed cache file")
         load(imputed_file)
@@ -299,7 +299,7 @@ euclidean.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, index_ty
         }
       }
     }
-    pairwisedist_region_file <- paste0(outdir, "/pairwisedist_region.RDa.gz")
+    pairwisedist_region_file <- file.path(outdir, "pairwisedist_region.RDa.gz")
     if (file.exists(pairwisedist_region_file) & use_cache) {
       print("loading pairwise Euclidean distances")
       load(pairwisedist_region_file)
@@ -321,7 +321,7 @@ euclidean.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, index_ty
       hcluster <- hclust(pairwisedist_region, method="complete")
 
       print("Plotting Euclidean clusters")
-      plot_file <- paste0(outdir, "/Region_based_EuclideanClust_PLOT.pdf")
+      plot_file <- file.path(outdir, "Region_based_EuclideanClust_PLOT.pdf")
       if(!file.exists(plot_file)) {
         pheatmap(as.matrix(dist_region), cluster_rows=TRUE, cluster_cols=TRUE,
           cellwidth=8, cellheight=8, fontsize=8,
@@ -347,7 +347,7 @@ euclidean.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, index_ty
         hcluster_Nb <- t
       }
 
-      write.table(error_ch_index, file=paste0(outdir, "/EuclideanClust_bestpartition_crash.tsv"), row.names=FALSE, col.names=FALSE)
+      write.table(error_ch_index, file=file.path(outdir, "EuclideanClust_bestpartition_crash.tsv"), row.names=FALSE, col.names=FALSE)
 
       if (error_ch_index == 0) {
         best_cluster <- hcluster_Nb$Best.partition
@@ -356,17 +356,17 @@ euclidean.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, index_ty
         colnames(possible_clusters) <- c(colnames(possible_clusters)[1:(dim(possible_clusters)[2]-1)], paste0("EuclideanClust_best_cluster_", hcluster_Nb$Best.nc[1]))
       }
 
-      ofile <- gzfile(paste0(outdir, "/EuclideanClust_cell_order_region_based_maxk_", Max_K, ".tsv.gz"))
+      ofile <- gzfile(file.path(outdir, paste0("EuclideanClust_cell_order_region_based_maxk_", Max_K, ".tsv.gz")))
       write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
     } else {
       print("some pairs of cells have no region with data in common")
       hclust_region_crash <- 1
     }
 
-    ofile <- gzfile(paste0(outdir, "/EuclideanClust_clusters_region_based_maxk_", Max_K, ".tsv.gz"))
+    ofile <- gzfile(file.path(outdir, paste0("EuclideanClust_clusters_region_based_maxk_", Max_K, ".tsv.gz")))
     write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE, row.names=FALSE)
 
-    write.table(hclust_region_crash, file=paste0(outdir, "/EuclideanClust_crash.tsv"), row.names=FALSE, col.names=FALSE)
+    write.table(hclust_region_crash, file=file.path(outdir, "EuclideanClust_crash.tsv"), row.names=FALSE, col.names=FALSE)
   }
   return(possible_clusters)
 }
@@ -403,7 +403,7 @@ hamming.clust <- function(input_CpG_data, Max_K, index_type="ch", impute, use_ca
   print("Tony's approach - CpG based clustering (HammingClust)")
 
   if (impute == 1) {
-    imputed_file <- paste0(outdir, "/CpG_based_imputed.RDa.gz")
+    imputed_file <- file.path(outdir, "CpG_based_imputed.RDa.gz")
     if (file.exists(imputed_file) & use_cache) {
       print("Reading the imputed file")
       load(imputed_file)
@@ -421,7 +421,7 @@ hamming.clust <- function(input_CpG_data, Max_K, index_type="ch", impute, use_ca
       }
     }
   }
-  dist_PBAL_file <- paste0(outdir, "/dist_PBAL.RDa.gz")
+  dist_PBAL_file <- file.path(outdir, "dist_PBAL.RDa.gz")
   if (file.exists(dist_PBAL_file) & use_cache) {
     print("Loading PBAL distance matrix from file")
     load(dist_PBAL_file)
@@ -443,7 +443,7 @@ hamming.clust <- function(input_CpG_data, Max_K, index_type="ch", impute, use_ca
     PBAL_crash <- 0
 
     print("Plotting Hamming clusters")
-    plot_file <- paste0(outdir, "/HammingClust_PLOT.pdf")
+    plot_file <- file.path(outdir, "HammingClust_PLOT.pdf")
     if (!file.exists(plot_file)) {
       pheatmap(dist_PBAL, cluster_rows=TRUE, cluster_cols=TRUE,
         cellwidth=8, cellheight=8, fontsize=8,
@@ -470,7 +470,7 @@ hamming.clust <- function(input_CpG_data, Max_K, index_type="ch", impute, use_ca
       hcluster_Nb <- t
     }
 
-    write.table(error_ch_index, file=paste0(outdir, "/HammingClust_bestpartition_crash.tsv"), row.names=FALSE, col.names=FALSE)
+    write.table(error_ch_index, file=file.path(outdir, "HammingClust_bestpartition_crash.tsv"), row.names=FALSE, col.names=FALSE)
 
     if (error_ch_index == 0) {
       best_cluster <- hcluster_Nb$Best.partition
@@ -479,17 +479,17 @@ hamming.clust <- function(input_CpG_data, Max_K, index_type="ch", impute, use_ca
       colnames(possible_clusters) <- c(colnames(possible_clusters)[1:(dim(possible_clusters)[2]-1)], paste0("HammingClust_best_cluster_", hcluster_Nb$Best.nc[1]))
     }
 
-    ofile <- gzfile(paste0(outdir, "/HammingClust_cell_order_CpG_based_maxk_", Max_K, ".tsv.gz"))
+    ofile <- gzfile(file.path(outdir, paste0("HammingClust_cell_order_CpG_based_maxk_", Max_K, ".tsv.gz")))
     write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
   } else {
     PBAL_crash <- 1
     print("Couldn't fine Hamming distances")
   }
 
-  ofile <- gzfile(paste0(outdir, "/HammingClust_clusters_CpG_based_maxk_", Max_K, ".tsv.gz"))
+  ofile <- gzfile(file.path(outdir, paste0("HammingClust_clusters_CpG_based_maxk_", Max_K, ".tsv.gz")))
   write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE, row.names=FALSE)
 
-  write.table(PBAL_crash, file=paste0(outdir, "/HammingClust_crash.tsv"), row.names=FALSE, col.names=FALSE)
+  write.table(PBAL_crash, file=file.path(outdir, "HammingClust_crash.tsv"), row.names=FALSE, col.names=FALSE)
   return(possible_clusters)
 }
 
@@ -523,7 +523,7 @@ hamming.clust <- function(input_CpG_data, Max_K, index_type="ch", impute, use_ca
 #'
 pearson.clust <- function(input_CpG_data, Max_K, index_type="ch", impute, use_cache, outdir) {
   if (impute == 1) {
-    imputed_file <- paste0(outdir, "/CpG_based_imputed.RDa.gz")
+    imputed_file <- file.path(outdir, "CpG_based_imputed.RDa.gz")
     if (file.exists(imputed_file) & use_cache) {
       print("Loading the imputed file")
       load(imputed_file)
@@ -540,7 +540,7 @@ pearson.clust <- function(input_CpG_data, Max_K, index_type="ch", impute, use_ca
     }
   }
 
-  dist_Pearson_file <- paste0(outdir, "/dist_Pearson.RDa.gz")
+  dist_Pearson_file <- file.path(outdir, "dist_Pearson.RDa.gz")
   if (file.exists(dist_Pearson_file) & use_cache) {
     print("Loading Pearson distances from file")
     load(dist_Pearson_file)
@@ -564,7 +564,7 @@ pearson.clust <- function(input_CpG_data, Max_K, index_type="ch", impute, use_ca
     hcluster <- hclust(as.dist(diss_matrix), method = "ward.D2")
 
     print("Plotting Pearson Clusters")
-    plot_file <- paste0(outdir, "/PearsonClust_PLOT.pdf")
+    plot_file <- file.path(outdir, "PearsonClust_PLOT.pdf")
     if (!file.exists(plot_file)) {
       pheatmap(dist_Pearson, cluster_rows=TRUE, cluster_cols=TRUE,
         cellwidth=8, cellheight=8, fontsize=8,
@@ -591,7 +591,7 @@ pearson.clust <- function(input_CpG_data, Max_K, index_type="ch", impute, use_ca
       hcluster_Nb <- t
     }
 
-    write.table(error_ch_index, file=paste0(outdir, "/PearsonClust_bestpartition_crash.tsv"), row.names=FALSE, col.names=FALSE)
+    write.table(error_ch_index, file=file.path(outdir, "PearsonClust_bestpartition_crash.tsv"), row.names=FALSE, col.names=FALSE)
 
     if (error_ch_index == 0) {
       best_cluster <- hcluster_Nb$Best.partition
@@ -600,17 +600,17 @@ pearson.clust <- function(input_CpG_data, Max_K, index_type="ch", impute, use_ca
       colnames(possible_clusters) <- c(colnames(possible_clusters)[1:(dim(possible_clusters)[2]-1)], paste0("PearsonClust_best_cluster_", hcluster_Nb$Best.nc[1]))
     }
 
-    ofile <- gzfile(paste0(outdir, "/PearsonClust_cell_order_CpG_based_maxk_", Max_K, ".tsv.gz"))
+    ofile <- gzfile(file.path(outdir, paste0("PearsonClust_cell_order_CpG_based_maxk_", Max_K, ".tsv.gz")))
     write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
   } else {
     Pearson_crash <- 1
     print("couldn't find Pearson distances")
   }
 
-  ofile <- gzfile(paste0(outdir, "/PearsonClust_clusters_CpG_based_maxk_", Max_K, ".tsv.gz"))
+  ofile <- gzfile(file.path(outdir, paste0("PearsonClust_clusters_CpG_based_maxk_", Max_K, ".tsv.gz")))
   write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE, row.names=FALSE)
 
-  write.table(Pearson_crash, file=paste0(outdir, "/PearsonClust_crash.tsv"), row.names=FALSE, col.names=FALSE)
+  write.table(Pearson_crash, file=file.path(outdir, "PearsonClust_crash.tsv"), row.names=FALSE, col.names=FALSE)
   return(possible_clusters)
 }
 

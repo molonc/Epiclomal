@@ -83,19 +83,19 @@ extraction_region_info_f <- function(region_info,type){  ### type should be "fil
 
   print(number_regions_single_CpG)
 
-  pdf(paste0(outdir,"/hist_numCpGs_per_region_",type,"_",args$data_ID,".pdf"))
+  pdf(file.path(outdir, paste0("hist_numCpGs_per_region_",type,"_",args$data_ID,".pdf")))
   hist(tmp$region_cpgNum,main="Number of CpGs per region",xlab="Number of CpGs")
   dev.off()
 
-  pdf(paste0(outdir,"/boxplot_numCpGs_per_region_",type,"_",args$data_ID,".pdf"))
+  pdf(file.path(outdir, paste0("boxplot_numCpGs_per_region_",type,"_",args$data_ID,".pdf")))
   boxplot(tmp$region_cpgNum,main="Number of CpGs per region")
   dev.off()
 
-  pdf(paste0(outdir,"/hist_length_per_region_",type,"_",args$data_ID,".pdf"))
+  pdf(file.path(outdir, paste0("hist_length_per_region_",type,"_",args$data_ID,".pdf")))
   hist(tmp$region_length,main="Region length - bp",xlab="bp")
   dev.off()
 
-  pdf(paste0(outdir,"/boxplot_length_per_region_",type,"_",args$data_ID,".pdf"))
+  pdf(file.path(outdir, paste0("boxplot_length_per_region_",type,"_",args$data_ID,".pdf")))
   boxplot(tmp$region_length,main="Region length - bp")
   dev.off()
 
@@ -116,7 +116,7 @@ extraction_region_info_f <- function(region_info,type){  ### type should be "fil
 
   print(summary_info)
 
-  write.table(summary_info,paste0(outdir,"/region_summary_info_",type,"_data",args$data_ID,".tsv"),sep="\t",quote=FALSE,row.names=FALSE)
+  write.table(summary_info, file.path(outdir, paste0("region_summary_info_",type,"_data",args$data_ID,".tsv")),sep="\t",quote=FALSE,row.names=FALSE)
 
   rm(tmp)
 
@@ -140,11 +140,11 @@ region_distance_CpGs_f <- function(CpG_based_data,type){ ### CpG_based_data is t
 
   mean_distance_CpG_per_region$dist_mean[which(mean_distance_CpG_per_region$dist_mean == "NaN")] <- NA ### NAs correspond to regions with only one CpG
 
-  pdf(paste0(outdir,"/hist_dist_CpGs_",type,"_",args$data_ID,".pdf"))
+  pdf(file.path(outdir, paste0("hist_dist_CpGs_",type,"_",args$data_ID,".pdf")))
   hist(mean_distance_CpG_per_region$dist_mean,main="Mean distance between CpGs across regions",xlab="Mean distance")
   dev.off()
 
-  pdf(paste0(outdir,"/boxplot_dist_CpGs_",type,"_",args$data_ID,".pdf"))
+  pdf(file.path(outdir, paste0("boxplot_dist_CpGs_",type,"_",args$data_ID,".pdf")))
   boxplot(mean_distance_CpG_per_region$dist_mean,main="Mean distance between CpGs across regions")
   dev.off()
 
@@ -158,7 +158,7 @@ region_distance_CpGs_f <- function(CpG_based_data,type){ ### CpG_based_data is t
   p2 = p + geom_point(alpha = 0.01, colour="blue") +
     theme_bw()
 
-  ggsave(paste0(outdir,"/scatter_dist_numCpGs_",type,"_",args$data_ID,".pdf"))
+  ggsave(file.path(outdir, paste0("scatter_dist_numCpGs_",type,"_",args$data_ID,".pdf")))
 
 }
 
@@ -219,7 +219,7 @@ all_stats_cell_files <- list.files(args$path_stats_region_data, pattern="*.tsv")
 
 print("Extracting region info")
 
-tmp0 <- read.csv(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[1]),sep="\t",header=TRUE)
+tmp0 <- read.csv(file.path(args$path_post_processed_CpG_data, all_CpG_cell_files[1]),sep="\t",header=TRUE)
 
 tmp0 <- tmp0[,1:8]
 
@@ -243,7 +243,7 @@ rm(r_index)
 
 number_regions_single_CpG <- extraction_region_info_f(region_info=tmp,type="unfiltered") ## returns a number and produces plots and tables
 
-regions_average_number_CpGs <-  read.table(file=paste0(outdir,"/region_summary_info_","unfiltered","_data",args$data_ID,".tsv"),sep="\t",header=TRUE)[4,3]
+regions_average_number_CpGs <-  read.table(file=file.path(outdir, paste0("region_summary_info_","unfiltered","_data",args$data_ID,".tsv"),sep="\t",header=TRUE))[4,3]
 
 print(regions_average_number_CpGs)
 
@@ -265,7 +265,8 @@ if(args$nloci_cutoff > 1){
 
   miss_prop_per_cell <- NULL
 
-  cached_data <- paste0(outdir, '/missing_prop_per_cell.Rda.gz')
+  # cached data stored in one directory level up since this data is the same regarless of cutoffs
+  cached_data <- file.path(dirname(outdir), 'missing_prop_per_cell.Rda.gz')
   if (file.exists(cached_data)) {
     load(cached_data)
     print("loading cached missing proportion per cell")
@@ -274,7 +275,7 @@ if(args$nloci_cutoff > 1){
 
       print(all_CpG_cell_files[c])
 
-      tmp <- read.csv(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[c]),sep="\t",header=TRUE)
+      tmp <- read.csv(file.path(args$path_post_processed_CpG_data, all_CpG_cell_files[c]),sep="\t",header=TRUE)
 
       if(c == 1){
         num_loci_unfiltered <- dim(tmp)[1]
@@ -301,16 +302,14 @@ if(args$nloci_cutoff > 1){
 
     }
     save(num_loci_unfiltered, CpG_nodata_df, miss_prop_per_cell, file = cached_data, compress = "gzip")
-    }
   }
-
 
   print("Number of loci with no data across all cells = ")
   print(sum(CpG_nodata_df$CpG_nodata == 0))
 
   ave_miss_prop <- mean(miss_prop_per_cell)
 
-  pdf(paste0(outdir,"/boxplot_miss_prop_per_cell_unfiltered_",args$data_ID,".pdf"))
+  pdf(file.path(outdir, paste0("boxplot_miss_prop_per_cell_unfiltered_",args$data_ID,".pdf")))
   boxplot(miss_prop_per_cell,main="Missing proportion per cell")
   dev.off()
 
@@ -327,7 +326,7 @@ if(args$nloci_cutoff > 1){
   print("Table with some info for unfiltered data")
   print(info_unfiltered)
 
-  write.table(info_unfiltered,paste0(outdir,"/unfiltered_data_info_",args$data_ID,".tsv"),sep="\t",quote=FALSE,col.names=FALSE,append=TRUE)
+  write.table(info_unfiltered, file.path(outdir, paste0("unfiltered_data_info_",args$data_ID,".tsv")), sep="\t", quote=FALSE, col.names=FALSE, append=TRUE)
 
 }
 
@@ -339,7 +338,7 @@ if(args$nloci_cutoff > 1){
 
 print("Creating matrices with region-based info - IQR, mean methylation, missing proportion")
 
-cell_stats <- read.csv(paste0(args$path_stats_region_data,"/",all_stats_cell_files[1]),sep="\t",header=TRUE)
+cell_stats <- read.csv(file.path(args$path_stats_region_data, all_stats_cell_files[1]), sep="\t", header=TRUE)
 cell_stats$region_id <- factor(cell_stats$region_id,levels=as.character(unique(cell_stats$region_id)))
 num_regions <- dim(cell_stats)[1]
 
@@ -348,7 +347,8 @@ region_miss_prop <- FBM(num_regions, length(all_stats_cell_files))
 region_IQR_meth <- FBM(num_regions, length(all_stats_cell_files))
 cell_ID <- NULL
 
-cached_data <- paste0(outdir, '/region_based_stats.Rda.gz')
+# cached data stored in one directory level up since this data is the same regarless of cutoffs
+cached_data <- file.path(dirname(outdir), 'region_based_stats.Rda.gz')
 if (file.exists(cached_data)){
   print("loading cached region based stats")
   load(cached_data)
@@ -360,9 +360,7 @@ if (file.exists(cached_data)){
 
   cell_ID <- foreach (f = 1:length(all_stats_cell_files), .combine = c) %dopar% {
 
-    print(all_stats_cell_files[f])
-
-    cell_stats <- read.csv(paste0(args$path_stats_region_data,"/",all_stats_cell_files[f]),sep="\t",header=TRUE)
+    cell_stats <- read.csv(file.path(args$path_stats_region_data ,all_stats_cell_files[f]),sep="\t",header=TRUE)
 
     print(as.character(unique(cell_stats$cell_id)))
 
@@ -415,7 +413,7 @@ more_info_unfiltered <- as.matrix(c(total_regions_no_data))
 
 rownames(more_info_unfiltered) <- c("number of regions with no data")
 
-write.table(more_info_unfiltered,paste0(outdir,"/unfiltered_data_info_",args$data_ID,".tsv"),sep="\t",quote=FALSE,col.names=FALSE,append=TRUE)
+write.table(more_info_unfiltered, file.path(outdir, paste0("unfiltered_data_info_",args$data_ID,".tsv")),sep="\t",quote=FALSE,col.names=FALSE,append=TRUE)
 
 
 #############################################################################################
@@ -430,15 +428,15 @@ if(args$plot_heatmap_unfiltered == 1){
 
   pheatmap(t(region_mean_meth[regions_no_data_index==FALSE,]),cluster_rows = FALSE,cluster_cols=FALSE,fontsize = 8,
            fontsize_row=6,fontsize_col=4,show_colnames = FALSE,
-           filename = paste0(outdir,"/heatmap_region_mean_meth_unfiltered_data_",args$data_ID,".pdf"))
+           filename = file.path(outdir, paste0("heatmap_region_mean_meth_unfiltered_data_",args$data_ID,".pdf")))
 
   pheatmap(t(region_miss_prop[regions_no_data_index==FALSE,]),cluster_rows = FALSE,cluster_cols=FALSE,fontsize = 8,
            fontsize_row=6,fontsize_col=4,show_colnames = FALSE,
-           filename = paste0(outdir,"/heatmap_region_miss_prop_unfiltered_data_",args$data_ID,".pdf"))
+           filename = file.path(outdir, paste0("heatmap_region_miss_prop_unfiltered_data_",args$data_ID,".pdf")))
 
   pheatmap(t(region_IQR_meth[regions_no_data_index==FALSE,]),cluster_rows = FALSE,cluster_cols=FALSE,fontsize = 8,
            fontsize_row=6,fontsize_col=4,show_colnames = FALSE,
-           filename = paste0(outdir,"/heatmap_region_IQR_meth_unfiltered_data_",args$data_ID,".pdf"))
+           filename = file.path(outdir, paste0("heatmap_region_IQR_meth_unfiltered_data_",args$data_ID,".pdf")))
 
 }
 
@@ -452,13 +450,13 @@ print("Finding IQR of region mean methylation across cells")
 
 if (args$filter_regions_same_meth == 1){
 
-  print("applying new filter") ## Applying the new filter so that regions with same methylation across all regions are eliminated
+  print("applying new filter") ## Applying the new filter so that regions with same methylation across all cells are eliminated
 
   same_meth <-as.matrix(apply(region_mean_meth,1,same.meth.f,same_cutoff=args$same_meth_cutoff))
 
   rownames(same_meth) <- rownames(region_mean_meth)
 
-  write.table(same_meth,file=paste0(outdir,"/regions_same_mean_meth_",args$data_ID,".tsv"),row.names=TRUE,col.names=FALSE,sep="\t",quote=FALSE)
+  write.table(same_meth,file=file.path(outdir, paste0("regions_same_mean_meth_",args$data_ID,".tsv")),row.names=TRUE,col.names=FALSE,sep="\t",quote=FALSE)
 
 }
 
@@ -466,7 +464,7 @@ IQR_meth <-as.matrix(apply(region_mean_meth,1,function(x){IQR(x,na.rm=TRUE)}))
 
 rownames(IQR_meth) <- rownames(region_mean_meth)
 
-write.table(IQR_meth,file=paste0(outdir,"/IQR_mean_meth_region_",args$data_ID,".tsv"),row.names=TRUE,col.names=FALSE,sep="\t",quote=FALSE)
+write.table(IQR_meth,file=file.path(outdir, paste0("IQR_mean_meth_region_",args$data_ID,".tsv")),row.names=TRUE,col.names=FALSE,sep="\t",quote=FALSE)
 
 #####################################################
 ## Finding average missing proportion per region ####
@@ -478,15 +476,15 @@ mean_miss_prop <- as.matrix((apply(region_miss_prop,1,function(x){mean(x,na.rm=T
 
 rownames(mean_miss_prop) <- rownames(region_miss_prop)
 
-pdf(paste0(outdir,"/hist_region_mean_miss_prop_unfiltered_",args$data_ID,".pdf"))
+pdf(file.path(outdir, paste0("hist_region_mean_miss_prop_unfiltered_",args$data_ID,".pdf")))
 hist(mean_miss_prop,main="Mean missing proportion per region across cells",xlab="Mean missing proportion")
 dev.off()
 
-pdf(paste0(outdir,"/boxplot_region_mean_miss_prop_unfiltered_",args$data_ID,".pdf"))
+pdf(file.path(outdir, paste0("boxplot_region_mean_miss_prop_unfiltered_",args$data_ID,".pdf")))
 boxplot(mean_miss_prop,main="Mean missing proportion per region across cells")
 dev.off()
 
-write.table(mean_miss_prop,file=paste0(outdir,"/mean_miss_prop_region_",args$data_ID,".tsv"),row.names=TRUE,col.names=FALSE,sep="\t",quote=FALSE)
+write.table(mean_miss_prop,file=file.path(outdir, paste0("mean_miss_prop_region_",args$data_ID,".tsv")),row.names=TRUE,col.names=FALSE,sep="\t",quote=FALSE)
 
 ####################################################################################################
 ## Finding how many cells with missing proportion <= 95% (or whatever the cutoff is) per region ####
@@ -494,7 +492,7 @@ write.table(mean_miss_prop,file=paste0(outdir,"/mean_miss_prop_region_",args$dat
 
 number_cells_miss_cutoff <- as.matrix((apply(region_miss_prop,1,num_cells_miss_function,cutoff=args$miss_prop_cutoff)))
 
-pdf(paste0(outdir,"/hist_region_number_cells_miss_cutoff_unfiltered_",args$data_ID,".pdf"))
+pdf(file.path(outdir, paste0("hist_region_number_cells_miss_cutoff_unfiltered_",args$data_ID,".pdf")))
 hist(number_cells_miss_cutoff,main="# of cells with missing proportion < cutoff per region",xlab="Number of cells")
 dev.off()
 
@@ -647,9 +645,9 @@ if (args$nloci_cutoff > 1 ){
 
       print(save_table)
 
-      write.table(save_table,file=paste0(outdir,"/extra_info_after_applying_cutoffs_",args$data_ID,".tsv"),row.names=TRUE,col.names=FALSE,sep="\t",quote=FALSE)
+      write.table(save_table,file=file.path(outdir, paste0("extra_info_after_applying_cutoffs_",args$data_ID,".tsv")),row.names=TRUE,col.names=FALSE,sep="\t",quote=FALSE)
 
-      write.table(IQR_meth_tmp$region_id,file=paste0(outdir,"/final_regions_",args$data_ID,".tsv"),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE)
+      write.table(IQR_meth_tmp$region_id,file=file.path(outdir, paste0("final_regions_",args$data_ID,".tsv")),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE)
 
       index_IQR <- 1:dim(IQR_meth_tmp)[1]
 
@@ -686,7 +684,7 @@ if (args$nloci_cutoff > 1 ){
 
       print(save_table)
 
-      write.table(save_table,file=paste0(outdir,"/extra_info_after_applying_cutoffs_",args$data_ID,".tsv"),row.names=TRUE,col.names=FALSE,sep="\t",quote=FALSE)
+      write.table(save_table,file=file.path(outdir, paste0("extra_info_after_applying_cutoffs_",args$data_ID,".tsv")),row.names=TRUE,col.names=FALSE,sep="\t",quote=FALSE)
 
       final_regions_unordered <- IQR_meth_tmp$region_id[index_IQR]
 
@@ -701,7 +699,7 @@ if (args$nloci_cutoff > 1 ){
 
       print(length(FINAL_reg))
 
-      write.table(FINAL_reg,file=paste0(outdir,"/final_regions_",args$data_ID,".tsv"),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE)
+      write.table(FINAL_reg,file=file.path(outdir, paste0("final_regions_",args$data_ID,".tsv")),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE)
 
     }
 
@@ -748,9 +746,9 @@ if (args$nloci_cutoff > 1 ){
 
       print(save_table)
 
-      write.table(save_table,file=paste0(outdir,"/extra_info_after_applying_cutoffs_",args$data_ID,".tsv"),row.names=TRUE,col.names=FALSE,sep="\t",quote=FALSE)
+      write.table(save_table,file=file.path(outdir, paste0("extra_info_after_applying_cutoffs_",args$data_ID,".tsv")),row.names=TRUE,col.names=FALSE,sep="\t",quote=FALSE)
 
-      write.table(IQR_meth_tmp$region_id,file=paste0(outdir,"/final_regions_",args$data_ID,".tsv"),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE)
+      write.table(IQR_meth_tmp$region_id,file=file.path(outdir, paste0("final_regions_",args$data_ID,".tsv")),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE)
 
       index_IQR <- 1:dim(IQR_meth_tmp)[1]
 
@@ -787,7 +785,7 @@ if (args$nloci_cutoff > 1 ){
 
       print(save_table)
 
-      write.table(save_table,file=paste0(outdir,"/extra_info_after_applying_cutoffs_",args$data_ID,".tsv"),row.names=TRUE,col.names=FALSE,sep="\t",quote=FALSE)
+      write.table(save_table,file=file.path(outdir, paste0("extra_info_after_applying_cutoffs_",args$data_ID,".tsv")),row.names=TRUE,col.names=FALSE,sep="\t",quote=FALSE)
 
       ### Ordering the regions by chr and start
 
@@ -806,7 +804,7 @@ if (args$nloci_cutoff > 1 ){
 
       print(head(FINAL_reg))
 
-      write.table(FINAL_reg,file=paste0(outdir,"/final_regions_",args$data_ID,".tsv"),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE)
+      write.table(FINAL_reg,file=file.path(outdir, paste0("final_regions_",args$data_ID,".tsv")),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE)
 
     }
 
@@ -824,7 +822,7 @@ if (args$nloci_cutoff > 1 ){
 
   new_region_mean_meth <- new_region_mean_meth[index_IQR,]
 
-  write.table(new_region_mean_meth,file=paste0(outdir,"/final_mean_meth_region_",args$data_ID,".tsv"),row.names=TRUE,col.names=TRUE,sep="\t",quote=FALSE)
+  write.table(new_region_mean_meth,file=file.path(outdir, paste0("final_mean_meth_region_",args$data_ID,".tsv")),row.names=TRUE,col.names=TRUE,sep="\t",quote=FALSE)
 
   ################################################################################
   ### Plot heatmaps for filtered IQR, mean methylation and missing proportion ####
@@ -852,15 +850,15 @@ if (args$nloci_cutoff > 1 ){
 
     pheatmap(t(new_region_mean_meth),cluster_rows = FALSE,cluster_cols=FALSE,fontsize = 8,
              fontsize_row=6,fontsize_col=4,show_colnames = FALSE,
-             filename = paste0(outdir,"/heatmap_region_mean_meth_filtered_data_",args$data_ID,".pdf"))
+             filename = file.path(outdir, paste0("heatmap_region_mean_meth_filtered_data_",args$data_ID,".pdf")))
 
     pheatmap(t(new_region_miss_prop),cluster_rows = FALSE,cluster_cols=FALSE,fontsize = 8,
              fontsize_row=6,fontsize_col=4,show_colnames = FALSE,
-             filename = paste0(outdir,"/heatmap_region_miss_prop_filtered_data_",args$data_ID,".pdf"))
+             filename = file.path(outdir, paste0("heatmap_region_miss_prop_filtered_data_",args$data_ID,".pdf")))
 
     pheatmap(t(new_region_IQR_meth),cluster_rows = FALSE,cluster_cols=FALSE,fontsize = 8,
              fontsize_row=6,fontsize_col=4,show_colnames = FALSE,
-             filename = paste0(outdir,"/heatmap_region_IQR_meth_filtered_data_",args$data_ID,".pdf"))
+             filename = file.path(outdir, paste0("heatmap_region_IQR_meth_filtered_data_",args$data_ID,".pdf")))
 
   }
 
@@ -941,7 +939,7 @@ if (args$nloci_cutoff <= 1 ) {
     print(paste0("IQR cutoff = ",args$nloci_cutoff))
     index_IQR <- which(IQR_meth_tmp$IQR >= args$nloci_cutoff)
 
-    write.table(IQR_meth_tmp[index_IQR,]$region_id,file=paste0(outdir,"/final_regions_",args$data_ID,".tsv"),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE)
+    write.table(IQR_meth_tmp[index_IQR,]$region_id,file=file.path(outdir, paste0("final_regions_",args$data_ID,".tsv")),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE)
 
     } else {
     ####################################################################################################################
@@ -961,7 +959,7 @@ if (args$nloci_cutoff <= 1 ) {
     index_IQR <- which(IQR_meth_tmp$IQR >= args$nloci_cutoff)
     print(dim(IQR_meth_tmp[index_IQR,]))
 
-    write.table(IQR_meth_tmp[index_IQR,]$region_id,file=paste0(outdir,"/final_regions_",args$data_ID,".tsv"),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE)
+    write.table(IQR_meth_tmp[index_IQR,]$region_id,file=file.path(paste0("final_regions_",args$data_ID,".tsv")),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE)
   }
 
   print("End of applying all cutoffs")
@@ -977,7 +975,7 @@ if (args$nloci_cutoff <= 1 ) {
   new_region_mean_meth <- new_region_mean_meth[index_IQR,]
   print(dim(new_region_mean_meth))
 
-  write.table(new_region_mean_meth,file=paste0(outdir,"/final_mean_meth_region_",args$data_ID,".tsv"),row.names=TRUE,col.names=TRUE,sep="\t",quote=FALSE)
+  write.table(new_region_mean_meth,file=file.path(outdir, paste0("final_mean_meth_region_",args$data_ID,".tsv")),row.names=TRUE,col.names=TRUE,sep="\t",quote=FALSE)
 
   ################################################################################
   ### Plot heatmaps for filtered IQR, mean methylation and missing proportion ####
@@ -1007,15 +1005,15 @@ if (args$nloci_cutoff <= 1 ) {
 
     pheatmap(t(new_region_mean_meth),cluster_rows = FALSE,cluster_cols=FALSE,fontsize = 8,
              fontsize_row=6,fontsize_col=4,show_colnames = FALSE,
-             filename = paste0(outdir,"/heatmap_region_mean_meth_filtered_data_",args$data_ID,".pdf"))
+             filename = file.path(outdir, paste0("heatmap_region_mean_meth_filtered_data_",args$data_ID,".pdf")))
 
     pheatmap(t(new_region_miss_prop),cluster_rows = FALSE,cluster_cols=FALSE,fontsize = 8,
              fontsize_row=6,fontsize_col=4,show_colnames = FALSE,
-             filename = paste0(outdir,"/heatmap_region_miss_prop_filtered_data_",args$data_ID,".pdf"))
+             filename = file.path(outdir, paste0("heatmap_region_miss_prop_filtered_data_",args$data_ID,".pdf")))
 
     pheatmap(t(new_region_IQR_meth),cluster_rows = FALSE,cluster_cols=FALSE,fontsize = 8,
              fontsize_row=6,fontsize_col=4,show_colnames = FALSE,
-             filename = paste0(outdir,"/heatmap_region_IQR_meth_filtered_data_",args$data_ID,".pdf"))
+             filename = file.path(outdir, paste0("heatmap_region_IQR_meth_filtered_data_",args$data_ID,".pdf")))
 
   }
 

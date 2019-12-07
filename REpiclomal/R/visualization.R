@@ -104,7 +104,7 @@
 #'
 #' @export
 #'
-#' @param out_dir Path to output directory
+#' @param outdir Path to output directory
 #' @param input_CpG_data_file Path to methylation data
 #' @param input_regions_file Path to region coordinates
 #' @param input_CN_data_file Path to copy number data if available
@@ -120,10 +120,10 @@
 #'
 #' @examples
 #'
-#' visualization(out_dir, input_CpG_data_file, input_CN_data_file, input_regions_file, inferred_clusters_file, true_clusters_file, order_by_true, name, regions_to_plot, use_cache)
+#' visualization(outdir, input_CpG_data_file, input_CN_data_file, input_regions_file, inferred_clusters_file, true_clusters_file, order_by_true, name, regions_to_plot, use_cache)
 #'
-visualization <- function(out_dir, input_CpG_data_file, input_regions_file, input_CN_data_file=NULL, inferred_clusters_file=NULL, true_clusters_file=NULL, order_by_true=0, name, regions_to_plot=NULL) {
-  dir.create(file.path(out_dir), showWarnings=FALSE)
+visualization <- function(outdir, input_CpG_data_file, input_regions_file, input_CN_data_file=NULL, inferred_clusters_file=NULL, true_clusters_file=NULL, order_by_true=0, name, regions_to_plot=NULL) {
+  dir.create(outdir, showWarnings=FALSE)
 
   # We can have the following situations:
   # - (NOT YET IMPLEMENTED) neither true_clusters or inferred_clusters are given (e.g. if we want to visualize real data)
@@ -142,7 +142,7 @@ visualization <- function(out_dir, input_CpG_data_file, input_regions_file, inpu
   #======================
   # loading the data
   #======================
-  data <- load_data(out_dir, input_CpG_data_file, input_regions_file, use_cache=0)
+  data <- load_data(outdir, input_CpG_data_file, input_regions_file, use_cache=0)
 
   input_CpG_data <- data$input_CpG_data
   input_regions <- data$input_regions
@@ -218,7 +218,7 @@ visualization <- function(out_dir, input_CpG_data_file, input_regions_file, inpu
       annotation_names_row=FALSE, annotation_names_col=FALSE,
       show_colnames=FALSE,
       annotation_col=annotation_col,
-      filename=paste0(out_dir, "/", name, "_CpG_based_PLOT.pdf"))
+      filename=file.path(outdir, paste0(name, "_CpG_based_PLOT.pdf")))
 
     rm(data)
   }
@@ -236,7 +236,7 @@ visualization <- function(out_dir, input_CpG_data_file, input_regions_file, inpu
         annotation_names_row=TRUE,
         show_colnames=show_col_chr_labels,
         labels_col=labels_col,
-        filename=paste0(out_dir, "/", name, "_CpG_based_PLOT.pdf"))
+        filename=file.path(outdir, paste0(name, "_CpG_based_PLOT.pdf")))
 
       rm(data)
     }
@@ -260,7 +260,7 @@ visualization <- function(out_dir, input_CpG_data_file, input_regions_file, inpu
           #annotation_col=annotation_col,
           annotation_legend = TRUE,
           #legend_breaks = c(0,1),legend_labels = c("unmeth","meth"),
-          filename = paste0(out_dir,"/",name,"_CpG_based_PLOT.pdf"))
+          filename = file.path(outdir, paste0(name,"_CpG_based_PLOT.pdf")))
 
         rm(data)
       }
@@ -296,7 +296,7 @@ visualization <- function(out_dir, input_CpG_data_file, input_regions_file, inpu
         labels_col_reg <- NULL
       }
 
-      save(data, file=paste0(out_dir, "/", name, "_region_based_data.Rda"))
+      save(data, file=file.path(outdir, paste0(name, "_region_based_data.Rda")))
 
       if (name == "InHouse") {
         ann_colors = list(Epiclomal = c(`cl. 1`="orange3", `cl. 2`="seagreen", `cl.3`="royalblue"))
@@ -313,7 +313,7 @@ visualization <- function(out_dir, input_CpG_data_file, input_regions_file, inpu
           show_colnames=show_col_chr_labels_reg,
           show_rownames=FALSE,
           labels_col=labels_col_reg,
-          filename=paste0(out_dir, "/", name, "_region_based_PLOT.pdf"))
+          filename=file.path(outdir, paste0(name, "_region_based_PLOT.pdf")))
       } else {
         pheatmap(data, cluster_cols=FALSE,
           cluster_rows=FALSE,
@@ -325,7 +325,7 @@ visualization <- function(out_dir, input_CpG_data_file, input_regions_file, inpu
           border_color=NA,
           show_colnames=show_col_chr_labels_reg,
           labels_col=labels_col_reg,
-          filename=paste0(out_dir, "/", name, "_region_based_PLOT.pdf"))
+          filename=file.path(outdir, paste0(name, "_region_based_PLOT.pdf")))
       }
 
       rm(data)
@@ -364,7 +364,7 @@ visualization <- function(out_dir, input_CpG_data_file, input_regions_file, inpu
           annotation_names_row=FALSE, annotation_names_col=FALSE,
           show_colnames=FALSE, annotation_col=annotation_col,
           gaps_col=(which(!duplicated(reg_id) == TRUE)[-1]-1),
-          filename=paste0(out_dir, "/", name, "_flipped_regions_CpG_based_PLOT.pdf"))
+          filename=file.path(outdir, paste0(name, "_flipped_regions_CpG_based_PLOT.pdf")))
 
         rm(data)
       }
@@ -392,7 +392,7 @@ visualization <- function(out_dir, input_CpG_data_file, input_regions_file, inpu
         cellwidth=6, cellheight=6,
         fontsize=8, main=paste("Copy number data for", name),
         gaps_row=index_gaps, fontsize_row=6, fontsize_col=6, annotation_names_row=FALSE,
-        filename=paste0(out_dir, "/", name, "_CN_PLOT.pdf"))
+        filename=file.path(outdir, paste0(name, "_CN_PLOT.pdf")))
 
       rm(tmp)
     }
@@ -405,7 +405,7 @@ visualization <- function(out_dir, input_CpG_data_file, input_regions_file, inpu
              border_color=NA, annotation_names_row = FALSE,show_colnames=FALSE,
              annotation_col=annotation_col_chr,
              #annotation_colors = ann_colors,
-             filename = paste0(out_dir,"/",name,"_noLines_CN_PLOT.pdf"))
+             filename = file.path(outdir, paste0(name,"_noLines_CN_PLOT.pdf")))
 
     rm(tmp)
   }

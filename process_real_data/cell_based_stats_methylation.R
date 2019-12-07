@@ -83,7 +83,7 @@ print(head(stat_tmp))
 ### Saving the region based stats ###
 #####################################
 
-write.table(stat_tmp,file=paste0(outdir,"/stats_region_",args$data_ID,"_",args$cell_ID,".tsv"),row.names=FALSE,col.names=TRUE,sep="\t",quote=FALSE)
+write.table(stat_tmp,file=file.path(outdir, paste0("stats_region_",args$data_ID,"_",args$cell_ID,".tsv")), row.names=FALSE, col.names=TRUE, sep="\t", quote=FALSE)
 
 print("DONE")
 

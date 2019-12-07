@@ -172,11 +172,11 @@ if(!is.null(args$chr)){ ### it is supposed to be always by chr, the argument chr
     outdir <- args$output_directory
 
     ### output for Cecilia, all CpGs in hg19
-    #cat(sapply(c("chrm", "CpGposition"), toString), file= paste0(outdir,"/CpGs_coordinates_",region_interest,"_",args$chr,".tsv"), sep="\t")
-    #cat("\n", file=paste0(outdir,"/CpGs_coordinates_",region_interest,"_",args$chr,".tsv"), append=TRUE)
+    #cat(sapply(c("chrm", "CpGposition"), toString), file= file.path(outdir, paste0("CpGs_coordinates_",region_interest,"_",args$chr,".tsv")), sep="\t")
+    #cat("\n", file=file.path(outdir, paste0("CpGs_coordinates_",region_interest,"_",args$chr,".tsv")), append=TRUE)
 
-    cat(sapply(c("chr","CpG_start","CpG_end","region_start","region_end","region_cpgNum","region_length","region_id"), toString), file= paste0(outdir,"/CpGs_coordinates_",region_interest,"_",args$chr,".tsv"), sep="\t")
-    cat("\n", file=paste0(outdir,"/CpGs_coordinates_",region_interest,"_",args$chr,".tsv"), append=TRUE)
+    cat(sapply(c("chr","CpG_start","CpG_end","region_start","region_end","region_cpgNum","region_length","region_id"), toString), file= file.path(outdir, paste0("CpGs_coordinates_",region_interest,"_",args$chr,".tsv")), sep="\t")
+    cat("\n", file=file.path(outdir, paste0("CpGs_coordinates_",region_interest,"_",args$chr,".tsv")), append=TRUE)
 
     CpG_coordinates_per_chr  <- NULL
 
@@ -184,11 +184,11 @@ if(!is.null(args$chr)){ ### it is supposed to be always by chr, the argument chr
 
     if(!is.null(CpG_coordinates_per_chr)){
 
-      write.table(CpG_coordinates_per_chr,file=paste0(outdir,"/CpGs_coordinates_",region_interest,"_",args$chr,".tsv"),row.names=FALSE,col.names=FALSE,sep="\t",append=TRUE,quote=FALSE)
+      write.table(CpG_coordinates_per_chr,file=file.path(outdir, paste0("CpGs_coordinates_",region_interest,"_",args$chr,".tsv")),row.names=FALSE,col.names=FALSE,sep="\t",append=TRUE,quote=FALSE)
 
     }
 
-    system(paste0("gzip --force ", paste0(outdir,"/CpGs_coordinates_",region_interest,"_",args$chr,".tsv")))
+    system(paste0("gzip --force ", file.path(outdir, paste0("CpGs_coordinates_",region_interest,"_",args$chr,".tsv"))))
 
   } else {
     print(paste0("Error: chromosome ",args$chr," contain no region of interest"))

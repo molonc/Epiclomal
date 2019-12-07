@@ -65,11 +65,11 @@ if(args$LuoDiamond == 1){
 
   final_regions$region_id <- as.character(final_regions$region_id)
 
-  #system.time(tmp <- read.csv(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[1]),sep="\t",header=TRUE))
+  #system.time(tmp <- read.csv(file.path(args$path_post_processed_CpG_data, all_CpG_cell_files[1]),sep="\t",header=TRUE))
 
   suppressMessages(library(data.table))
 
-  system.time(tmp <- fread(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[1]),showProgress=FALSE,sep="\t",header=TRUE))
+  system.time(tmp <- fread(file.path(args$path_post_processed_CpG_data, all_CpG_cell_files[1]),showProgress=FALSE,sep="\t",header=TRUE))
 
   sub_tmp <- tmp[tmp$region_id %in% final_regions$region_id,]
 
@@ -94,13 +94,13 @@ if(args$LuoDiamond == 1){
     reg_coord <- cbind((1:num_regions),reg_coord)
     colnames(reg_coord) <- c("region_id","start","end")
 
-    filename = gzfile(paste0(outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv.gz"))
+    filename = gzfile(file.path(outdir, paste0("regionIDs_input_Epiclomal_",args$data_ID,".tsv.gz")))
     write.table(as.matrix(reg_coord-1 ), file = filename, row.names = FALSE, quote = FALSE, sep = "\t")
   }
 
   print(dim(sub_tmp))
 
-  epiclomal_input_file = paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv")
+  epiclomal_input_file = file.path(outdir, paste0("input_Epiclomal_",args$data_ID,".tsv"))
   cat(sapply(c("cell_id",id), toString), file = epiclomal_input_file , sep="\t")
   cat("\n", file=epiclomal_input_file, append=TRUE)
 
@@ -116,8 +116,8 @@ if(args$LuoDiamond == 1){
 
     ### saving a file with regions for Epiclomal
 
-    #tmp <- read.csv(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[c]),sep="\t",header=TRUE)
-    tmp <- fread(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[c]),showProgress=FALSE,sep="\t",header=TRUE)
+    #tmp <- read.csv(file.path(args$path_post_processed_CpG_data, all_CpG_cell_files[c]),sep="\t",header=TRUE)
+    tmp <- fread(file.path(args$path_post_processed_CpG_data, all_CpG_cell_files[c]),showProgress=FALSE,sep="\t",header=TRUE)
     print("  ...read")
 
     sub_tmp <- tmp[tmp$region_id %in% final_regions$region_id,]  # fast
@@ -163,13 +163,13 @@ if(args$LuoDiamond == 1){
 
     print("saving the final data without CpGs with no data")
 
-    file.rename(from=paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"), to=paste0(outdir,"/input_Epiclomal_",args$data_ID,"_temp_file.tsv"))
-    ## file.remove(paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv"))
+    file.rename(from=file.path(outdir, paste0("input_Epiclomal_",args$data_ID,".tsv")), to=file.path(outdir, paste0("input_Epiclomal_",args$data_ID,"_temp_file.tsv")))
+    ## file.remove(file.path(outdir, paste0("input_Epiclomal_",args$data_ID,".tsv")))
 
     #tmp4 <- as.data.frame(tmp4)
     print(class(tmp4))
 
-    epiclomal_input_file = gzfile(paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv.gz"))
+    epiclomal_input_file = gzfile(file.path(outdir, paste0("input_Epiclomal_",args$data_ID,".tsv.gz")))
     fwrite(tmp4, file = epiclomal_input_file, row.names = FALSE, quote = FALSE, sep = "\t", na = "",showProgress=FALSE)
 
     print("adjusting for right set of regions")
@@ -203,7 +203,7 @@ if(args$LuoDiamond == 1){
     reg_coord <- cbind((1:num_regions),reg_coord)
     colnames(reg_coord) <- c("region_id","start","end")
 
-    region_file = gzfile(paste0(outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv.gz"))
+    region_file = gzfile(file.path(outdir, paste0("regionIDs_input_Epiclomal_",args$data_ID,".tsv.gz")))
     write.table(as.matrix(reg_coord-1 ), file = region_file, row.names = FALSE, quote = FALSE, sep = "\t")
   }
 
@@ -229,7 +229,7 @@ if (args$LuoDiamond == 0) {
 
   # some setup with first cell
 
-  tmp <- read.csv(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[1]),sep="\t",header=TRUE)
+  tmp <- read.csv(file.path(args$path_post_processed_CpG_data,all_CpG_cell_files[1]),sep="\t",header=TRUE)
   sub_tmp <- tmp[tmp$region_id %in% final_regions$region_id,]
 
   ### saving a file with regions for Epiclomal
@@ -253,7 +253,7 @@ if (args$LuoDiamond == 0) {
   colnames(reg_coord) <- c("region_id","start","end")
 
   if(args$filter_CpG_no_data == 1){
-    region_file = gzfile(paste0(outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv.gz"))
+    region_file = gzfile(file.path(outdir, paste0("regionIDs_input_Epiclomal_",args$data_ID,".tsv.gz")))
     write.table(as.matrix(reg_coord-1 ), file = region_file, row.names = FALSE, quote = FALSE, sep = "\t")
 
   }
@@ -278,7 +278,7 @@ if (args$LuoDiamond == 0) {
 
   cell_id <- foreach (c = 1:length(all_CpG_cell_files), .combine=c) %dopar% {
 
-    tmp <- read.csv(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[c]),sep="\t",header=TRUE)
+    tmp <- read.csv(file.path(args$path_post_processed_CpG_data, all_CpG_cell_files[c]),sep="\t",header=TRUE)
 
     sub_tmp <- tmp[tmp$region_id %in% final_regions$region_id,]
 
@@ -313,14 +313,14 @@ if (args$LuoDiamond == 0) {
   print(ave_mono_meth_prop)
 
   ### making a plot for the proportion of CpGs with methylation as a fraction amongst all CpGs with data
-  pdf(paste0(outdir,"/hist_mono_meth_prop_filtered_",args$data_ID,".pdf"))
+  pdf(file.path(outdir, paste0("hist_mono_meth_prop_filtered_",args$data_ID,".pdf")))
   hist(mono_meth_prop,main="Proportion of CpGs with methylation as a fraction",xlab="Proportion of CpGs")
   dev.off()
 
   CpG_with_data <- apply(CpG_data,2,function(x){sum(!is.na(x))})  ### checking how many cells have data for each CpG
 
   ### make a plot for this CpG_with_data
-  pdf(paste0(outdir,"/hist_number_cells_with_data_per_CpG_filtered_",args$data_ID,".pdf"))
+  pdf(file.path(outdir, paste0("hist_number_cells_with_data_per_CpG_filtered_",args$data_ID,".pdf")))
   hist(CpG_with_data,main="Number of cells with data across CpGs",xlab="Number of cells")
   dev.off()
 
@@ -328,7 +328,7 @@ if (args$LuoDiamond == 0) {
 
   IQR_CpG_data <- apply(CpG_data,2,function(x){IQR(x,na.rm=TRUE)})
 
-  pdf(paste0(outdir,"/hist_CpG_based_IQR_filtered_",args$data_ID,".pdf"))
+  pdf(file.path(outdir, paste0("hist_CpG_based_IQR_filtered_",args$data_ID,".pdf")))
   hist(IQR_CpG_data,main="Methylation IQR across cells per CpG",xlab="Methylation IQR")
   dev.off()
 
@@ -345,7 +345,7 @@ if (args$LuoDiamond == 0) {
 
     ### getting the right regions for Epiclomal after getting rid of CpGs with no data
 
-    tmp <- read.csv(paste0(args$path_post_processed_CpG_data,"/",all_CpG_cell_files[1]),sep="\t",header=TRUE)
+    tmp <- read.csv(file.path(args$path_post_processed_CpG_data, all_CpG_cell_files[1]),sep="\t",header=TRUE)
 
     sub_tmp <- tmp[tmp$region_id %in% final_regions$region_id,]
 
@@ -370,7 +370,7 @@ if (args$LuoDiamond == 0) {
     reg_coord <- cbind((1:num_regions),reg_coord)
     colnames(reg_coord) <- c("region_id","start","end")
 
-    filename = gzfile(paste0(outdir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv.gz"))
+    filename = gzfile(file.path(outdir, paste0("regionIDs_input_Epiclomal_",args$data_ID,".tsv.gz")))
     write.table(as.matrix(reg_coord-1 ), file = filename, row.names = FALSE, quote = FALSE, sep = "\t")
 
 
@@ -387,7 +387,7 @@ if (args$LuoDiamond == 0) {
 
   print(which(final_miss_prop == 1))
 
-  filename = gzfile(paste0(outdir,"/final_miss_prop_per_cell_",args$data_ID,".tsv.gz"))
+  filename = gzfile(file.path(outdir, paste0("final_miss_prop_per_cell_",args$data_ID,".tsv.gz")))
   write.table(cbind(cell_id,final_miss_prop), file = filename, row.names = FALSE, col.names=FALSE, quote = FALSE, sep = "\t")
 
   if( (dim(CpG_data)[2]) > 250){
@@ -399,7 +399,7 @@ if (args$LuoDiamond == 0) {
       #gaps_col=(input_regions[,2][1:(R-1)] + 1),
       show_colnames=FALSE,
       #annotation_col=annotation_col,
-      filename = paste0(outdir,"/final_sample_CpG_based_PLOT_",args$data_ID,".pdf"))
+      filename = file.path(outdir, paste0("final_sample_CpG_based_PLOT_",args$data_ID,".pdf")))
   } else {
     pheatmap(CpG_data,cluster_rows = FALSE,cluster_cols=FALSE, cellwidth = 5,
     cellheight = 5,fontsize = 8,
@@ -409,13 +409,13 @@ if (args$LuoDiamond == 0) {
     #gaps_col=(input_regions[,2][1:(R-1)] + 1),
     show_colnames=FALSE,
     #annotation_col=annotation_col,
-    filename = paste0(outdir,"/final_sample_CpG_based_PLOT_",args$data_ID,".pdf"))
+    filename = file.path(outdir, paste0("final_sample_CpG_based_PLOT_",args$data_ID,".pdf")))
 
   }
 
   CpG_data <- cbind(cell_id,CpG_data)
 
-  cat("\n", file=paste0(outdir, "/cells_no_data_",args$data_ID,".tsv"), append=FALSE)
+  cat("\n", file=file.path(outdir, paste0("cells_no_data_",args$data_ID,".tsv")), append=FALSE)
 
   if( sum(final_miss_prop == 1) > 0 ){
     print("Warning: there are cells with no data across all CpGs")
@@ -429,14 +429,14 @@ if (args$LuoDiamond == 0) {
 
     print(cells_no_data)
 
-    write.table(cells_no_data, file=paste0(outdir, "/cells_no_data_",args$data_ID,".tsv") , sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE)
+    write.table(cells_no_data, file=file.path(outdir, paste0("cells_no_data_",args$data_ID,".tsv")) , sep="\t",row.names=FALSE, col.names=FALSE, quote=FALSE, append=TRUE)
 
   }
 
 
   print(head(CpG_data)[,head(colnames(CpG_data))])
 
-  epiclomal_input_file = gzfile(paste0(outdir,"/input_Epiclomal_",args$data_ID,".tsv.gz"))
+  epiclomal_input_file = gzfile(file.path(outdir, paste0("input_Epiclomal_",args$data_ID,".tsv.gz")))
 
   write.table(CpG_data, file = epiclomal_input_file, row.names = FALSE, quote = FALSE, sep = "\t", na = "")
 
@@ -453,7 +453,7 @@ if (args$LuoDiamond == 0) {
   print("Table with some info for filtered data")
   print(info_filtered)
 
-  write.table(info_filtered,paste0(outdir,"/filtered_data_info_",args$data_ID,".tsv"),sep="\t",quote=FALSE,col.names=FALSE,append=FALSE)
+  write.table(info_filtered,file.path(outdir, paste0("filtered_data_info_",args$data_ID,".tsv")),sep="\t",quote=FALSE,col.names=FALSE,append=FALSE)
 
   #finaltime <- proc.time() - ptm
 }

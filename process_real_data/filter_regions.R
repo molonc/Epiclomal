@@ -22,7 +22,7 @@ data_id <- args$data_ID
 mean_meth_file <- args$mean_methylation_file
 true_file <- args$true_file
 outdir <- args$output_directory
-dir.create(file.path(outdir), showWarnings = FALSE, recursive=TRUE)
+dir.create(outdir, showWarnings = FALSE, recursive=TRUE)
 
 coef_t <- args$coef_threshold
 N <- args$n_to_keep
@@ -34,7 +34,7 @@ initial.options <- commandArgs(trailingOnly = FALSE)
 file.arg.name <- "--file="
 script.name <- sub(file.arg.name, "", initial.options[grep(file.arg.name, initial.options)])
 script.basename <- dirname(script.name)
-sourceCpp(paste(sep="/", script.basename, "filter_regions.cpp"))
+sourceCpp(file.path(script.basename, "filter_regions.cpp"))
 
 
 load_mean_meth <- function(filename) {
@@ -156,7 +156,7 @@ main <- function(mean_meth_file, true_file, outdir, coef_t, mean_diff_threshold)
     }
 
     region_weights <- correlated_regions[correlated_regions$keep_region, c('region', 'weight'), drop=FALSE]
-    region_weight_file <- gzfile(paste0(outdir, "/non_redundant_region_weights_", data_id, ".tsv.gz"))
+    region_weight_file <- gzfile(file.path(outdir, paste0("non_redundant_region_weights_", data_id, ".tsv.gz")))
     write.table(region_weights, file = region_weight_file, sep = "\t", quote=FALSE, row.names = FALSE, col.names = TRUE)
 
     if (!is.null(true_file)) {
@@ -172,21 +172,21 @@ main <- function(mean_meth_file, true_file, outdir, coef_t, mean_diff_threshold)
         index_gaps <- set_index_gaps(mean_meth_matrix)
     }
 
-    redundant_file <- gzfile(paste0(outdir, "/redundant_regions_meth_", data_id, ".tsv.gz"))
+    redundant_file <- gzfile(file.path(outdir, paste0("redundant_regions_meth_", data_id, ".tsv.gz")))
     write.table(redundant_matrix, file = redundant_file, sep = "\t", quote=FALSE, row.names = TRUE, col.names = TRUE)
 
-    non_redundant_file <- gzfile(paste0(outdir, "/to_keep_meth_", data_id, ".tsv.gz"))
+    non_redundant_file <- gzfile(file.path(outdir, paste0("to_keep_meth_", data_id, ".tsv.gz")))
     write.table(non_redundant_matrix, file = non_redundant_file, sep = "\t", quote=FALSE, row.names = TRUE, col.names = TRUE)
 
-    regions_file <- paste0(outdir, "/filtered_regions_", data_id, ".tsv")
+    regions_file <- file.path(outdir, paste0("filtered_regions_", data_id, ".tsv"))
     write.table(colnames(non_redundant_matrix), file = regions_file, sep = "\t", quote=FALSE, row.names = FALSE, col.names = FALSE)
 
     print("Plotting methylation of redundant regions")
-    redundant_plot <- paste0(outdir, "/redundant_regions_plot_", data_id, ".png")
+    redundant_plot <- file.path(outdir, paste0("redundant_regions_plot_", data_id, ".png"))
     plot_heatmap(redundant_matrix, redundant_plot, "Mean methylation of redundant regions", annotation_row, index_gaps)
 
     print("Plotting methylation of regions to keep")
-    non_redundant_plot <- paste0(outdir, "/regions_to_keep_plot_", data_id, ".png")
+    non_redundant_plot <- file.path(outdir, paste0("regions_to_keep_plot_", data_id, ".png"))
     plot_heatmap(non_redundant_matrix, non_redundant_plot, "Mean methylation of regions to keep", annotation_row, index_gaps)
 
     if (!is.null(true_file)) {
@@ -199,7 +199,7 @@ main <- function(mean_meth_file, true_file, outdir, coef_t, mean_diff_threshold)
         non_redundant_matrix <- mean_meth_matrix[, !(colnames(mean_meth_matrix) %in% low_variance_regions)]
 
         print("Plotting histogram of max difference in methylation between clusters by region")
-        png(paste0(outdir, "/mean_diff_hist_", data_id, ".png"))
+        png(file.path(outdir, paste0("mean_diff_hist_", data_id, ".png")))
         hist(cluster_means$max_diff, breaks = 100)
         dev.off()
 
@@ -208,13 +208,13 @@ main <- function(mean_meth_file, true_file, outdir, coef_t, mean_diff_threshold)
 
         if (sum(!is.na(redundant_matrix)) > 0) {
             print("Plotting methylation of low variance regions")
-            redundant_plot <- paste0(outdir, "/low_variance_regions_plot_", data_id, ".png")
+            redundant_plot <- file.path(outdir, paste0("low_variance_regions_plot_", data_id, ".png"))
             plot_heatmap(redundant_matrix, redundant_plot, "Mean methylation of low variance regions", annotation_row, index_gaps)
         }
 
         if (sum(!is.na(non_redundant_matrix)) > 0) {
             print("Plotting methylation of variant regions")
-            non_redundant_plot <- paste0(outdir, "/variant_regions_plot_", data_id, ".png")
+            non_redundant_plot <- file.path(outdir, paste0("variant_regions_plot_", data_id, ".png"))
             plot_heatmap(non_redundant_matrix, non_redundant_plot, "Mean methylation of variant regions", annotation_row, index_gaps)
         }
     }

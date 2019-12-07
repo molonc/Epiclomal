@@ -278,10 +278,10 @@ rule epiclomal_basic:
     output:
         directory(os.path.join(EPI_BASIC_DIR, '{run}'))
     resources:
-        h_vmem=480
+        h_vmem=400
     params:
-        qsub_out=os.path.join(LOG_DIR, 'epi_basic_qsub_out'),
-        qsub_err=os.path.join(LOG_DIR, 'epi_basic_qsub_err')
+        qsub_out=os.path.join(LOG_DIR, 'epi_basic_{run}_qsub_out'),
+        qsub_err=os.path.join(LOG_DIR, 'epi_basic_{run}_qsub_err')
     run:
         if (config['TRUE_FILE']):
             shell( '(echo "==================================="; '
@@ -317,10 +317,10 @@ rule epiclomal_region:
     output:
         directory(os.path.join(EPI_REGION_DIR, '{run}'))
     resources:
-        h_vmem=480
+        h_vmem=400
     params:
-        qsub_out=os.path.join(LOG_DIR, 'epi_region_qsub_out'),
-        qsub_err=os.path.join(LOG_DIR, 'epi_region_qsub_err')
+        qsub_out=os.path.join(LOG_DIR, 'epi_region_{run}_qsub_out'),
+        qsub_err=os.path.join(LOG_DIR, 'epi_region_{run}_qsub_err')
     run:
         if (config['TRUE_FILE']):
             shell('(echo "==================================="; '

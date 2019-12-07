@@ -5,7 +5,7 @@ samples = config["samples"]
 FILTER_REGIONS_OUTDIR = os.path.join(config['output_dir'], 'filter_regions')
 READY_EPICLOMAL_OUTDIR = os.path.join(config['output_dir'], 'epiclomal_input')
 
-default_mem=480
+default_mem=50
 
 rule all:
     input:
@@ -43,7 +43,7 @@ rule prepare_epiclomal:
         regions=os.path.join(READY_EPICLOMAL_OUTDIR, '{samples}/regionIDs_input_Epiclomal_{samples}.tsv.gz'),
         meth_file=os.path.join(READY_EPICLOMAL_OUTDIR, '{samples}/input_Epiclomal_{samples}.tsv.gz')
     resources:
-        h_vmem=default_mem
+        h_vmem=200
     log:
         os.path.join(READY_EPICLOMAL_OUTDIR, "{samples}/prepare_epiclomal_log.txt")
     shell:

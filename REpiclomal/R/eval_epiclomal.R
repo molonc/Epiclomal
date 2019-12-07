@@ -48,7 +48,7 @@ extract_yaml <- function(input_data, data_field) {
 #' @export
 #'
 #' @param input input directory of epiclomal results
-#' @param output output directory of evaluation results
+#' @param outdir output directory of evaluation results
 #' @param model A name for the model
 #' @param flag flag
 #' @param criterion criterion
@@ -62,10 +62,10 @@ extract_yaml <- function(input_data, data_field) {
 #' @examples
 #' run_eval (input, "all", "DIC_LINE_ELBOW", "0.05_-100")
 
-evaluate.epiclomal <- function (input, output, model, flag, criterion, GAIN_THRESHOLD) {
+evaluate.epiclomal <- function (input, outdir, model, flag, criterion, GAIN_THRESHOLD) {
   # criterion can be "lower_bound" or "log_posterior"
-  output <- paste0(output, "/", criterion, "_gainthr", GAIN_THRESHOLD)
-  dir.create(output, showWarnings=FALSE, recursive=TRUE)
+  outdir <- file.path(outdir, paste0(criterion, "_gainthr", GAIN_THRESHOLD))
+  dir.create(outdir, showWarnings=FALSE, recursive=TRUE)
 
   # input can actually be a list of directories. Then look through all of them and compute the measure
   directories <- Sys.glob(input)
@@ -97,7 +97,7 @@ evaluate.epiclomal <- function (input, output, model, flag, criterion, GAIN_THRE
 
   table_all <- data.frame(converged, score, run, cpu_time, memory, nclusters_pred, all_vmeasure, clone_prev_MAE, clone_prev_MSE, slsbulk_clone_prev_MSE, slsbulk_vmeasure, slsbulk_clone_prev_MAE, uncertainty)
 
-  dfile <- paste0(output, "/", flag, "_results_allruns_", model, ".tsv")
+  dfile <- file.path(outdir, paste0(flag, "_results_allruns_", model, ".tsv"))
   write.table(table_all, file = dfile, quote = FALSE, sep = "\t", row.names = FALSE)
 
   ntotal <- nrow(table_all)
@@ -114,12 +114,12 @@ evaluate.epiclomal <- function (input, output, model, flag, criterion, GAIN_THRE
     print("Table per cluster")
     print(table_per_cluster)
 
-    dfile <- paste0(output, "/", flag, "_results_perclusterruns_", model, ".tsv")
+    dfile <- file.path(outdir, paste0(flag, "_results_perclusterruns_", model, ".tsv"))
       write.table(table_per_cluster, file=dfile, quote=FALSE, sep="\t", row.names=FALSE)
 
       if (sum(!is.na(table_per_cluster$all_vmeasure))) {
       # also plot the v-measure versus the number of predicted clusters to see if we get better V-measure when we choose a different number of clusters
-      pdf(paste0(output, "/Vmeasure_vs_nclusters.pdf"), height=7, width=9)
+      pdf(file.path(outdir, "Vmeasure_vs_nclusters.pdf"), height=7, width=9)
       x <- table_per_cluster$nclusters_pred
       y <- table_per_cluster$all_vmeasure
 
@@ -166,7 +166,7 @@ evaluate.epiclomal <- function (input, output, model, flag, criterion, GAIN_THRE
           x_elbow <- c(x_elbow, table_per_cluster[k+1,c("nclusters_pred")])
           y_elbow <- c(y_elbow, table_per_cluster[k+1,c("score")])
         }
-        gfile <- paste0(output, "/", flag, "_results_gain_", model, ".tsv")
+        gfile <- file.path(outdir, paste0(flag, "_results_gain_", model, ".tsv"))
         gtable <- data.frame()
         gtable <- cbind(x_elbow, y_elbow, gain_vector)
         write.table(gtable, file=gfile, quote=FALSE, sep="\t", row.names=FALSE)
@@ -209,7 +209,7 @@ evaluate.epiclomal <- function (input, output, model, flag, criterion, GAIN_THRE
     }
 
     ## Now plotting a graph that shows the DIC measures
-    pdf(paste0(output, "/DIC_selection.pdf"), height=7, width=9)
+    pdf(file.path(outdir, "DIC_selection.pdf"), height=7, width=9)
     x <- table_per_cluster[,c("nclusters_pred")]
     y <- table_per_cluster[,c("score")]
 
@@ -359,10 +359,3 @@ hamming.dist <- function (outfile_est, true_epigenotype_file, true_Z_file, estim
 
   return(list("estimates" = estimates, 'corrected_estimates' = corrected_estimates, 'naive_data' = naive_data))
 }
-
-
-
-
-
-
-

@@ -119,8 +119,8 @@ if (method == "euclidean" || method == "all") {
   if (method == "all") {
     possible_clusters <- cbind(possible_clusters, euclidean_clusters[,1:Max_K+1])
     rm(euclidean_clusters)
-    hclust_region_crash <- read.table(file=paste0(outdir,"/EuclideanClust_crash.tsv"))
-    hclust_region_bestpartition_crash <- read.table(file=paste0(outdir,"/EuclideanClust_bestpartition_crash.tsv"))
+    hclust_region_crash <- read.table(file=file.path(outdir,"EuclideanClust_crash.tsv"))
+    hclust_region_bestpartition_crash <- read.table(file=file.path(outdir,"EuclideanClust_bestpartition_crash.tsv"))
   }
   print("Done Euclidean Clustering")
 }
@@ -138,8 +138,8 @@ if(method == "hamming" || method == "all") {
   if (method == "all") {
     possible_clusters <- cbind(possible_clusters, hamming_clusters[,1:Max_K+1])
     rm(hamming_clusters)
-    PBAL_crash <- read.table(file=paste0(outdir,"/HammingClust_crash.tsv"))
-    PBALclust_bestpartition_crash <- read.table(file=paste0(outdir,"/HammingClust_bestpartition_crash.tsv"))
+    PBAL_crash <- read.table(file=file.path(outdir,"HammingClust_crash.tsv"))
+    PBALclust_bestpartition_crash <- read.table(file=file.path(outdir,"HammingClust_bestpartition_crash.tsv"))
   }
   print("Done Hamming Clustering")
 }
@@ -157,8 +157,8 @@ if(method == "pearson" || method == "all") {
   if (method == "all") {
     possible_clusters <- cbind(possible_clusters, pearson_clusters[,1:Max_K+1])
     rm(pearson_clusters)
-    Pearson_crash <- read.table(file=paste0(outdir,"/PearsonClust_crash.tsv"))
-    Pearsonclust_bestpartition_crash <- read.table(file=paste0(outdir,"/PearsonClust_bestpartition_crash.tsv"))
+    Pearson_crash <- read.table(file=file.path(outdir,"PearsonClust_crash.tsv"))
+    Pearsonclust_bestpartition_crash <- read.table(file=file.path(outdir,"PearsonClust_bestpartition_crash.tsv"))
   }
   print("Done Pearson Clustering")
 }
@@ -170,10 +170,9 @@ if (method == "all") {
   # MA: added another file at the end with all the columns from hclust regions and pbal (except the first 2 columns of pbal cell_id and clusters_1
   # Note: I am unzipping so I zip again after, I should not zip earlier, TODO
   # TODO: skip the best column, this file will be used only for initialization, not for evaluation
-  outfile <- paste0(outdir, "/initial_inputs.tsv")
+  outfile <- gzfile(file.path(outdir, "initial_inputs.tsv.gz"))
 
   write.table(possible_clusters, file=outfile, col.names=TRUE, sep="\t", quote=FALSE, row.names=FALSE)
-  system(paste("gzip --force", outfile))
 
   # PYTHON3 <- "/home/mandronescu/.local/centos6/anaconda3/bin/python3"
 
@@ -182,28 +181,28 @@ if (method == "all") {
 
     if (hclust_region_crash == 0 && hclust_region_bestpartition_crash == 0) {
         print("Calling evaluation software for Hclust (EuclideanClust)")
-        command <- paste("python3", eval_soft, "--true_clusters_file", true_clusters_file, "--true_prevalences", args$true_prevalences, "--predicted_clusters_file", paste0(hfile, ".gz"), "--clusters_are_probabilities False --results_file", paste0(outdir, "/results_EuclideanClust.txt"))
+        command <- paste("python3", eval_soft, "--true_clusters_file", true_clusters_file, "--true_prevalences", args$true_prevalences, "--predicted_clusters_file", paste0(hfile, ".gz"), "--clusters_are_probabilities False --results_file", file.path(outdir, "results_EuclideanClust.txt"))
         print(command)
         system(command)
     }
 
     if (PBAL_crash == 0 && PBALclust_bestpartition_crash == 0) {
         print("Calling evaluation software for HammingClust")
-        command <- paste("python3", eval_soft, "--true_clusters_file", true_clusters_file, "--true_prevalences", args$true_prevalences, "--predicted_clusters_file", paste0(pfile, ".gz"), "--clusters_are_probabilities False --results_file", paste0(outdir, "/results_HammingClust.txt"))
+        command <- paste("python3", eval_soft, "--true_clusters_file", true_clusters_file, "--true_prevalences", args$true_prevalences, "--predicted_clusters_file", paste0(pfile, ".gz"), "--clusters_are_probabilities False --results_file", file.path(outdir, "results_HammingClust.txt"))
         print(command)
         system(command)
     }
 
     if (Pearson_crash == 0 && Pearsonclust_bestpartition_crash == 0) {
         print("Calling evaluation software for PearsonClust")
-        command <- paste("python3", eval_soft, "--true_clusters_file", true_clusters_file, "--true_prevalences", args$true_prevalences, "--predicted_clusters_file", paste0(peafile, ".gz"), "--clusters_are_probabilities False --results_file", paste0(outdir, "/results_PearsonClust.txt"))
+        command <- paste("python3", eval_soft, "--true_clusters_file", true_clusters_file, "--true_prevalences", args$true_prevalences, "--predicted_clusters_file", paste0(peafile, ".gz"), "--clusters_are_probabilities False --results_file", file.path(outdir, "results_PearsonClust.txt"))
         print(command)
         system(command)
     }
 
     if(file.exists(paste0(dfile,".gz"))) {
         print("Calling evaluation software for DensityCut")
-        command <- paste("python3", eval_soft, "--true_clusters_file", true_clusters_file, "--true_prevalences", args$true_prevalences, "--predicted_clusters_file", paste0(dfile, ".gz"), "--clusters_are_probabilities False --results_file", paste0(outdir, "/results_DensityCut.txt"))
+        command <- paste("python3", eval_soft, "--true_clusters_file", true_clusters_file, "--true_prevalences", args$true_prevalences, "--predicted_clusters_file", paste0(dfile, ".gz"), "--clusters_are_probabilities False --results_file", file.path(outdir, "results_DensityCut.txt"))
         print(command)
         system(command)
     }

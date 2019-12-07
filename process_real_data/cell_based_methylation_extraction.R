@@ -170,7 +170,7 @@ extract_cov_data <- function(coverage_data,data_type,CpGs_per_region,cell_id,plo
   # print(head(tmp2$meth_frac[!is.na(tmp2$meth_frac)]))
 
   if(plot_hist==TRUE){
-    pdf(file=paste0(outdir,"hist_meth_frac_CpGs_CGI_",cell_id,".pdf"),height=7,width=7)
+    pdf(file=file.path(outdir, paste0("hist_meth_frac_CpGs_CGI_",cell_id,".pdf")),height=7,width=7)
     hist(CpGs_per_region_cov_data$meth_frac[!is.na(CpGs_per_region_cov_data$meth_frac)],main=cell_id,xlab="Methylation fraction")
     dev.off()
   }
@@ -211,7 +211,7 @@ if(args$genome == "mouse"){
 print(chrs)
 
 outdir <- args$output_directory
-outfile <- paste0(outdir,"/CpG_meth_data_long_",args$data_ID,"_",args$cell_ID,".tsv")
+outfile <- file.path(outdir, paste0("CpG_meth_data_long_",args$data_ID,"_",args$cell_ID,".tsv"))
 
 cat(sapply(c("chr","CpG_start","CpG_end","region_start", "region_end"  ,"region_cpgNum","region_length","region_id","meth_frac","count_meth", "count_unmeth", "cell_id"), toString), file= outfile, sep="\t")
 cat("\n", file= outfile, append=TRUE)
@@ -252,10 +252,10 @@ for(c in 1:length(chrs)){
       print(paste0("There is no regions in chromosome ", chrs[c]))
     } else{
 
-    coord_file <- paste0(args$path_CpG_coordinates,"/",file_tmp)
+    coord_file <- file.path(args$path_CpG_coordinates, file_tmp)
     # print(paste0("Coordinates file is ", coord_file))
 
-    CpGs_per_region <- read.table(coord_file, header=TRUE) ### uncoment this please
+    CpGs_per_region <- read.table(coord_file, header=TRUE)
 
     #print(dim(CpGs_per_region))
     #print(head(CpGs_per_region))
@@ -280,9 +280,9 @@ for(c in 1:length(chrs)){
 
       print("cov_file is a directory")
 
-      print(paste0(cov_file,"/",new_list[grepl(pattern=paste0("_",chrs[c],".tsv.gz"),x=new_list)]))
+      print(file.path(cov_file, new_list[grepl(pattern=paste0("_",chrs[c],".tsv.gz"),x=new_list)]))
 
-      cov_data <- get_cov_data(coverage_file=paste0(cov_file,"/",new_list[grepl(pattern=paste0("_",chrs[c],".tsv.gz"),x=new_list)]), data_type=args$data_type)
+      cov_data <- get_cov_data(coverage_file=file.path(cov_file, new_list[grepl(pattern=paste0("_",chrs[c],".tsv.gz"),x=new_list)]), data_type=args$data_type)
 
       CpGs_per_region_cov_data_per_sample <- extract_cov_data(coverage_data=cov_data,
                                                                   data_type=args$data_type,CpGs_per_region=CpGs_per_region,cell_id=args$cell_ID,

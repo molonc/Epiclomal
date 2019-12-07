@@ -23,7 +23,7 @@ print(args)
 # args <- commandArgs(TRUE)
 
 input <- args$input_dir
-output <- args$output_dir
+outdir <- args$outdir_dir
 model <- args$model_name
 meth_file <- args$methylation_file
 regions_file <- args$regions_file
@@ -34,7 +34,7 @@ true_epigenotypes_file <- args$true_epigenotypes_file  # NULL if it is not known
 
 run_eval <- function (input, flag, criterion, GAIN_THRESHOLD) {
   print(paste("criterion:", criterion, "GAIN_THRESHOLD:", GAIN_THRESHOLD))
-  evaluation <- evaluate.epiclomal (input, output, model, flag, criterion, GAIN_THRESHOLD)  # essentially means the elbow curve can go all the way to the end
+  evaluation <- evaluate.epiclomal (input, outdir, model, flag, criterion, GAIN_THRESHOLD)  # essentially means the elbow curve can go all the way to the end
   best_row <- evaluation$best_row
   table_best <- evaluation$table_best
   best_cluster <- best_row$run
@@ -42,8 +42,8 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD) {
   clMAPfile  <- gsub("cluster_posteriors.tsv.gz", "cluster_MAP.tsv.gz", best_cluster)
   # We add best_vmeasure later, only if there is a true_clusters_file
 
-  output <- paste0(output, "/", criterion, "_gainthr", GAIN_THRESHOLD)
-  dir.create(output, showWarnings=FALSE, recursive=TRUE)
+  outdir <- file.path(outdir, paste0(criterion, "_gainthr", GAIN_THRESHOLD))
+  dir.create(outdir, showWarnings=FALSE, recursive=TRUE)
   if (!is.null(true_clusters_file))
   {
       # get the true number of clusters
@@ -67,7 +67,7 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD) {
 
       if (!is.null(true_epigenotypes_file))
       {
-          houtfile <- paste0(output, "/", flag, "_hdist_bestrun_", model, ".tsv")
+          houtfile <- file.path(outdir, paste0(flag, "_hdist_bestrun_", model, ".tsv"))
 
           print ("Calling the hamming distance software")
           hamming.dist(houtfile, true_epigenotypes_file, true_clusters_file, epiMAPfile, clMAPfile, meth_file, regions_file)
@@ -84,13 +84,13 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD) {
       }
   }
 
-  sfile <- paste0(output, "/", flag, "_results_bestrun_", model, ".tsv")
+  sfile <- file.path(outdir, paste0(flag, "_results_bestrun_", model, ".tsv"))
   write.table(table_best, file=sfile, quote = FALSE, sep = "\t", row.names = FALSE)
 
   # Order will be by predicted
   print ("Calling the visualization software")
   print(clMAPfile)
-  visualization(out_dir=output,
+  visualization(outdir=outdir,
     input_CpG_data_file=meth_file,
     input_regions=regions_file,
     inferred_clusters_file=clMAPfile,
@@ -103,7 +103,7 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD) {
   if (!is.null(true_clusters_file))
   {
       print ("Calling the visualization software the second time")
-      visualization(out_dir=output,
+      visualization(outdir=outdir,
         input_CpG_data_file=meth_file,
         input_regions=regions_file,
         inferred_clusters_file=clMAPfile,
