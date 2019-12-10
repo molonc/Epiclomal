@@ -5,8 +5,6 @@
 
 suppressMessages(library(argparse))
 suppressMessages(library(pheatmap))
-suppressMessages(library(doParallel))
-suppressMessages(library(bigstatsr))
 
 #======================
 # arguments
@@ -228,7 +226,6 @@ if (args$LuoDiamond == 0) {
   #print(str(final_regions))
 
   # some setup with first cell
-
   tmp <- read.csv(file.path(args$path_post_processed_CpG_data,all_CpG_cell_files[1]),sep="\t",header=TRUE)
   sub_tmp <- tmp[tmp$region_id %in% final_regions$region_id,]
 
@@ -264,23 +261,21 @@ if (args$LuoDiamond == 0) {
   total_number_regions_filtered <- num_regions
   number_regions_single_CpG <- sum(region_sizes == 1)
 
-  cached_data <- file.path(dirname(outdir), "epiclomal_input_Luo_Diamond_0.Rda.gz")
+  cell_id <- NULL
+  CpG_data <- NULL
+  mono_meth_prop <- NULL
+
+  start <- 1
+
+  cached_data <- file.path(outdir, "epiclomal_input_Luo_Diamond_0.Rda.gz")
   if (file.exists(cached_data)) {
     print("loading cached epiclomal input data")
     load(cached_data)
-  } else {
-    cell_id <- NULL
+  }
+  if (start != FALSE) {
+    print(paste('starting from cell', start))
 
-    CpG_data <- FBM(length(id), number_cells, init = NA, type='integer')
-    mono_meth_prop <- FBM(1, number_cells)
-
-    numCores <- ceiling(detectCores()/5)
-    print(paste("number of cores available", numCores))
-    cl <- makeCluster(numCores)
-    registerDoParallel(cl)
-
-    cell_id <- foreach (c = 1:number_cells, .combine=c) %dopar% {
-
+    for (c in start:number_cells) {
       tmp <- read.csv(file.path(args$path_post_processed_CpG_data, all_CpG_cell_files[c]),sep="\t",header=TRUE)
 
       sub_tmp <- tmp[tmp$region_id %in% final_regions$region_id,]
@@ -291,23 +286,27 @@ if (args$LuoDiamond == 0) {
 
       mono_meth <- sum( (sub_tmp$meth_frac[!is.na(sub_tmp$meth_frac)] != 0) & (sub_tmp$meth_frac[!is.na(sub_tmp$meth_frac)] != 1) )
 
-      mono_meth_prop[1,c] <- mono_meth/length(sub_tmp$meth_frac[!is.na(sub_tmp$meth_frac)])
+      mono_meth_prop <- c(mono_meth_prop,mono_meth/length(sub_tmp$meth_frac[!is.na(sub_tmp$meth_frac)]))
 
-      CpG_data[,c] <- binary_function(x=as.matrix((sub_tmp$meth_frac)))
+      CpG_data <- cbind(CpG_data,binary_function(x=as.matrix((sub_tmp$meth_frac))))
 
-      as.character(sub_tmp$cell_id[1])
+      cell_id <- c(cell_id,as.character(sub_tmp$cell_id[1]))
+
+      start <- start + 1
+
+      save(mono_meth_prop, CpG_data, cell_id, start, file = cached_data, compress = "gzip")
     }
-    stopCluster(cl)
 
-    mono_meth_prop <- mono_meth_prop[1,]
+    start <- FALSE
+    save(mono_meth_prop, CpG_data, cell_id, start, file = cached_data, compress = "gzip")
 
-    CpG_data <- t(as.matrix(CpG_data[]))
-    print(dim(CpG_data))
-    print(length(id))
+  } else { print("data already processed, loaded from cache") }
 
-    colnames(CpG_data) <- id
-    save(CpG_data, mono_meth_prop, cell_id, file = cached_data, compress = 'gzip')
-  }
+  CpG_data <- t(CpG_data)
+  print(dim(CpG_data))
+  print(length(id))
+
+  colnames(CpG_data) <- id
 
   miss_prop_per_cell <- apply(CpG_data,1,function(x){sum(is.na(x))})/(dim(CpG_data)[2])
   ave_miss_prop <- mean(miss_prop_per_cell)
