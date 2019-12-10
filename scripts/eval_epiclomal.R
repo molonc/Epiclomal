@@ -23,7 +23,7 @@ print(args)
 # args <- commandArgs(TRUE)
 
 input <- args$input_dir
-outdir <- args$outdir_dir
+outdir <- args$output_dir
 model <- args$model_name
 meth_file <- args$methylation_file
 regions_file <- args$regions_file

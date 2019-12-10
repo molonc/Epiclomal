@@ -479,7 +479,7 @@ def _load_initial_clusters_frame(file_name, repeat_id):
 def _load_regions_frame(file_name):
     # Assume the data file contains only regions, and the regions start and end are the column index from the data
     print ('Loading regions file {0}.'.format(file_name))
-    df = pd.read_csv(file_name, compression='gzip', index_col='region_id', sep='\t')
+    df = pd.read_csv(file_name, compression='gzip', index_col='region_id', sep='\t', dtype='int')
     return df
 
 def _load_bulk_frame(file_name):

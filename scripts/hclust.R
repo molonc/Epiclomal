@@ -86,6 +86,8 @@ M <- dim(input_CpG_data)[2] ## number of loci
 Max_K <- min((dim(input_CpG_data)[1]-1),args$max_k)
 print(Max_K)
 
+print('number of cells:')
+print(dim(input_CpG_data)[1])
 print("number of regions:")
 print(R)
 print("number of loci:")

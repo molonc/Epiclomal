@@ -175,7 +175,7 @@ num_cells_miss_function <- function(x,cutoff){
 ##############################################
 
 same.meth.f <- function(x,same_cutoff){
-  if( (sum(!is.na(x))*same_cutoff) < 1 ){
+  if((sum(!is.na(x))*same_cutoff) < 1){
     cutoff <- 0
   }else{
     cutoff <- ceiling(sum(!is.na(x))*same_cutoff)}
@@ -185,8 +185,9 @@ same.meth.f <- function(x,same_cutoff){
   if(unique_meth > cutoff){
     if(unique_meth == 1){
       same_meth <- TRUE
-    }else{
-    same_meth <- FALSE}
+    } else {
+      same_meth <- FALSE
+    }
   }
 
   if(unique_meth <= cutoff){
@@ -243,7 +244,7 @@ rm(r_index)
 
 number_regions_single_CpG <- extraction_region_info_f(region_info=tmp,type="unfiltered") ## returns a number and produces plots and tables
 
-regions_average_number_CpGs <-  read.table(file=file.path(outdir, paste0("region_summary_info_","unfiltered","_data",args$data_ID,".tsv"),sep="\t",header=TRUE))[4,3]
+regions_average_number_CpGs <-  read.table(file=file.path(outdir, paste0("region_summary_info_","unfiltered","_data",args$data_ID,".tsv")),sep="\t",header=TRUE)[4,3]
 
 print(regions_average_number_CpGs)
 
@@ -259,7 +260,7 @@ print("End of extracting region info")
 
 ### TO TEST
 
-if(args$nloci_cutoff > 1){
+if(args$nloci_cutoff > 1) {
 
   print("checking missing proportion per cell")
 
@@ -292,7 +293,7 @@ if(args$nloci_cutoff > 1){
 
       }
 
-      CpG_nodata_df$CpG_nodata[!is.na((tmp$meth_frac))] <- 1
+      CpG_nodata_df$CpG_nodata[!is.na(tmp$meth_frac)] <- 1
 
       #print(head(CpG_nodata_df$CpG_nodata[!is.na((tmp$meth_frac))]))
 
@@ -472,7 +473,7 @@ write.table(IQR_meth,file=file.path(outdir, paste0("IQR_mean_meth_region_",args$
 
 print("Finding average missing proportion per region")
 
-mean_miss_prop <- as.matrix((apply(region_miss_prop,1,function(x){mean(x,na.rm=TRUE)})))
+mean_miss_prop <- as.matrix(apply(region_miss_prop,1,function(x){mean(x,na.rm=TRUE)}))
 
 rownames(mean_miss_prop) <- rownames(region_miss_prop)
 
@@ -575,14 +576,14 @@ if (args$nloci_cutoff > 1 ){
 
   CpG_nodata_df$region_id <- factor(CpG_nodata_df$region_id,levels=as.character(regions_passed_miss_cutoff$region_id))
 
-  new_number_CpGs <- ddply( CpG_nodata_df, .(region_id), summarise,number_CpGs = sum(CpG_nodata == 1)) ### 1 means data present for that CpG
+  new_number_CpGs <- ddply(CpG_nodata_df, .(region_id), summarise,number_CpGs = sum(CpG_nodata == 1)) ### 1 means data present for that CpG
 
   regions_passed_miss_cutoff$region_cpgNum <- new_number_CpGs$number_CpGs
 
   print(dim(regions_passed_miss_cutoff))
   print(dim(CpG_nodata_df))
 
-  if ( (args$filter_regions_same_meth == 1) ) {
+  if ((args$filter_regions_same_meth == 1)) {
 
     print("Filtering regions with same methylation")
 
@@ -625,7 +626,7 @@ if (args$nloci_cutoff > 1 ){
 
     print(number_CpGs_passed_miss_cutoff)
 
-    if ( (number_CpGs_passed_miss_cutoff + regions_average_number_CpGs)  <= args$nloci_cutoff ){
+    if ((number_CpGs_passed_miss_cutoff + regions_average_number_CpGs) <= args$nloci_cutoff){
 
       IQR_cutoff_implemented <- 0
 
@@ -653,7 +654,7 @@ if (args$nloci_cutoff > 1 ){
 
     }
 
-    if (( (number_CpGs_passed_miss_cutoff + regions_average_number_CpGs)  > args$nloci_cutoff )) {
+    if ((number_CpGs_passed_miss_cutoff + regions_average_number_CpGs)  > args$nloci_cutoff) {
 
       IQR_cutoff_implemented <- 1
 
@@ -702,8 +703,6 @@ if (args$nloci_cutoff > 1 ){
       write.table(FINAL_reg,file=file.path(outdir, paste0("final_regions_",args$data_ID,".tsv")),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE)
 
     }
-
-
   } else {
 
     ####################################################################################################################
@@ -726,7 +725,7 @@ if (args$nloci_cutoff > 1 ){
     #print(number_CpGs_passed_miss_cutoff)
     #print(regions_average_number_CpGs)
 
-    if ( (number_CpGs_passed_miss_cutoff + regions_average_number_CpGs)  <= args$nloci_cutoff ) {
+    if ((number_CpGs_passed_miss_cutoff + regions_average_number_CpGs) <= args$nloci_cutoff) {
 
       IQR_cutoff_implemented <- 0
 
@@ -751,10 +750,9 @@ if (args$nloci_cutoff > 1 ){
       write.table(IQR_meth_tmp$region_id,file=file.path(outdir, paste0("final_regions_",args$data_ID,".tsv")),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE)
 
       index_IQR <- 1:dim(IQR_meth_tmp)[1]
-
     }
 
-    if ( (number_CpGs_passed_miss_cutoff + regions_average_number_CpGs)  > args$nloci_cutoff ){
+    if ((number_CpGs_passed_miss_cutoff + regions_average_number_CpGs) > args$nloci_cutoff){
 
       IQR_cutoff_implemented <- 1
 
@@ -769,7 +767,7 @@ if (args$nloci_cutoff > 1 ){
       IQR_meth_tmp <- IQR_meth_tmp[index_IQR_tmp,] ### ordering by IQR
 
       ### After ordering the regions by IQR keeping the first given number of loci (argument == nloci_cutoff)
-      index_IQR <- (which(cumsum(regions_passed_miss_cutoff$region_cpgNum) <= args$nloci_cutoff))
+      index_IQR <- which(cumsum(regions_passed_miss_cutoff$region_cpgNum) <= args$nloci_cutoff)
 
       number_regions_cutoff <- length(index_IQR)
 
@@ -805,9 +803,7 @@ if (args$nloci_cutoff > 1 ){
       print(head(FINAL_reg))
 
       write.table(FINAL_reg,file=file.path(outdir, paste0("final_regions_",args$data_ID,".tsv")),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE)
-
     }
-
   }
 
   #############################################################################################################
@@ -882,7 +878,6 @@ if (args$nloci_cutoff > 1 ){
   number_regions_single_CpG <- extraction_region_info_f(region_info=tmp3,type="filtered") ## returns a number and produces plots and tables
   print("Number of regions with only one CpG - filtered data")
   print(number_regions_single_CpG)
-
 }
 
 
@@ -894,7 +889,7 @@ if (args$nloci_cutoff <= 1 ) {
 
   print("FILTERING BY IQR")
 
-  if ( (args$filter_regions_same_meth == 1) ) {
+  if (args$filter_regions_same_meth == 1) {
 
     print("Applying new filter")
 
@@ -941,7 +936,7 @@ if (args$nloci_cutoff <= 1 ) {
 
     write.table(IQR_meth_tmp[index_IQR,]$region_id,file=file.path(outdir, paste0("final_regions_",args$data_ID,".tsv")),row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE)
 
-    } else {
+  } else {
     ####################################################################################################################
     ### finding regions with at least 5 (or other value) cells with less than 95% (or other value) of missing data   ###
     ### and then regions with certain IQR                                                                            ###
@@ -1016,8 +1011,5 @@ if (args$nloci_cutoff <= 1 ) {
              filename = file.path(outdir, paste0("heatmap_region_IQR_meth_filtered_data_",args$data_ID,".pdf")))
 
   }
-
-
 }
-
-print("done!")
+print("DONE")

@@ -40,7 +40,7 @@ class RegionGeMM(BasicGeMM):
 
         for data_type in self.data_types:
             if self.M[data_type] > 500000:
-                print("Data set is too large for region, with ", self.M[data_type], " number of loci, EXITING")
+                print("Data set is too large for region, with", self.M[data_type], "number of loci")
         #         sys.exit(0)
 
     ######################
