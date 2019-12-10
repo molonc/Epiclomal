@@ -339,21 +339,21 @@ if(args$nloci_cutoff > 1) {
 
 print("Creating matrices with region-based info - IQR, mean methylation, missing proportion")
 
-cell_stats <- read.csv(file.path(args$path_stats_region_data, all_stats_cell_files[1]), sep="\t", header=TRUE)
-cell_stats$region_id <- factor(cell_stats$region_id,levels=as.character(unique(cell_stats$region_id)))
-num_regions <- dim(cell_stats)[1]
-
-region_mean_meth <- FBM(num_regions, length(all_stats_cell_files))
-region_miss_prop <- FBM(num_regions, length(all_stats_cell_files))
-region_IQR_meth <- FBM(num_regions, length(all_stats_cell_files))
-cell_ID <- NULL
-
 # cached data stored in one directory level up since this data is the same regarless of cutoffs
 cached_data <- file.path(dirname(outdir), 'region_based_stats.Rda.gz')
 if (file.exists(cached_data)){
   print("loading cached region based stats")
   load(cached_data)
 } else {
+  cell_stats <- read.csv(file.path(args$path_stats_region_data, all_stats_cell_files[1]), sep="\t", header=TRUE)
+  cell_stats$region_id <- factor(cell_stats$region_id,levels=as.character(unique(cell_stats$region_id)))
+  num_regions <- dim(cell_stats)[1]
+
+  region_mean_meth <- FBM(num_regions, length(all_stats_cell_files))
+  region_miss_prop <- FBM(num_regions, length(all_stats_cell_files))
+  region_IQR_meth <- FBM(num_regions, length(all_stats_cell_files))
+  cell_ID <- NULL
+
   numCores <- ceiling(detectCores()/5)
   print(paste("number of cores available", numCores))
   cl <- makeCluster(numCores)
