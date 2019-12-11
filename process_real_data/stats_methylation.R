@@ -262,7 +262,7 @@ if(args$nloci_cutoff > 1) {
 
   print("checking missing proportion per cell")
 
-  miss_prop_per_cell <- NULL
+  miss_prop_per_cell <- numeric(length(all_CpG_cell_files))
 
   # load cached results in case script did not complete last time it was run
   start <- 1
@@ -301,7 +301,7 @@ if(args$nloci_cutoff > 1) {
 
       print(paste("CpG sites with no data", sum(CpG_nodata_df$CpG_nodata == 0)))
 
-      miss_prop_per_cell <- c(miss_prop_per_cell,sum(is.na(tmp$meth_frac))/num_loci_unfiltered)
+      miss_prop_per_cell[c] <- sum(is.na(tmp$meth_frac))/num_loci_unfiltered
 
       start <- start + 1
 
@@ -345,11 +345,13 @@ if(args$nloci_cutoff > 1) {
 
 print("Creating matrices with region-based info - IQR, mean methylation, missing proportion")
 
+cell_stats <- read.csv(file.path(args$path_stats_region_data ,all_stats_cell_files[f]),sep="\t",header=TRUE)
+num_regions <- length(cell_stats$region_id)
 
-region_mean_meth <- NULL
-region_miss_prop <- NULL
-region_IQR_meth <- NULL
-cell_ID <- NULL
+region_mean_meth <- matrix(, nrow = num_regions, ncol = length(all_stats_cell_files))
+region_miss_prop <- matrix(, nrow = num_regions, ncol = length(all_stats_cell_files))
+region_IQR_meth <- matrix(, nrow = num_regions, ncol = length(all_stats_cell_files))
+cell_ID <- character(length(all_stats_cell_files))
 
 start <- 1
 cached_data <- file.path(outdir, 'region_based_stats.Rda.gz')
@@ -365,21 +367,21 @@ if (start != FALSE) {
     cell_stats <- read.csv(file.path(args$path_stats_region_data ,all_stats_cell_files[f]),sep="\t",header=TRUE)
 
     print(as.character(unique(cell_stats$cell_id)))
-    cell_ID <- c(cell_ID, as.character(unique(cell_stats$cell_id)))
+    cell_ID[f] <- as.character(unique(cell_stats$cell_id))
 
     cell_stats$region_id <- factor(cell_stats$region_id,levels=as.character(unique(cell_stats$region_id)))
 
-    region_mean_meth <- cbind(region_mean_meth,cell_stats$region_mean)
-    region_miss_prop  <- cbind(region_miss_prop,cell_stats$region_miss)
-    region_IQR_meth <- cbind(region_IQR_meth,cell_stats$region_IQR)
+    region_mean_meth[,f] <- cell_stats$region_mean
+    region_miss_prop[,f] <- cell_stats$region_miss
+    region_IQR_meth[,f] <- cell_stats$region_IQR
 
     start <- start + 1
 
-    save(cell_ID, region_mean_meth, region_miss_prop, region_IQR_meth, cell_stats, start, file = cached_data, compress = "gzip")
+    save(cell_ID, region_mean_meth, region_miss_prop, region_IQR_meth, start, file = cached_data, compress = "gzip")
   }
 
   start <- FALSE
-  save(cell_ID, region_mean_meth, region_miss_prop, region_IQR_meth, cell_stats, start, file = cached_data, compress = "gzip")
+  save(cell_ID, region_mean_meth, region_miss_prop, region_IQR_meth, start, file = cached_data, compress = "gzip")
 
 } else { print("data already processed, loaded from cache") }
 

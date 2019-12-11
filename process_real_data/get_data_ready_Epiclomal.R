@@ -261,9 +261,9 @@ if (args$LuoDiamond == 0) {
   total_number_regions_filtered <- num_regions
   number_regions_single_CpG <- sum(region_sizes == 1)
 
-  cell_id <- NULL
-  CpG_data <- NULL
-  mono_meth_prop <- NULL
+  cell_id <- character(number_cells)
+  CpG_data <- matrix(, nrow = length(id), ncol = number_cells)
+  mono_meth_prop <- numeric(number_cells)
 
   start <- 1
 
@@ -286,11 +286,11 @@ if (args$LuoDiamond == 0) {
 
       mono_meth <- sum( (sub_tmp$meth_frac[!is.na(sub_tmp$meth_frac)] != 0) & (sub_tmp$meth_frac[!is.na(sub_tmp$meth_frac)] != 1) )
 
-      mono_meth_prop <- c(mono_meth_prop,mono_meth/length(sub_tmp$meth_frac[!is.na(sub_tmp$meth_frac)]))
+      mono_meth_prop[c] <- mono_meth/length(sub_tmp$meth_frac[!is.na(sub_tmp$meth_frac)])
 
-      CpG_data <- cbind(CpG_data,binary_function(x=as.matrix((sub_tmp$meth_frac))))
+      CpG_data[,c] <- binary_function(x=as.matrix((sub_tmp$meth_frac)))
 
-      cell_id <- c(cell_id,as.character(sub_tmp$cell_id[1]))
+      cell_id[c] <- as.character(sub_tmp$cell_id[1])
 
       start <- start + 1
 
