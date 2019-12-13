@@ -2,6 +2,7 @@
 
 using namespace Rcpp;
 
+// finds the indices that have values in both Vectors (non NA).
 LogicalVector non_na_intersection(NumericVector x, NumericVector y) {
     int n = x.length();
     LogicalVector complete(n, TRUE);
@@ -13,6 +14,8 @@ LogicalVector non_na_intersection(NumericVector x, NumericVector y) {
     return(complete);
 }
 
+// Calculates the mean methylation value across cells
+// Only includes cells that have values in both regions in the calculation
 double cpp_mean(NumericVector arr, LogicalVector complete) {
     double sum = 0;
     double n = 0;
@@ -32,6 +35,8 @@ double cpp_mean(NumericVector arr, LogicalVector complete) {
     return(sum / n);
 }
 
+// Calculates the standard deviation of methylation across cells
+// Only includes cells that have values in both regions in the calculation
 double stdDev(NumericVector arr, double mean, LogicalVector complete) {
     double sum = 0;
     double n = 0;
@@ -50,7 +55,8 @@ double stdDev(NumericVector arr, double mean, LogicalVector complete) {
     return(sqrt(sum / n));
 }
 
-
+// Calculates the Pearson Correlation Coefficient between two Numeric Vectors
+// is equivalent to cor(x, y, method = "pearson", use = "na.or.complete") in R
 double find_pearson_corr(NumericVector x, NumericVector y) {
     LogicalVector complete = non_na_intersection(x, y);
 
@@ -87,6 +93,7 @@ double find_pearson_corr(NumericVector x, NumericVector y) {
     // return(corr);
 }
 
+// Counts the number of NA values in a Numeric Vector
 int number_of_na(NumericVector region) {
     int no_na = 0;
     for (int i = 0; i < region.length(); i++) {
@@ -98,6 +105,8 @@ int number_of_na(NumericVector region) {
 }
 
 // find regions with high correlation to remove and region weights
+// If the absolute value of the Pearson Correlation Coefficient between a pair of regions is greater than the threshold,
+// the region that has more missing data (NAs) is removed.
 // [[Rcpp::export]]
 DataFrame find_correlated_regions_cpp(NumericMatrix mean_meth_matrix, double coef_t) {
     int cols = mean_meth_matrix.ncol();

@@ -12,6 +12,7 @@ EVAL_REGION_DIR = os.path.join(OUTDIR, 'result_region')
 run=list(range(0,config["NUM_EPI_ITERS"]))
 
 default_mem = 12
+high_mem = 200
 
 if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR)
@@ -277,7 +278,7 @@ rule epiclomal_basic:
     output:
         directory(os.path.join(EPI_BASIC_DIR, '{run}'))
     resources:
-        h_vmem=480
+        h_vmem=high_mem
     params:
         qsub_out=os.path.join(LOG_DIR, 'epi_basic_{run}_qsub_out'),
         qsub_err=os.path.join(LOG_DIR, 'epi_basic_{run}_qsub_err')
@@ -306,7 +307,7 @@ rule epiclomal_region:
     output:
         directory(os.path.join(EPI_REGION_DIR, '{run}'))
     resources:
-        h_vmem=480
+        h_vmem=high_mem
     params:
         qsub_out=os.path.join(LOG_DIR, 'epi_region_{run}_qsub_out'),
         qsub_err=os.path.join(LOG_DIR, 'epi_region_{run}_qsub_err')

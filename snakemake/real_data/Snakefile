@@ -12,6 +12,7 @@ EVAL_REGION_DIR = os.path.join(OUTDIR, 'result_region')
 run=list(range(0,config["NUM_EPI_ITERS"]))
 
 default_mem=12
+high_mem=80
 
 if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR)
@@ -32,7 +33,7 @@ rule preprocess:
     output:
         os.path.join(NPM_DIRECTORY, re.sub('.tsv.gz', '.RDa.gz', os.path.basename(config['METH_FILE'])))
     resources:
-        h_vmem=240
+        h_vmem=high_mem
     params:
         qsub_out=os.path.join(LOG_DIR, 'preprocess_qsub_out'),
         qsub_err=os.path.join(LOG_DIR, 'preprocess_qsub_err')
@@ -278,7 +279,7 @@ rule epiclomal_basic:
     output:
         directory(os.path.join(EPI_BASIC_DIR, '{run}'))
     resources:
-        h_vmem=400
+        h_vmem=high_mem
     params:
         qsub_out=os.path.join(LOG_DIR, 'epi_basic_{run}_qsub_out'),
         qsub_err=os.path.join(LOG_DIR, 'epi_basic_{run}_qsub_err')
@@ -317,7 +318,7 @@ rule epiclomal_region:
     output:
         directory(os.path.join(EPI_REGION_DIR, '{run}'))
     resources:
-        h_vmem=400
+        h_vmem=high_mem
     params:
         qsub_out=os.path.join(LOG_DIR, 'epi_region_{run}_qsub_out'),
         qsub_err=os.path.join(LOG_DIR, 'epi_region_{run}_qsub_err')

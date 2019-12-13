@@ -72,6 +72,7 @@ evaluate.epiclomal <- function (input, outdir, model, flag, criterion, GAIN_THRE
   files <- unlist(lapply(directories, function(x) return(list.files(x, recursive=TRUE, pattern="params.yaml", full.names=TRUE))))
   print(paste("number of files:", length(files)))
   run <- unlist(lapply(directories, function(x) return(list.files(x, recursive=TRUE, pattern="cluster_posteriors.tsv.gz", full.names=TRUE))))
+  print(paste("length of runs:", length(run)))
   lines <- lapply(files, yaml.load_file)
   print(paste("length of lines:", length(lines)))
 
