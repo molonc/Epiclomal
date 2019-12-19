@@ -345,7 +345,7 @@ if(args$nloci_cutoff > 1) {
 
 print("Creating matrices with region-based info - IQR, mean methylation, missing proportion")
 
-cell_stats <- read.csv(file.path(args$path_stats_region_data ,all_stats_cell_files[f]),sep="\t",header=TRUE)
+cell_stats <- read.csv(file.path(args$path_stats_region_data ,all_stats_cell_files[1]),sep="\t",header=TRUE)
 num_regions <- length(cell_stats$region_id)
 
 region_mean_meth <- matrix(, nrow = num_regions, ncol = length(all_stats_cell_files))
