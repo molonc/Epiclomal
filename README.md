@@ -69,7 +69,7 @@ This workflow follows this diagram, but with 300 iterations for run_epiclomal_ba
 
 ![Alt text](./snakemake/diagrams/synthetic_data.svg)
 
-The Synthetic_data Snakemake workflow requires a config file, an example config file can bee found at `Epiclomal/snakemake/synthetic_data/config.yaml`, replace fields with appropriate paths and parameters. Then run
+The Synthetic_data Snakemake workflow requires a config file, an example config file can be found at `Epiclomal/snakemake/synthetic_data/config.yaml`, replace fields with appropriate paths and parameters. Then run
 ```
 snakemake -s /path/to/Epiclomal/snakemake/synthetic_data/Snakefile --configfile /path/to/Epiclomal/snakemake/synthetic_data/config.yaml
 ```

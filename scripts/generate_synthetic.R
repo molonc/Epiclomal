@@ -14,7 +14,6 @@
 
 
 library("argparse")
-suppressMessages(library("REpiclomal"))
 suppressMessages(library("Matrix"))
 suppressMessages(library("MCMCpack")) # for generating values from a Dirichlet distribution
 
@@ -313,7 +312,8 @@ if (args$verbose)   {
   print ("Region coordinates")
   print (reg_coord)
 }
-reg_file <- gzfile(file.path(output_dir, "regions_file.tsv.gz"))
+regions_file <- file.path(output_dir, "regions_file.tsv.gz")
+reg_file <- gzfile(regions_file)
 # write_data_file(as.matrix(reg_coord)-1, reg_file, index="region_id")
 # write_data_file(reg_coord, reg_file, index="region_id")
 # adding start and end to the header, and I want the regions ids to start from 0 -- MAYBE WE SHOULD DO THIS FOR THE OTHER IDS??
@@ -526,7 +526,8 @@ cell_id_sample_id <- cell_id
 
 tmp <- cbind(cell_id_sample_id,Z)
 colnames(tmp) <- c("cell_id","epigenotype_id")
-clone_file <- gzfile(file.path(output_dir, "true_clone_membership.tsv.gz"))
+clone_filename <- file.path(output_dir, "true_clone_membership.tsv.gz")
+clone_file <- gzfile(clone_filename)
 write.table (tmp, clone_file, sep="\t", row.names=FALSE, quote=FALSE)
 rm(tmp)
 
@@ -756,16 +757,21 @@ if( args$bulk_depth != 0 ){
   ## print(summaryRprof(tmp_prof_bulk,lines="both"))
 }
 
-
+suppressMessages(library("REpiclomal"))
+#source("../../REpiclomal/R/visualization.R")
 if (args$plot_data == 1) {
 
   print("PLOTTING GENERATED DATA")
   meth_file <- file.path(output_dir, "data_incomplete.tsv.gz")
-  visualization(out_dir=output_dir,
-    input_CpG_data_file=paste0(meth_file),
-    input_regions_file=paste0(reg_file),
+  # visualization is a function in library REpiclomal
+  visualization(outdir=output_dir,
+    input_CpG_data_file=meth_file,
+    input_regions_file=regions_file,
+    input_CN_data_file=NULL,
     name="data",
-    true_clusters_file=paste0(clone_file),
+    inferred_clusters_file=NULL,
+    true_clusters_file=paste0(clone_filename),
+    order_by_true=1,
     regions_to_plot=file.path(output_dir, "flipped_regions.tsv"))
 
 }

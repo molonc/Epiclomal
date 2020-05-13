@@ -1,0 +1,15 @@
+num_clusters: 10
+
+alpha_prior: 1
+
+data:
+  meth:
+    gamma_prior: [[99, 1],
+                  [1, 99]]
+   
+    state_prior: [1, 1]
+
+    beta_prior: [1, 1]
+
+
+

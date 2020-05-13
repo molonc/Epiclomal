@@ -143,7 +143,6 @@ visualization <- function(outdir, input_CpG_data_file, input_regions_file, input
   # loading the data
   #======================
   data <- load_data(outdir, input_CpG_data_file, input_regions_file, use_cache=0)
-
   input_CpG_data <- data$input_CpG_data
   input_regions <- data$input_regions
   mean_meth_matrix <- data$mean_meth_matrix

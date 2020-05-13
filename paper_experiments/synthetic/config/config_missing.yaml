@@ -1,0 +1,49 @@
+OUTPUT_DIR: 'misspb'
+DATA_DIRECTORY: 'misspb'
+
+NUM_EPI_ITERS: 300
+
+PARAMS:
+  ALL:
+    prevalences: '0.33_0.33_0.34'
+  GENERATE_SYNTHETIC:
+    saveall: 0
+    verbose: 0
+    read_size: '10_2'
+    region_size_type: 'multinomial_equal'
+    genotype_prob: 'dirichlet'
+    num_regions: 100
+    num_clones: 3
+    num_cells: 100
+    plot_data: 1
+    seed: 31
+    prop_add_var: '0_0.5'
+    prop_cpd_flip: 1
+    num_samples: 1
+    missing_probability: 0.6
+    error_probability: '0.001_0.001'
+    num_loci: 10000
+    given_dir_complete: 1
+    phylogenetic_generation: 1
+    percent_regions_dirichlet_param: 0.85
+    dirichlet_param_genotype_prob: '90_10'
+  NPM:
+    index: 'ch'
+    max_k: 10
+    impute: 0
+    use_cache: 0
+  EPICLOMAL:
+    K: 10
+    slsbulk_iterations: 10
+    mu_has_k: True
+    convergence_tolerange: 1e-4
+    max_num_iters: 1000
+    Bishop_model_selection: False
+    check_uncertainty: True
+    config_file: 'config/config1.yaml'
+
+SOFTWARE:
+  generate_synthetic_software: '../../scripts/generate_synthetic.R'
+  hclust_software: '../../scripts/hclust.R'
+  eval_software: '../../scripts/eval_epiclomal.R'
+
