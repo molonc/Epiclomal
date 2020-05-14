@@ -1,5 +1,5 @@
 # Scripts for pre-processing the real data
-These are the scripts used by the pre-process pipeline.
+These are the scripts used by the pre-process pipeline, given a set of region coordinates. 
 
 - Task 1: CpG_coordinates_accross_regions - Extracts the CpG coordinates for the given regions, outputs one file per chromosome.
 Output file example:
@@ -12,7 +12,7 @@ chr     CpG_start       CpG_end region_start    region_end      region_cpgNum   
 ```
 
 - Task 2: cell_based_methylation_extraction.R - Extracts the CpG coordinates in the given cells, outputs one file per cell.
-Output file example:
+This output file contains all the data, before filtering, in the given set of regions, including missing data (NA) and non-binary methylation calls (column meth_frac). Output file example:
 ```
 chr     CpG_start       CpG_end region_start    region_end      region_cpgNum   region_length   region_id       meth_frac       count_meth
       count_unmeth    cell_id
