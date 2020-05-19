@@ -334,7 +334,8 @@ visualization <- function(outdir, input_CpG_data_file, input_regions_file, input
       #=============================
 
       if (!is.null(regions_to_plot)) {
-        regions_for_plot <- scan(file=regions_to_plot, what=integer())
+        ## Added unique by Camila
+        regions_for_plot <- unique(scan(file=regions_to_plot, what=integer()))
         print("Plotting CpGs for regions")
         print(regions_for_plot)
         input_regions <- input_regions[sort(regions_for_plot),]

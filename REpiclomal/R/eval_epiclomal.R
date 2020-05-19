@@ -302,9 +302,11 @@ compute_and_save_hd <- function (data_true, data_estimate, outfile) {
 #' @examples
 #' hamming.dist(outfile_est, true_epigenotype_file, true_Z_file, estimated_epigenotype_file, estimated_Z_file, methylation_file, regions_file)
 
+
 hamming.dist <- function (outfile_est, true_epigenotype_file, true_Z_file, estimated_epigenotype_file, estimated_Z_file, methylation_file, regions_file) {
   true_Z <- read.csv(true_Z_file, sep="\t")
-  true_epi <- read.csv(true_epigenotype_file, sep="\t", header=TRUE)
+  # MA: 13 May 2020, replaced header = TRUE with header = FALSE, the header is not saved by the generator
+  true_epi <- read.csv(true_epigenotype_file, sep="\t", header=FALSE)
   # the number of rows is the number of true clusters
 
   outfile_naive <- paste0(outfile_est, ".naive.tsv")
@@ -353,10 +355,14 @@ hamming.dist <- function (outfile_est, true_epigenotype_file, true_Z_file, estim
     }
     .impute_missing_data(meth_data, data_estimate_corr, estimate_Z, rstart, rend, variable_region)
   }
-
+  
+  print("1")
   estimates <- compute_and_save_hd(data_true, data_estimate, outfile_est)
+  print("2")
   corrected_estimates <- compute_and_save_hd(data_true, data_estimate_corr, outfile_est_corr)
+    print("3")
   naive_data <- compute_and_save_hd(data_true, meth_data, outfile_naive)
+    print("4")
 
   return(list("estimates" = estimates, 'corrected_estimates' = corrected_estimates, 'naive_data' = naive_data))
 }
