@@ -58,7 +58,10 @@ def main():
 
     # Sometimes pred_clusters has fewer cells than true_clusters, so taking only those
     true_clusters = true_clusters[true_clusters['cell_id'].isin(pred_clusters['cell_id'])]
-    #print(true_clusters)
+    print("True clusters")
+    print(true_clusters)
+    print("Pred clusters")
+    print(pred_clusters)
     labels_true = np.array(true_clusters['epigenotype_id'])
     # print (labels_true.shape)
 
