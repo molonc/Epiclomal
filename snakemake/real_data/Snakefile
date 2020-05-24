@@ -9,6 +9,8 @@ EPI_REGION_DIR = os.path.join(OUTDIR, 'epi_region')
 EVAL_BASIC_DIR = os.path.join(OUTDIR, 'result_basic')
 EVAL_REGION_DIR = os.path.join(OUTDIR, 'result_region')
 
+cutoffs = config['ALL_CUTOFFS']
+
 run=list(range(0,config["NUM_EPI_ITERS"]))
 
 default_mem=12
