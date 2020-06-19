@@ -1,0 +1,2 @@
+ntotal	nconv	best_score	best_cluster	cpu_total	memory	nclusters_pred	nclusters_true	best_vmeasure	clone_prev_MAE	clone_prev_MSE	slsbulk_vmeasure	slsbulk_clone_prev_MAE	slsbulk_clone_prev_MSE	uncertainty
+1000	1000	104618.436006628	runs_epiclomal/0_0.95_10000/epi_region/287/cluster_posteriors.tsv.gz	80582	143	2	2	0.828914435828653	0.033203125	0.001220703125	NA	NA	NA	NA
