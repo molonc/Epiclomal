@@ -253,6 +253,13 @@ evaluate.epiclomal <- function (input, outdir, model, flag, criterion, GAIN_THRE
 }
 
 compute_and_save_hd <- function (data_true, data_estimate, outfile) {
+	# TODO: true data should be the original methylation file
+	# first remove the columns that have NA in data_true
+	# Or we can test by cell, but then when we sample we have to keep track of what we removed.
+
+	data_estimate <- data_estimate[,colSums(is.na(data_true))==0]
+	data_true <- data_true[,colSums(is.na(data_true))==0]	
+
     ncells <- dim(data_true)[1]
     nloci <- dim(data_true)[2]
     hamming_distance_per_cell <- NULL
@@ -284,6 +291,26 @@ compute_and_save_hd <- function (data_true, data_estimate, outfile) {
     return(hd_stats)
 }
 
+
+##### given a methylation file and a true clustering file, save the epigenotype file
+## used in the subsampling for Smallwood
+## Actually I shouldn't need this because I should use the whole full matrix
+save.epigenotype <- function (methylation_file, true_Z_file, outfile) {
+	library("matrixStats")
+    true_Z <- read.csv(true_Z_file, sep="\t")
+    meth <- read.csv(meth_file, sep="\t", header=TRUE)
+    cluster1 <- true_Z[true_Z$epigenotype_id==1,]$cell_id
+    cluster2 <- true_Z[true_Z$epigenotype_id==2,]$cell_id    
+    meth1 <- meth[meth$cell_id %in% cluster1,]
+    meth1$cell_id <- NULL
+    epi1 <- c(1, colMedians(as.matrix(meth1), na.rm=TRUE))
+    meth2 <- meth[meth$cell_id %in% cluster2,]
+    meth2$cell_id <- NULL
+    epi2 <- c(2, colMedians(as.matrix(meth2), na.rm=TRUE)) 
+    epi <- t(data.frame(epi1,epi2))
+    write.table (epi, file=outfile, sep="\t", row.names=FALSE, col.names=FALSE, quote=FALSE)
+}
+
 ##====================================================================
 #' Calculate hamming distance between true and estimated epigenotype/clusters
 #'
@@ -302,20 +329,25 @@ compute_and_save_hd <- function (data_true, data_estimate, outfile) {
 #' @examples
 #' hamming.dist(outfile_est, true_epigenotype_file, true_Z_file, estimated_epigenotype_file, estimated_Z_file, methylation_file, regions_file)
 
-
-hamming.dist <- function (outfile_est, true_epigenotype_file, true_Z_file, estimated_epigenotype_file, estimated_Z_file, methylation_file, regions_file) {
+hamming.dist <- function (outfile_est, true_epigenotype_file, true_Z_file, estimated_epigenotype_file, estimated_Z_file, methylation_file) {
   true_Z <- read.csv(true_Z_file, sep="\t")
-  # MA: 13 May 2020, replaced header = TRUE with header = FALSE, the header is not saved by the generator
-  true_epi <- read.csv(true_epigenotype_file, sep="\t", header=FALSE)
-  # the number of rows is the number of true clusters
+  # TODO: for subsampling true data should be the original methylation file  ???
+  ### Yes, add 
+  # We don't usually have a header for this
+  #if (!hd_from_full) {
+    true_epi <- read.csv(true_epigenotype_file, sep="\t", header=FALSE)
+    # the number of rows is the number of true clusters
 
-  outfile_naive <- paste0(outfile_est, ".naive.tsv")
-  outfile_est_corr <- paste0(outfile_est, ".corr.tsv")
+    outfile_naive <- paste0(outfile_est, ".naive.tsv")
+    outfile_est_corr <- paste0(outfile_est, ".corr.tsv")
 
-  true_epi.tmp <- as.matrix(true_epi[,-1])
-  data_true <- (t(sapply(true_Z[,2], function(x) return(true_epi.tmp[which(true_epi[,1]==x),])))) ### obtaining the true epigenotype for each cell
-  rm(true_epi.tmp)
-
+    true_epi.tmp <- as.matrix(true_epi[,-1])
+    data_true <- (t(sapply(true_Z[,2], function(x) return(true_epi.tmp[which(true_epi[,1]==x),])))) ### obtaining the true epigenotype for each cell
+    rm(true_epi.tmp)
+  #} else {
+  #  # true_epigenotype_file is actually the full matrix
+  #  data_true <- read.csv(true_epigenotype_file, sep="\t", header=TRUE)
+  #}
   estimate_Z <- as.data.frame(read.csv(estimated_Z_file, sep='\t'))
   estimate_epi <- read.csv(estimated_epigenotype_file, sep='\t', header=TRUE)
 

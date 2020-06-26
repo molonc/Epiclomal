@@ -16,6 +16,9 @@ parser$add_argument("--methylation_file", type="character", default=NULL, help="
 parser$add_argument("--regions_file", type="character", default=NULL, help="Input regions file, has to be given even for basic")
 parser$add_argument("--true_clusters_file", type="character", default=NULL, help="File with the true clusters, if known")
 parser$add_argument("--true_epigenotypes_file", type="character", default=NULL, help="File with the true epigenotypes, if known")
+#parser$add_argument("--hd_from_full", type="logical", default=NULL, help="If TRUE, we have the true epigenotype per cell, FALSE we have epigenotype per cluster")
+
+
 # GAIN_THRESHOLD <- 0.05
 args <- parser$parse_args()
 print(args)

@@ -17,6 +17,7 @@ parser$add_argument("--output_directory", type="character", help="Path to the di
 parser$add_argument("--data_ID", type="character", help="Some identification for the data, e.g., Smallwood2014_CGI")
 parser$add_argument("--file_input_Epiclomal", type="character",help="path and file to the input data for Epiclomal")
 parser$add_argument("--file_final_regions", type="character",help="path and file containing the final set of regions to be used by region Epiclomal")
+parser$add_argument("--file_true_membership", type="character",help="file with the true membership")
 parser$add_argument("--keep_cells_prop", type="character",default="0.7_0.5_0.3",help="new number of cells for subsampling")
 
 parser$add_argument("--read_size", type="character",default="10_2",help="read size")

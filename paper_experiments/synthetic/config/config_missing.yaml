@@ -1,7 +1,8 @@
 OUTPUT_DIR: 'misspb'
 DATA_DIRECTORY: 'misspb'
 
-NUM_EPI_ITERS: 300
+NUM_EPI_ITERS: 10
+num_reg_flip: 1
 
 PARAMS:
   ALL:
@@ -16,7 +17,6 @@ PARAMS:
     num_clones: 3
     num_cells: 100
     plot_data: 1
-    seed: 31
     prop_add_var: '0_0.5'
     prop_cpd_flip: 1
     num_samples: 1

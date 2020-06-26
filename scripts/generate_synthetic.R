@@ -817,11 +817,7 @@ if (args$plot_data == 1) {
   
   print("PLOTTING GENERATED DATA")
   
-  #suppressMessages(library("REpiclomal"))
-  source("/Users/camiladesouza/OneDrive - The University of Western Ontario/Epiclomal_generator/Epiclomal-master/REpiclomal/R/visualization.R")
-  source("/Users/camiladesouza/OneDrive - The University of Western Ontario/Epiclomal_generator/Epiclomal-master/REpiclomal/R/eval_epiclomal.R")
-  source("/Users/camiladesouza/OneDrive - The University of Western Ontario/Epiclomal_generator/Epiclomal-master/REpiclomal/R/non_prob_methods.R")
-  source("/Users/camiladesouza/OneDrive - The University of Western Ontario/Epiclomal_generator/Epiclomal-master/REpiclomal/R/RcppExports.R")
+  suppressMessages(library("REpiclomal"))
   library(pheatmap)
   
   meth_file <- file.path(output_dir, "data_incomplete.tsv.gz")
