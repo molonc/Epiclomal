@@ -20,8 +20,6 @@ parser$add_argument("--file_final_regions", type="character",help="path and file
 parser$add_argument("--file_true_membership", type="character",help="file with the true membership")
 parser$add_argument("--keep_cells_prop", type="character",default="0.7_0.5_0.3",help="new number of cells for subsampling")
 
-parser$add_argument("--read_size", type="character",default="10_2",help="read size")
-
 parser$add_argument("--number_subsamples", type="double",default="10",help="number of subsamples for each new missing proportion")
 parser$add_argument("--seed", type="double",default="2",help="seed for subsampling")
 
@@ -29,10 +27,8 @@ args <- parser$parse_args()
 
 print(args)
 
-
-
 if (!is.null(args$output_directory)) {
-    dir.create(args$output_directory)
+  dir.create(args$output_directory)
 }
 
 outdir <- args$output_directory
@@ -41,183 +37,79 @@ print(outdir)
 
 final_regions <- read.table(file=args$file_final_regions,header=TRUE)
 
+true_membership <- read.table(file=args$file_true_membership,header=TRUE)
+
+#print(true_membership)
+
 input_data <- read.csv(paste0(args$file_input_Epiclomal),sep="\t",header=FALSE,na.strings=c("","NA"))
+
 colnames(input_data) <- NULL
+
+#print(head(input_data[1:5,1:5]))
 
 cell_id <- as.character(input_data[,1][-1])
 
-input_data <- as.matrix(input_data[,-1])
+keep_cells_prop <- as.numeric(unlist(strsplit(args$keep_cells_prop , split ="_")))
 
-CpG_coord <- as.vector(input_data[1,])
-
-input_data <- input_data[-1,]
-input_data <- apply(input_data,2,function(x){as.numeric(x)})
-
- print(length(cell_id))
- print(length(CpG_coord))
- print(dim(input_data))
-
-rownames(input_data) <- cell_id
-colnames(input_data) <- CpG_coord
-
-input_data <- t(input_data)
-
-print(dim(input_data))
-head(input_data)
-
-indices_with_data <- as.matrix(which(!is.na(input_data),arr.ind=TRUE))
-
-#print(head(indices_with_data))
-#print(tail(indices_with_data))
-#print(dim(indices_with_data))
-
-current_missing <- sum(is.na(input_data))/(dim(input_data)[1]*dim(input_data)[2])
-print("Original input data missing proportion:")
-print(current_missing)
-
-new_missing <- as.numeric(unlist(strsplit(args$new_miss_prop, split ="_")))
-
-read_size <- as.numeric(unlist(strsplit(args$read_size, split ="_")))
-
-mean_read_size <- read_size[1]
-sd_read_size <- read_size[2]
-
-n_loci <- dim(input_data)[1]
+#print(cell_id)
+#print(keep_cells_prop)
 
 set.seed(args$seed)
 
-for(m in 1:length(new_missing)){
+for(m in 1:length(keep_cells_prop)){
   
   print(m)
-  print(new_missing[m])
-
-  if(current_missing > new_missing[m]){
-  print("Stop - original missing proportion is already larger than the one requested for subsampling")  
-  }else{
+  print(keep_cells_prop[m])
   
-    for(j in 1:args$number_subsamples){
-      
+  for(j in 1:args$number_subsamples){
+    
     print(j)
-  
-    number_extra_missing <- round(((dim(input_data)[1]*dim(input_data)[2])*new_missing[m]) - ((dim(input_data)[1]*dim(input_data)[2])*current_missing))
-  
-    #print(number_extra_missing)
     
-    tmp <- input_data
+    ncells_keeping <- round(length(cell_id)*keep_cells_prop[m])
     
-    new_extra_missing <- number_extra_missing
+    print(ncells_keeping)
     
-    sample_previous <- NULL
-
-    s <- 0
+    sample_ind <- sort(sample(1:length(cell_id),size=ncells_keeping,replace = FALSE))
     
-    print("Starting while loop")
+    #print(sample_ind)
+    #print(sort(sample_ind))
+    #print(cell_id)
+    print(cell_id[sort(sample_ind)])
     
-    while ( ( new_extra_missing >= 0 )  ){
-
-      s <- s+1
-      
-      #print(s)
-      #print(new_extra_missing)
-      
-      read_length <- round(rnorm(1,mean=mean_read_size,sd=sd_read_size))
-      
-      sample_ind <- sample(1:dim(indices_with_data)[1],size=1)
-      
-      sample_previous <- c(sample_previous,sample_ind)
-      
-      if(sum(sample_ind == sample_previous[-length(sample_previous)]) == 1){
-        #print("Sampling another index because the current one is equal to a previous one")
-        
-        #i=0
-        while(sum(sample_ind == sample_previous[-length(sample_previous)]) == 1){
-          #i <- i+1
-          #print(i)
-          sample_ind <- sample(1:dim(indices_with_data)[1],size=1)
-          sample_previous[length(sample_previous)] <- sample_ind
-          
-        }
-        
-      }
+    #print(dim(input_data))
+    tmp <- input_data[c(1,(sample_ind + 1)),]
+    #print(tmp[,1:2])
     
-      
-      new_miss_indices <- indices_with_data[sample_ind,]
-      
-      obs_indices <- new_miss_indices
-         
-         if( new_extra_missing > read_length ){
-          
-           mid <- round(read_length/2) 
-                      
-           if((obs_indices[1] - mid) >= 1){
-             
-             if( (n_loci - obs_indices[1]) >= ((read_length-mid)-1) ){
-             tmp[((obs_indices[1]-mid):(obs_indices[1]+((read_length-mid)-1))),obs_indices[2]] <- NA
-             
-             }else{
-             tmp[((obs_indices[1]-mid):n_loci),obs_indices[2]] <- NA   
-             }
-      
-           }else{
-             tmp[(((obs_indices[1] - mid)-(obs_indices[1] - mid)+1):((obs_indices[1])+((read_length-mid)-1))),obs_indices[2]] <- NA   
-           }
-           
-           
-         }else{
-           
-           #print("Read length is bigger than amount of missing data needed")
-           
-            if ( (n_loci - obs_indices[1]) >= ( new_extra_missing - 1 ) ) {
-            tmp[(obs_indices[1]: ( obs_indices[1]+ (new_extra_missing-1))),obs_indices[2]] <- NA
-              }else { 
-               tmp[(obs_indices[1]:n_loci),obs_indices[2]] <- NA
-              }
-          
-            }
-               
-                c_missing <- sum(is.na(tmp))/(dim(tmp)[1]*dim(tmp)[2])
-                
-                new_extra_missing <- round(((dim(input_data)[1]*dim(input_data)[2])*new_missing[m]) - ((dim(input_data)[1]*dim(input_data)[2])*c_missing))
-                
-
-             }
-
-
-    new_data_more_missing <- t(tmp)
-    rm(tmp)
+    #print(dim(true_membership))
+    tmp_membership <- true_membership[sample_ind,]
     
-    print("missing proportion after adding more missing data:")
-    print(sum(is.na(new_data_more_missing))/(dim(new_data_more_missing)[1]*dim(new_data_more_missing)[2]))
-  
-    #print(length(cell_id))
-    #print(dim(new_data_more_missing))
+    #print(tmp_membership)
     
-    new_data_more_missing <- cbind(cell_id,new_data_more_missing)
-  
-    colnames(new_data_more_missing)[1] <- "cell_id"  
-  
-    #print(head(new_data_more_missing))
-
-    output_dir <- paste0(outdir,"/",new_missing[m],"_",j )
-
-    #print("output directory is")
-    #print(output_dir)
-
+    output_dir <- paste0(outdir,"/",keep_cells_prop[m],"_",j )
+    
+    print(output_dir)
+    
     if (!dir.exists(output_dir)){
-    dir.create(output_dir, showWarnings = TRUE)
+      dir.create(output_dir, showWarnings = TRUE)
     }
-
-    write.table(new_data_more_missing, file = paste0(output_dir,"/input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t", na = "")
+    
+    write.table(tmp, file = paste0(output_dir,"/input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t", na = "")
     system(paste0("gzip --force ", output_dir,"/input_Epiclomal_",args$data_ID,".tsv"))  
-
+    
     write.table(final_regions, file = paste0(output_dir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t")
     system(paste0("gzip --force ", output_dir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"))  
-
-    }
-
+    
+    write.table(tmp_membership, file = paste0(output_dir,"/true_clone_membership.txt"), row.names = FALSE, quote = FALSE, sep = "\t")
+    system(paste0("gzip --force ", output_dir,"/true_clone_membership.txt"))  
+    
+    rm(tmp)
+    rm(tmp_membership)
+    
+  }
+  
 }
 
-}
+
 
 print("Done!")
 
