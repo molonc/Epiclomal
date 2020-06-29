@@ -244,8 +244,8 @@ for(m in 1:length(new_missing)){
       write.table(new_data_more_missing, file = paste0(output_dir,"/input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t", na = "")
       system(paste0("gzip --force ", output_dir,"/input_Epiclomal_",args$data_ID,".tsv"))  
       
-      write.table(indicator_matrix_removed, file = paste0(output_dir,"/removed_CpGs_indicator_matrix",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t", na = "")
-      system(paste0("gzip --force ", output_dir,"/removed_CpGs_indicator_matrix",args$data_ID,".tsv"))  
+      write.table(indicator_matrix_removed, file = paste0(output_dir,"/removed_CpGs_indicator_matrix_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t", na = "")
+      system(paste0("gzip --force ", output_dir,"/removed_CpGs_indicator_matrix_",args$data_ID,".tsv"))  
       
       write.table(final_regions, file = paste0(output_dir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t")
       system(paste0("gzip --force ", output_dir,"/regionIDs_input_Epiclomal_",args$data_ID,".tsv"))  
