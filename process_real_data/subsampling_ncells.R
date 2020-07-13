@@ -65,6 +65,17 @@ for(m in 1:length(keep_cells_prop)){
     
     print(j)
     
+    output_dir <- paste0(outdir,"/",keep_cells_prop[m],"_",j )
+    
+    print(output_dir)
+    
+    if (!dir.exists(output_dir)){
+      dir.create(output_dir, showWarnings = TRUE)
+    } else {
+      print("This sampling already exists, going to the next one")
+      next
+    }     
+    
     ncells_keeping <- round(length(cell_id)*keep_cells_prop[m])
     
     print(ncells_keeping)
@@ -85,13 +96,6 @@ for(m in 1:length(keep_cells_prop)){
     
     #print(tmp_membership)
     
-    output_dir <- paste0(outdir,"/",keep_cells_prop[m],"_",j )
-    
-    print(output_dir)
-    
-    if (!dir.exists(output_dir)){
-      dir.create(output_dir, showWarnings = TRUE)
-    }
     
     write.table(tmp, file = paste0(output_dir,"/input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t", na = "")
     system(paste0("gzip --force ", output_dir,"/input_Epiclomal_",args$data_ID,".tsv"))  

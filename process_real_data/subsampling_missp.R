@@ -85,7 +85,7 @@ for(m in 1:length(new_missing)){
   
   print(m)
   print(new_missing[m])
-  
+
   if(current_missing > new_missing[m]){
     print("Stop - original missing proportion is already larger than the one requested for subsampling")  
   }else{
@@ -93,6 +93,18 @@ for(m in 1:length(new_missing)){
     for(j in 1:args$number_subsamples){
       
       print(j)
+      
+      output_dir <- paste0(outdir,"/",new_missing[m],"_",j )
+      
+      print("output directory is")
+      print(output_dir)
+      
+      if (!dir.exists(output_dir)){
+        dir.create(output_dir, showWarnings = TRUE)
+      } else {
+        print("This sampling already exists, going to the next one")
+        next
+      }      
       
       number_extra_missing <- round(((dim(input_data)[1]*dim(input_data)[2])*new_missing[m]) - ((dim(input_data)[1]*dim(input_data)[2])*current_missing))
       
@@ -231,15 +243,6 @@ for(m in 1:length(new_missing)){
       # print(length(indicator_matrix_removed[22,-1][which(indicator_matrix[22,-1]==1)][1:20]))
       # 
       print(sum(indicator_matrix_removed == 1)/(dim(input_data)[1]*dim(input_data)[2]))
-      
-      output_dir <- paste0(outdir,"/",new_missing[m],"_",j )
-      
-      #print("output directory is")
-      #print(output_dir)
-      
-      if (!dir.exists(output_dir)){
-        dir.create(output_dir, showWarnings = TRUE)
-      }
       
       write.table(new_data_more_missing, file = paste0(output_dir,"/input_Epiclomal_",args$data_ID,".tsv"), row.names = FALSE, quote = FALSE, sep = "\t", na = "")
       system(paste0("gzip --force ", output_dir,"/input_Epiclomal_",args$data_ID,".tsv"))  
