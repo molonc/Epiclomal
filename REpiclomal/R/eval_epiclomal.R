@@ -252,28 +252,48 @@ evaluate.epiclomal <- function (input, outdir, model, flag, criterion, GAIN_THRE
   return(list("best_row" = best_row, "table_best" = table_best))
 }
 
-compute_and_save_hd <- function (data_true, data_estimate, outfile) {
+compute_and_save_hd <- function (data_true, data_estimate, outfile, cpg_indicator_matrix = "") {
 	# TODO: true data should be the original methylation file
 	# first remove the columns that have NA in data_true
 	# Or we can test by cell, but then when we sample we have to keep track of what we removed.
 
+  data_true_orig <- data_true
 	data_estimate <- data_estimate[,colSums(is.na(data_true))==0]
 	data_true <- data_true[,colSums(is.na(data_true))==0]	
 
     ncells <- dim(data_true)[1]
     nloci <- dim(data_true)[2]
     hamming_distance_per_cell <- NULL
-
-    for(i in 1:ncells){
-      hd <- sum(data_true[i,] != data_estimate[i,])/nloci
-      hamming_distance_per_cell <- c(hamming_distance_per_cell,hd)
+    
+    print("number of cells")
+    print(ncells)
+    print(cpg_indicator_matrix)
+    
+    if (cpg_indicator_matrix == "") {
+      print ("NO cpg_indicator_matri given, comparing all non-NA columns")
+      for(i in 1:ncells) {
+        hd <- sum(data_true[i,] != data_estimate[i,])/nloci
+        hamming_distance_per_cell <- c(hamming_distance_per_cell,hd)
+      }
+      print("number of CpGs")
+      print(nloci)
+    } else {    # compare only the values that are 1 in the cpg_indicator_matrix
+      print (paste0("Using cpg_indicator_matrix", cpg_indicator_matrix))
+      cpg_ind <- read.csv(cpg_indicator_matrix, sep="\t", header=TRUE)
+      cpg_ind <- as.matrix(cpg_ind[,-1])
+      cpg_ind <- cpg_ind[,colSums(is.na(data_true_orig))==0]	
+      colnames(data_true) <- colnames(cpg_ind)
+      colnames(data_estimate) <- colnames(cpg_ind)
+      for (i in 1:ncells) {
+        mycolumns <- colnames(cpg_ind)[cpg_ind[i,]==1]
+        hd <- sum(data_true[i,mycolumns] != data_estimate[i,mycolumns])/length(mycolumns)
+        hamming_distance_per_cell <- c(hamming_distance_per_cell,hd)        
+      }
     }
 
     # inferring the methylation profiles not from the G matrix, but from the clustering result
-    print("number of cells")
-    print(ncells)
-    print("number of CpGs")
-    print(nloci)
+
+
 
     hd_stats <- t(as.matrix(summary(hamming_distance_per_cell)))
     iqr <- IQR(hamming_distance_per_cell)
@@ -329,7 +349,7 @@ save.epigenotype <- function (methylation_file, true_Z_file, outfile) {
 #' @examples
 #' hamming.dist(outfile_est, true_epigenotype_file, true_Z_file, estimated_epigenotype_file, estimated_Z_file, methylation_file, regions_file)
 
-hamming.dist <- function (outfile_est, true_epigenotype_file, true_Z_file, estimated_epigenotype_file, estimated_Z_file, methylation_file) {
+hamming.dist <- function (outfile_est, true_epigenotype_file, true_Z_file, estimated_epigenotype_file, estimated_Z_file, methylation_file, regions_file, cpg_indicator_matrix="") {
   true_Z <- read.csv(true_Z_file, sep="\t")
   # TODO: for subsampling true data should be the original methylation file  ???
   ### Yes, add 
@@ -389,11 +409,11 @@ hamming.dist <- function (outfile_est, true_epigenotype_file, true_Z_file, estim
   }
   
   print("1")
-  estimates <- compute_and_save_hd(data_true, data_estimate, outfile_est)
+  estimates <- compute_and_save_hd(data_true, data_estimate, outfile_est, cpg_indicator_matrix=cpg_indicator_matrix)
   print("2")
-  corrected_estimates <- compute_and_save_hd(data_true, data_estimate_corr, outfile_est_corr)
+  corrected_estimates <- compute_and_save_hd(data_true, data_estimate_corr, outfile_est_corr, cpg_indicator_matrix=cpg_indicator_matrix)
     print("3")
-  naive_data <- compute_and_save_hd(data_true, meth_data, outfile_naive)
+  naive_data <- compute_and_save_hd(data_true, meth_data, outfile_naive, cpg_indicator_matrix=cpg_indicator_matrix)
     print("4")
 
   return(list("estimates" = estimates, 'corrected_estimates' = corrected_estimates, 'naive_data' = naive_data))

@@ -16,8 +16,8 @@ parser$add_argument("--methylation_file", type="character", default=NULL, help="
 parser$add_argument("--regions_file", type="character", default=NULL, help="Input regions file, has to be given even for basic")
 parser$add_argument("--true_clusters_file", type="character", default=NULL, help="File with the true clusters, if known")
 parser$add_argument("--true_epigenotypes_file", type="character", default=NULL, help="File with the true epigenotypes, if known")
-#parser$add_argument("--hd_from_full", type="logical", default=NULL, help="If TRUE, we have the true epigenotype per cell, FALSE we have epigenotype per cluster")
-
+parser$add_argument("--cpg_indicator_matrix", type="character", default="", help="A file with a cell x cpg matrix ")
+# this is used in the subsampling
 
 # GAIN_THRESHOLD <- 0.05
 args <- parser$parse_args()
@@ -32,6 +32,7 @@ meth_file <- args$methylation_file
 regions_file <- args$regions_file
 true_clusters_file <- args$true_clusters_file  # NULL if it is not known
 true_epigenotypes_file <- args$true_epigenotypes_file  # NULL if it is not known
+cpg_indicator_matrix <- args$cpg_indicator_matrix   # NULL it not given
 
 ######################################
 
@@ -73,7 +74,7 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD) {
           houtfile <- file.path(outdir, paste0(flag, "_hdist_bestrun_", model, ".tsv"))
 
           print ("Calling the hamming distance software")
-          hamming.dist(houtfile, true_epigenotypes_file, true_clusters_file, epiMAPfile, clMAPfile, meth_file, regions_file)
+          hamming.dist(houtfile, true_epigenotypes_file, true_clusters_file, epiMAPfile, clMAPfile, meth_file, regions_file, cpg_indicator_matrix)
 
           # get the mean value and put it in the table below
           hvalues <- read.table(houtfile, header=TRUE)

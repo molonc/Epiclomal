@@ -152,6 +152,8 @@ densitycut.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, max_PC=
     if (checking_warning[1] == "WARNING! not converged ") {
       ofile <- gzfile(file.path(outdir, paste0("DensityCut_clusters_Region_based_maxPC_", Max_K, ".tsv.gz")))
       write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE, row.names=FALSE)
+      ofile <- gzfile(file.path(outdir, paste0("DensityCut_clusters_Region_based_maxPC.tsv.gz")))
+      write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE, row.names=FALSE)      
       stop("densitycut didn't converge, not saving results")
     } else {
       print("densitycut converged!")
@@ -162,7 +164,9 @@ densitycut.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, max_PC=
 
       ofile <- gzfile(file.path(outdir, paste0("DensityCut_clusters_Region_based_maxPC_", Max_K, ".tsv.gz")))
       write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE, row.names=FALSE)
-
+      ofile <- gzfile(file.path(outdir, paste0("DensityCut_clusters_Region_based_maxPC.tsv.gz")))
+      write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE, row.names=FALSE)
+      
       inf_clustrs_order <- order(as.integer(cluster.out$cluster))
 
       if (sum(is.na(mean_meth_matrix[inf_clustrs_order,])) == 0) {
@@ -269,6 +273,8 @@ euclidean.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, index_ty
 
       ofile <- gzfile(file.path(outdir, paste0("EuclideanClust_cell_order_CpG_based_maxk_", Max_K, ".tsv.gz")))
       write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
+      ofile <- gzfile(file.path(outdir, paste0("EuclideanClust_cell_order_CpG_based.tsv.gz")))
+      write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)      
     } else {
       print("Some pairs of cells have no CpG with data in common")
       hclust_CpG_crash <- 1
@@ -276,7 +282,9 @@ euclidean.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, index_ty
 
     ofile <- gzfile(file.path(outdir, paste0("EuclideanClust_clusters_CpG_based_maxk_", Max_K, ".tsv.gz")))
     write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE, row.names=FALSE)
-
+    ofile <- gzfile(file.path(outdir, paste0("EuclideanClust_clusters_CpG_based.tsv.gz")))
+    write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE, row.names=FALSE)
+    
     write.table(hclust_CpG_crash, file=file.path(outdir, "EuclideanClust_crash.tsv"), row.names=FALSE, col.names=FALSE)
     return(possible_clusters)
   }
@@ -358,6 +366,8 @@ euclidean.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, index_ty
 
       ofile <- gzfile(file.path(outdir, paste0("EuclideanClust_cell_order_region_based_maxk_", Max_K, ".tsv.gz")))
       write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
+      ofile <- gzfile(file.path(outdir, paste0("EuclideanClust_cell_order_region_based.tsv.gz")))
+      write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)      
     } else {
       print("some pairs of cells have no region with data in common")
       hclust_region_crash <- 1
@@ -365,6 +375,8 @@ euclidean.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, index_ty
 
     ofile <- gzfile(file.path(outdir, paste0("EuclideanClust_clusters_region_based_maxk_", Max_K, ".tsv.gz")))
     write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE, row.names=FALSE)
+    ofile <- gzfile(file.path(outdir, paste0("EuclideanClust_clusters_region_based.tsv.gz")))
+    write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE, row.names=FALSE)    
 
     write.table(hclust_region_crash, file=file.path(outdir, "EuclideanClust_crash.tsv"), row.names=FALSE, col.names=FALSE)
   }
@@ -481,6 +493,8 @@ hamming.clust <- function(input_CpG_data, Max_K, index_type="ch", impute, use_ca
 
     ofile <- gzfile(file.path(outdir, paste0("HammingClust_cell_order_CpG_based_maxk_", Max_K, ".tsv.gz")))
     write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
+    ofile <- gzfile(file.path(outdir, paste0("HammingClust_cell_order_CpG_based.tsv.gz")))
+    write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)    
   } else {
     PBAL_crash <- 1
     print("Couldn't fine Hamming distances")
@@ -488,6 +502,8 @@ hamming.clust <- function(input_CpG_data, Max_K, index_type="ch", impute, use_ca
 
   ofile <- gzfile(file.path(outdir, paste0("HammingClust_clusters_CpG_based_maxk_", Max_K, ".tsv.gz")))
   write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE, row.names=FALSE)
+  ofile <- gzfile(file.path(outdir, paste0("HammingClust_clusters_CpG_based.tsv.gz")))
+  write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE, row.names=FALSE)  
 
   write.table(PBAL_crash, file=file.path(outdir, "HammingClust_crash.tsv"), row.names=FALSE, col.names=FALSE)
   return(possible_clusters)
@@ -602,6 +618,8 @@ pearson.clust <- function(input_CpG_data, Max_K, index_type="ch", impute, use_ca
 
     ofile <- gzfile(file.path(outdir, paste0("PearsonClust_cell_order_CpG_based_maxk_", Max_K, ".tsv.gz")))
     write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)
+    ofile <- gzfile(file.path(outdir, paste0("PearsonClust_cell_order_CpG_based.tsv.gz")))
+    write.table(hcluster$order, file=ofile, sep="\t", col.names=FALSE, quote=FALSE)    
   } else {
     Pearson_crash <- 1
     print("couldn't find Pearson distances")
@@ -609,6 +627,8 @@ pearson.clust <- function(input_CpG_data, Max_K, index_type="ch", impute, use_ca
 
   ofile <- gzfile(file.path(outdir, paste0("PearsonClust_clusters_CpG_based_maxk_", Max_K, ".tsv.gz")))
   write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE, row.names=FALSE)
+  ofile <- gzfile(file.path(outdir, paste0("PearsonClust_clusters_CpG_based.tsv.gz")))
+  write.table(possible_clusters, file=ofile, sep="\t", col.names=TRUE, quote=FALSE, row.names=FALSE)  
 
   write.table(Pearson_crash, file=file.path(outdir, "PearsonClust_crash.tsv"), row.names=FALSE, col.names=FALSE)
   return(possible_clusters)
