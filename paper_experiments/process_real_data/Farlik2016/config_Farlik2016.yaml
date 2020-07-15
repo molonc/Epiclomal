@@ -1,0 +1,50 @@
+# Path to the Snakefile for this pipeline
+PROCESS_REAL_DATA_DIR: '../../../process_real_data'
+
+DATA_ID: 'process_Farlik2016'
+OUTDIR: 'process_Farlik2016'
+
+COV_DIR: 'data_Farlik2016/cov'
+CELL_PATTERN: ".txt.gz"
+# All the cell names with the pattern will be extracted from COV_DIR
+
+REGION_FILE: 'data_Farlik2016/all_regions_union_across_all_75_regions.tsv'
+TRUE_FILE: 'data_Farlik2016/true_clone_membership_6clusters.txt.gz'
+
+CPG_COORDS:
+  NAME_REGIONS: 'process_Farlik2016'
+  GENOME_LIBRARY: 'BSgenome.Hsapiens.NCBI.GRCh38'
+  TYPE_OF_C: 'CpG'
+
+CELL_BASED_METH:
+  INCLUDE_CHRY: 1
+  DATA_TYPE: 'Farlik'
+  GENOME: 'human'
+
+STATS_METHYLATION:
+  ALL_CUTOFFS: 
+    - "0_0.98_10000"
+    - "0_0.98_15000"
+    - "0_0.98_20000"
+    - "0_0.98_50000"
+    - "0_1_0.01"
+    - "0_1_0.05"    
+    - "0_1_0.1"
+    - "0_0.98_0.01"
+    - "0_0.98_0.05"    
+    - "0_0.98_0.1"      
+  FILTER_REGIONS_SAME_METH: 1
+  #FILTER_REGIONS_SAME_METH: Null
+  PLOT_HEATMAP_FILTERED: 1
+  PLOT_HEATMAP_UNFILTERED: 0
+
+FILTER_REGIONS:
+  FILTER: False
+  COEF_THRESHOLD: 0.95
+  MEAN_DIFF_THRESHOLD: 0.05
+  N_TO_KEEP: 1000
+
+READY_EPICLOMAL:
+  FILTER_CPG_NO_DATA: 0
+  LUODIAMOND: 0
+
