@@ -1,0 +1,46 @@
+OUTPUT_DIR: 'runs_epiclomal'
+
+# To be given with the -config option if desired in the run_* file.
+CUTOFFS: '0_0.98_10000'
+
+INPUT_DIR: '../../process_real_data/Farlik2016/process_Farlik2016/epiclomal_input'
+METH_F: 'input_Epiclomal_process_Farlik2016.tsv.gz'
+REGION_F: 'regionIDs_input_Epiclomal_process_Farlik2016.tsv.gz'
+# METH_FILE will be INPUT_DIR/CUTOFFS/METH_F
+# REGION_FILE will be INPUT_DIR/CUTOFFS/REGION_F
+TRUE_FILE: '../../process_real_data/Farlik2016/data_Farlik2016/true_clone_membership_6clusters.txt.gz'
+TRUE_PREVALENCES: 'None'
+
+NUM_EPI_ITERS: 1000
+#NUM_EPI_ITERS: 1000
+
+#ALL_CUTOFFS: 
+#  - "0_0.95_10000"
+#  - "0_0.95_15000"
+#  - "0_0.95_20000"
+#  - "0_1_0.01"
+#  - "0_1_0.05"    
+#  - "0_1_0.1"
+#  - "0_0.95_0.01"
+#  - "0_0.95_0.05"    
+#  - "0_0.95_0.1"
+
+PARAMS:
+  NPM:
+    index: 'ch'
+    max_k: 10
+    impute: 0
+    use_cache: 1
+  EPICLOMAL:
+    K: 10
+    slsbulk_iterations: 10
+    mu_has_k: True
+    convergence_tolerange: 1e-4
+    max_num_iters: 1000
+    Bishop_model_selection: False
+    check_uncertainty: True
+    config_file: '../config/config1.yaml'
+
+SOFTWARE:
+  hclust_software: '../../../scripts/hclust.R'
+  eval_software: '../../../scripts/eval_epiclomal.R'
