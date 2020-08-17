@@ -19,7 +19,7 @@ do
   		--configfile config_Smallwood2014_ncells.yaml \
   		--config "CUTOFFS=\"$i\"" \
   		--cluster 'qsub -V -hard -q shahlab.q -l h_vmem={resources.h_vmem}G -S /bin/bash -o {params.qsub_out} -e {params.qsub_err}' \
-  		-j 500 > snakemake_ncells_$counter.txt 2>&1
+  		-j 1000 > snakemake_ncells_$counter.txt 2>&1
     echo "Done"
 done
  

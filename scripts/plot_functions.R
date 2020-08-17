@@ -2,7 +2,7 @@
 library(ggplot2)
 library(gridExtra)
 library(plyr)
-library(xlsx)
+#library(xlsx)
 
 
 # one_filter = 1      # only one filter -- for the main text
@@ -364,8 +364,8 @@ plot_data <- function(big_df, crash, xlabel, model, measure_name, add_points) {
   
   agg_df <- summarySE_new(big_df, measurevar="Measure", groupvars=c("VAR","method"),na.rm=TRUE)
   
-  xlsfile <- paste0(outdir,"/SourceData.xlsx")
-  write.xlsx(agg_df, file=xlsfile, sheetName=measure_name,append=TRUE)
+  #xlsfile <- paste0(outdir,"/SourceData.xlsx")
+  #write.xlsx(agg_df, file=xlsfile, sheetName=measure_name,append=TRUE)
   print(agg_df)
   
   for (agg in aggre) {
@@ -499,7 +499,7 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
     myheight=6.3    
     xtext <- element_text(angle=90, vjust=0.5, size=14, colour= "black")    
   } else if (measure_name == "clone_prev_MAE") {
-    measure_title <- "Clone prev. MAE"
+    measure_title <- "Cluster freq. MAE"
     fname <- "results"
     legpos="none"    
     #myheight=4.3
@@ -617,8 +617,9 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
     big_df$VAR <- factor(big_df$VAR,levels=c("Smallwood2014",
                                                "Hou2016",
 #                                               "Luo2017",
-                                               "Farlik2016",
-                                                "InHouse"))
+                                               "Farlik2016"
+#                                                "InHouse"
+                                              ))
 	if (measure_name != "nclusters2") {
 		xlsfile <- paste0(outdir,"/SourceData.xlsx")
 		write.xlsx(subset(big_df, select=c("Measure", "VAR", "replicate_method")), file=xlsfile, sheetName=measure_name, append=TRUE)	
@@ -687,7 +688,8 @@ plot_data_barplots <- function(big_df, crash, model, measure_name,add_points) {
    
     # Camila 6Feb2019
     #hline.dat <- data.frame(VAR=levels(big_df$VAR), vl=c(2,2,21,6,3))   # For Luo
-    hline.dat <- data.frame(VAR=levels(big_df$VAR), vl=c(2,2,6,3)) 
+    #hline.dat <- data.frame(VAR=levels(big_df$VAR), vl=c(2,2,6,3))   # this includes Inhouse
+    hline.dat <- data.frame(VAR=levels(big_df$VAR), vl=c(2,2,6))
     
     #cutoff <- data.frame( x = c(-Inf, Inf), y = 2, cutoff = factor(2) )          
     pHD <- ggplot(big_df, aes(x=replicate_method, y=Measure, fill=method)) +

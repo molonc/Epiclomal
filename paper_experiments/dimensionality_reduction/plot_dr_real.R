@@ -2,103 +2,94 @@ suppressMessages(library(NMF))
 suppressMessages(library(argparse))
 suppressMessages(library(ggplot2))
 suppressMessages(library(Rtsne))
-suppressMessages(library(dbscan))
-suppressMessages(library(umap))
-suppressMessages(library(pheatmap))
-library(xlsx)
 
-min_neighb_umap <- 10
-max_neighb_umap <- 50
-n_comp_umap <- c(2,10,20)
-min_nmf_rank <- 2
-max_nmf_rank <- 12       #15
-num_nmf_runs <- 100
+#### I have to be here
+## setwd("~/shahtemp/Epiclomal/Epiclomal/paper_experiments/dimensionality_reduction/")
+
+
 num_tsne_iter <- 5000
-min_dbscan_points <- 5
+outdir <- "../figures"
 
-dataset <- "Smallwood2014"
+#data_id <- "Smallwood2014"
+data_id <- "Hou2016"
+#data_id <- "Farlik2016"
 
-if (dataset == "Smallwood2014") {
-    input_file <- "../process_real_data/Smallwood2014/process_Smallwood2014/final_stats/0_0.95_10000/final_mean_meth_region_process_Smallwood2014.tsv"
-    true_file <- "../process_real_data/Smallwood2014/data_Smallwood2014/true_clone_membership.txt.gz"
-    data_id <- dataset
+if (data_id == "Smallwood2014") {
+  #input_file <- "../process_real_data/Smallwood2014/process_Smallwood2014/final_stats/0_0.95_10000/final_mean_meth_region_process_Smallwood2014.tsv"
+  nmf_file <- "Smallwood2014_0_0.95_10000/nmf_rank4.rds"
+  true_file <- "../process_real_data/Smallwood2014/data_Smallwood2014/true_clone_membership.txt.gz"
+  epi_file <- "../process_real_data/Smallwood2014/data_Smallwood2014/true_clone_membership.txt.gz"
+  #epi_file <- "../real_data/Smallwood2014/runs_epiclomal/0_0.95_10000/result_region/DIC_LINE_ELBOW_gainthr0.05_0.02/best_epi_run/cluster_MAP.tsv.gz"
+  label <- paste0(data_id, "_0_0.95_10000_nmf_rank4")
+  perp <- 9
+} else if (data_id == "Hou2016") {
+  nmf_file <- "Hou2016_0_0.95_10000/nmf_rank2.rds"
+  true_file <- "../process_real_data/Hou2016/data_Hou2016/true_clone_membership.txt.gz"
+  epi_file <- "../process_real_data/Hou2016/data_Hou2016/true_clone_membership.txt.gz"  
+  #epi_file <- "../real_data/Hou2016/runs_epiclomal/0_0.95_10000/result_region/DIC_LINE_ELBOW_gainthr0.05_0.02/best_epi_run/cluster_MAP.tsv.gz"
+  label <- paste0(data_id, "_0_0.95_10000_nmf_rank2")
+  perp <- 8  
+} else if (data_id == "Farlik2016") {
+  nmf_file <- "Farlik2016_0_0.98_10000/nmf_rank2.rds"
+  true_file <- "../process_real_data/Farlik2016/data_Farlik2016/true_clone_membership_6clusters.txt.gz"
+  epi_file <- "../process_real_data/Farlik2016/data_Farlik2016/true_clone_membership_6clusters.txt.gz"
+  #epi_file <- "../real_data/Farlik2016/runs_epiclomal/0_0.98_10000/result_region/DIC_LINE_ELBOW_gainthr0.05_-100/best_epi_run/cluster_MAP.tsv.gz"
+  label <- paste0(data_id, "_0_0.98_10000_nmf_rank2")
+  perp <- 8    
 }
-
-input_file <- "../EPI-112_inhouse_data/OUTPUT_process_INHOUSE/RUN/process_INHOUSE_process_real_data/outputs/final_stats/0_0.95_15000/final_mean_meth_region_process_INHOUSE.tsv"
-true_file <- "../EPI-112_inhouse_data/data_process_INHOUSE/true_clone_membership.txt.gz"
-data_id <- "InHouse"
-
-xlsxfile <- "../EPI-109_plots_for_paper/ALL_PLOTS/SourceDataFig6.xlsx"
-
-outdir <- data_id
-dir.create(outdir)
 
 true <- read.csv(true_file,sep="\t",header=TRUE,check.names=FALSE)
+epi <- read.csv(epi_file,sep="\t",header=TRUE,check.names=FALSE)
+res <- readRDS(file=nmf_file)
+htsne <- Rtsne(t(coef(res)), perplexity=perp, max_iter = num_tsne_iter, check_duplicates=FALSE)
+mycols <- epi[,2]
+mycols[mycols==0] <- "seagreen"
+mycols[mycols==1] <- "orange3"
+mycols[mycols==2] <- "royalblue"
+mycols[mycols==3] <- "mediumpurple"
+mycols[mycols==4] <- "steelblue"
+mycols[mycols==5] <- "midnightblue"
+mycols[mycols==6] <- "tomato2"
 
-imputed_file <- paste0(outdir,"/data_imputed.csv")
-if (file.exists(paste0(imputed_file,".gz"))) {
-    print ("Reading the imputed file")
-    input <- read.csv(paste0(imputed_file,".gz"),sep="\t",header=TRUE,check.names=FALSE)
-    print (" ... done.")
-} else {
-    print(paste0("Reading input file ", input_file))
-    input <- read.csv(input_file,sep="\t",header=TRUE,check.names=FALSE)
-    # This gives features as rows and cells as columns -- this is the right input for NMF
-    print(" ... done.")
-    
-    #input <- input[1:1000,1:200]
-    
-    # replace with average values, for each row
-    
-    print("Replacing NAs with average values")
-    for (i in seq(1:nrow(input))) {
-        # for some reason mean(input[i,],na.rm=TRUE) doesn't work
-        vec <- input[i,!is.na(input[i,])]
-        mean <- sum(vec)/length(vec)
-        input[i,is.na(input[i,])] <- mean
-    }
-    print(" ... done.")
-    
-    # eliminate the empty rows (features)
-    input <- input[ rowSums(input)!=0, ] 
-    write.table(input, file=imputed_file, sep="\t", col.names=TRUE, quote=FALSE,row.names=TRUE)
-    system(paste0("gzip --force ", imputed_file))    
+
+png(file=paste0(outdir,"/",label,"_tSNE_perp",perp,".png"))
+par(mar=c(5.1, 4.1, 4.1, 9.1), xpd=TRUE)
+plot(htsne$Y, col=mycols, pch=as.numeric(factor(true$epigenotype_id)), 
+     xlab="tSNE dimension 1", ylab="tSNE dimension 2", lwd = 3, cex=1.5, 
+     cex.lab=1.5, cex.axis=1.1, cex.main=1.5, cex.sub=1.5)
+
+if (data_id == "Smallwood2014") {
+  leg <- legend("topright", inset=c(-0.45,0), legend=c("2i", "SER"),
+                col=c("orange3","royalblue"), 
+                pch=c(1,2), lty = c(NA,NA), horiz=F, 
+                lwd = 3, bty = 'n', cex=1.3)    
+#  leg <- legend("topright", inset=c(-0.45,0), legend=c("2i", "SER", "Epicl. 1", "Epicl. 0"),
+#                col=c("black","black","orange3", "seagreen"), 
+#                pch=c(1,2,NA,NA), lty = c(NA,NA, 1, 1), horiz=F, 
+#                lwd = 3, bty = 'n', cex=1.3)   
+  title(main=("Smallwood2014, NMF (rank 4) + tSNE (perp. 9)"),cex.main=1.5)
+} else if (data_id == "Hou2016") {
+  leg <- legend("topright", inset=c(-0.45,0), legend=c("Subpop. I", "Subpop. II"),
+                col=c("orange3","royalblue"), 
+                pch=c(1,2), lty = c(NA,NA), horiz=F, 
+                lwd = 3, bty = 'n', cex=1.3)     
+#  leg <- legend("topright", inset=c(-0.45,0), legend=c("Subpop. I", "Subpop. II", "Epicl. 0", "Epicl. 1"),
+#                col=c("black","black","orange3", "seagreen"), 
+#                pch=c(1,2,NA,NA), lty = c(NA,NA, 1, 1), horiz=F, 
+#                lwd = 3, bty = 'n', cex=1.3)   
+  title(main=("Hou2016, NMF (rank 2) + tSNE (perp. 8)"),cex.main=1.5)
+} else if (data_id == "Farlik2016") {
+  leg <- legend("topright", inset=c(-0.45,0), legend=c("HSC", "CMP", "GMP", "MLP0", "CLP/MPP", "CLP/MLP0"),
+                col=c("orange3","royalblue","mediumpurple","steelblue","midnightblue", "tomato2"), 
+                pch=c(1,2,3,4,5,6),  lty = c(NA,NA,NA,NA,NA,NA), horiz=F, 
+                lwd = 3, bty = 'n', cex=1.3)     
+#  leg <- legend("topright", inset=c(-0.45,0), legend=c("HSC", "CMP", "GMP", "MLP0", "CLP/MPP", "CLP/MLP0", "Epicl. 2", "Epicl. 3", "Epicl. 6", "Epicl. 0", "Epicl. 5", "Epicl. 1", "Epicl. 4"),
+#                col=c("black","black","black","black","black","black","orange3", "seagreen","royalblue","mediumpurple","steelblue","midnightblue","tomato2"), 
+#                pch=c(1,2,3,4,5,6,NA,NA,NA,NA,NA,NA,NA), lty = c(NA,NA,NA,NA,NA,NA, 1, 1,1,1,1,1,1), horiz=F, 
+#                lwd = 3, bty = 'n', cex=1.3)   
+  title(main=("Farlik2016, NMF (rank 2) + tSNE (perp. 8)"),cex.main=1.5)
 }
 
-#######################################################
+dev.off()
 
-# do tSNE
-
-for (perp in c(20)) {
-#for (perp in c(10, 20, 100, 150)) {
-    clusterer <- paste0("tSNE_perp",perp)
-    mycols <- true$epigenotype_id
-    mycols[mycols==1] <- "orange3"
-    mycols[mycols==2] <- "seagreen"
-    mycols[mycols==3] <- "royalblue"
-
-    tsne_file <- paste0(outdir,"/",data_id,"_tSNE_perp",perp,".rda")
-    if (file.exists(tsne_file) ) {
-        print("Loading tSNE data")
-        load(tsne_file)
-    } else {
-        print(paste0("Running only tSNE with perplexity ", perp))      
-        tSNE <- Rtsne(t(input), perplexity=perp, max_iter = num_tsne_iter, check_duplicates=FALSE)        
-        save (tSNE, file=tsne_file)
-    }    
-    pdf(file=paste0(outdir,"/",data_id,"_tSNE_perp",perp,".pdf"))
-    print("Printing into the excel file")
-    write.xlsx(data.frame(tSNE$Y,true$epigenotype_id), file=xlsxfile, sheetName=paste0("Fig6b_", args$name), append=TRUE)
-    # For some reason the line above didn't work from this script, but I ran it from R directly and it worked.
-    plot(tSNE$Y, col=mycols, pch=as.numeric(factor(true$epigenotype_id)), 
-         xlab="tSNE dimension 1", ylab="tSNE dimension 2", lwd = 3, cex=1.5, 
-         cex.lab=1.5, cex.axis=1.1, cex.main=1.5, cex.sub=1.5)
-    legend("bottomright", legend=c("SA501 TNBC", "SA532 ER+PR-Her2+", "SA609 TNBC", "Epiclomal cl. 1", "Epiclomal cl. 2", "Epiclomal cl. 3"),
-           col=c("black","black","black","orange3", "seagreen", "royalblue"), 
-           pch=c(1,2,3,NA,NA,NA), lty = c(NA,NA,NA, 1, 1, 1), horiz=F, 
-           #inset = c(0.05, 0.05), 
-           lwd = 3, bty = 'n', cex=1.3)
-    title(main=paste0("tSNE visualization for the InHouse data set"),cex.main=1.5)
-    dev.off()
-}     
 

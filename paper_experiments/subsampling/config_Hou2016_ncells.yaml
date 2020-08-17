@@ -12,7 +12,8 @@ REGION_F: 'regionIDs_input_Epiclomal_Hou2016.tsv.gz'
 TRUE_F: 'true_clone_membership.txt.gz'
 # If TRUE_F is given, then TRUE_FILE depends on TRUE_F and that specific directory (such as for subsampling)
 TRUE_PREVALENCES: 'None'
-TRUE_EPI: 'Hou2016_true_clone_epigenotypes.tsv'
+# I don't need hamming distance for this, so I'm not setting TRUE_EPI
+#TRUE_EPI: 'Hou2016_true_clone_epigenotypes.tsv'
 
 NUM_EPI_ITERS: 1000
 #NUM_EPI_ITERS: 1000

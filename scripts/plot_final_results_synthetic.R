@@ -12,7 +12,8 @@ parser <- ArgumentParser()
 # specify our desired options
 # by default ArgumentParser will add a help option
 
-parser$add_argument("--summary_file", type="character", help="File path to the summary table") 
+#parser$add_argument("--summary_file", type="character", help="File path to the summary table") 
+parser$add_argument("--input_dir", type="character", help="Input dir with the synthetic runs") 
 
 parser$add_argument("--output_dir", type="character", default="output", help="Entire or just the beginning of the output directory file ")
 
@@ -24,20 +25,18 @@ args <- parser$parse_args()
 
 print(args)
 
-summary_table_file <- args$summary_file
+#summary_table_file <- args$summary_file
+#summary_table <- read.table(summary_table_file,header=TRUE,na.strings="NA",sep="\t")
+#print(summary_table)
+#print(class(summary_table))
+#print(str(summary_table))
 
-summary_table <- read.table(summary_table_file,header=TRUE,na.strings="NA",sep="\t")
-
-print(summary_table)
-
-print(class(summary_table))
-
-print(str(summary_table))
-
+inputdir <- args$input_dir
 outdir <- args$output_dir
 
 criterion <- args$criterion
 
+dir.create(outdir, showWarnings = FALSE)
 
 # function to get the script path
 getScriptPath <- function(){
@@ -55,12 +54,20 @@ scriptPath <- getScriptPath()
 source(paste0(scriptPath, "/plot_functions.R"))
 
 
-collect_data <- function(model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, measure_name){
+collect_data <- function(model, number_data_sets, inputdir, criterion, measure_name){
 # measure_name can be HD, Vmeasure, nclusters, cp_error
 
-    variable <- as.character(summary_table[,1])
+    #variable <- as.character(summary_table[,1])
     # variable is the value of the changed variable, for example if we are varying misspb, variable is 0.5, 0.6, 0.7, 0.8, 0.9, 0.95
-
+    
+    # MA 24 July 2020, now getting variable from the input dir directly
+    subdirs <- list.files(inputdir, pattern = "*", recursive = FALSE)
+    variable <- NULL
+    for (sdir in subdirs) {
+      variable <- c(variable, unlist(strsplit(sdir,"_"))[1])
+    }
+    variable <- unique(variable)
+    
 
     if (measure_name == "HD") {
         measure_title <- "hamming distance"
@@ -110,7 +117,13 @@ collect_data <- function(model, number_data_sets, initial_path_to_each_RUN, summ
         xlabel <- "Cell to cell variability"
     } else if (grepl("PROP_CPG_FLIP", args$var, fixed=TRUE))   {
         xlabel <- "Proportions of CpGs flipped in the different region"     
-    }     
+    } else if (grepl("ndiffreg", args$var, fixed=TRUE))   {
+      xlabel <- "Number of different regions"     
+    } else if (grepl("subsamp_missp", args$var, fixed=TRUE))   {
+      xlabel <- "Missing data proportion (subsampled)"  
+    } else if (grepl("subsamp_ncells", args$var, fixed=TRUE))   {
+      xlabel <- "Proportion of cells (subsampled)"  
+    }
  
     
      
@@ -130,13 +143,13 @@ collect_data <- function(model, number_data_sets, initial_path_to_each_RUN, summ
                 print(paste0("Model ", model[m], " value ", variable[j], " number of data sets ", number_data_sets))
                 for(i in 1:number_data_sets){
                     if (model[m] == "HammingClust" || model[m] == "DensityCut" || model[m] == "PearsonClust" || model[m] == "EuclideanClust") {
-                        results_file <- paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/simple_hclust/results_", model[m], ".txt")
+                        results_file <- paste0(inputdir, "/", variable[j], "_", i, "/simple_hclust/results_", model[m], ".txt")
                     } else if (model[m] == "region_bulk") {     
-                        results_file <- paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_region/",criterion,"/all_",fname,"_bestrun_region.tsv")
+                        results_file <- paste0(inputdir, "/", variable[j], "_", i, "/result_region/",criterion,"/all_",fname,"_bestrun_region.tsv")
                     } else {     
-                        results_file <- paste0(initial_path_to_each_RUN,colnames(summary_table)[1],"_",variable[j],"_",i,"_epiclomal_synthetic/outputs/results_",model[m],"/",criterion,"/all_",fname,"_bestrun_",model[m],".tsv")
+                        results_file <- paste0(inputdir, "/", variable[j], "_", i, "/result_",model[m],"/",criterion,"/all_",fname,"_bestrun_",model[m],".tsv")
                     }                      
-                    #print (paste0('file is ', results_file))
+                    print (paste0('file is ', results_file))
                     t <- try(read.table(file=results_file,sep="\t",header=TRUE))   
                     if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
                         print("can't find file")
@@ -147,11 +160,11 @@ collect_data <- function(model, number_data_sets, initial_path_to_each_RUN, summ
                     } else {
                         # for HD, we have to check 3 files
                         for (index in c(1,2,3)) {
-							t <- try(read.table(file=results_file,sep="\t",header=TRUE))   
-							if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
-								print(paste0("Can't find file ", results_file, " skipping it"))
-								next
-							}	
+							              t <- try(read.table(file=results_file,sep="\t",header=TRUE))   
+							              if("try-error" %in% class(t)) { ### could have an alternativeFunction() here
+								              print(paste0("Can't find file ", results_file, " skipping it"))
+								              next
+							              }	
                             f <- read.table(file=results_file,sep="\t",header=TRUE)							
                             if (model[m] == "region_bulk") {
                                 if (measure_name == "Vmeasure") {
@@ -229,19 +242,19 @@ collect_data <- function(model, number_data_sets, initial_path_to_each_RUN, summ
 ##################
 ### hamming distance
 
-number_data_sets <- as.numeric(gsub("_|D", "", str_extract(summary_table_file, "_D[0-9]+_")))
+#number_data_sets <- as.numeric(gsub("_|D", "", str_extract(summary_table_file, "_D[0-9]+_")))
+number_data_sets <- 10
 
-
-initial_path_to_each_RUN <- paste0(unlist(strsplit(summary_table_file, "/FINAL"))[1],"/RUN/D_")
-print (initial_path_to_each_RUN)
+#initial_path_to_each_RUN <- paste0(unlist(strsplit(summary_table_file, "/FINAL"))[1],"/RUN/D_")
+#print (initial_path_to_each_RUN)
 
 
 all_regions_criterion <- "0_1_0.01"
 
-xlsfile <- paste0(outdir,"/SourceData.xlsx")
-if (file.exists(xlsfile)) {
-	file.remove(xlsfile)
-}
+#xlsfile <- paste0(outdir,"/SourceData.xlsx")
+#if (file.exists(xlsfile)) {
+#	file.remove(xlsfile)
+#}
 
 ##################
 ### plots hamming distance ####
@@ -249,7 +262,7 @@ if (file.exists(xlsfile)) {
 print ("Plots for hamming distance")
 #model <- c("region", "basic")
 model <- c("region")
-mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "HD")
+mylist <- collect_data (model, number_data_sets, inputdir, criterion, "HD")
 #model <- c("region-uncorrected", "region-corrected", "region-naive", "basic-uncorrected", "basic-corrected", "basic-naive")
 #model <- c("region-corrected", "region-naive", "basic-corrected", "basic-naive")
 model <- c("region-uncorrected", "region-corrected", "region-naive")
@@ -264,7 +277,7 @@ print ("Plots for clone_prev_MAE")
 model <- c("region","region_bulk", "basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
 # To add custom labels
 # label <- c("EpiclomalRegion","EpiclomalBulk","EpiclomalBasic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
-mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "clone_prev_MAE")
+mylist <- collect_data (model, number_data_sets, inputdir, criterion, "clone_prev_MAE")
 plot_data(mylist$big_df, mylist$crash, mylist$xlabel, model, "clone_prev_MAE", add_points=FALSE)
 #plot_data(mylist$big_df, mylist$crash, model, "clone_prev_MAE", add_points=FALSE)
 
@@ -278,7 +291,7 @@ plot_data(mylist$big_df, mylist$crash, mylist$xlabel, model, "clone_prev_MAE", a
 print ("Plots for V-measure")
 #model <- c("region","region_bulk", "basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
 model <- c("region","basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
-mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "Vmeasure")
+mylist <- collect_data (model, number_data_sets, inputdir, criterion, "Vmeasure")
 plot_data(mylist$big_df, mylist$crash,  mylist$xlabel, model, "Vmeasure", add_points=FALSE)
 
 ##################
@@ -286,7 +299,7 @@ plot_data(mylist$big_df, mylist$crash,  mylist$xlabel, model, "Vmeasure", add_po
 ##################
 print ("Plots for nclusters")
 model <- c("region","basic","EuclideanClust","DensityCut","HammingClust","PearsonClust")
-mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "nclusters")
+mylist <- collect_data (model, number_data_sets, inputdir, criterion, "nclusters")
 plot_data(mylist$big_df, mylist$crash,  mylist$xlabel, model, "nclusters", add_points=FALSE)
 
 ##################
@@ -295,6 +308,6 @@ plot_data(mylist$big_df, mylist$crash,  mylist$xlabel, model, "nclusters", add_p
 
 print ("Plots for uncertainty")
 model <- c("region")
-mylist <- collect_data (model, number_data_sets, initial_path_to_each_RUN, summary_table, criterion, "uncertainty")
+mylist <- collect_data (model, number_data_sets, inputdir, criterion, "uncertainty")
 plot_data(mylist$big_df, mylist$crash,  mylist$xlabel, model, "uncertainty", add_points=FALSE)
 

@@ -115,9 +115,6 @@ densitycut.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, max_PC=
         load(imputed_file)
         print (" ... done.")
       } else {
-        # to remove
-        #input <- input[1:100,1:5]
-
         # replace with average values, for each col
         print("Per region, replacing NAs with average values")
         mean_meth_matrix <- .impute_means(mean_meth_matrix)
@@ -131,12 +128,15 @@ densitycut.clust <- function(input_CpG_data, mean_meth_matrix, R, Max_K, max_PC=
       }
     }
 
-    max_comp <- min(max_PC, R)
+    max_comp <- min(max_PC, R, nrow(input_CpG_data))
 
     print("number of PC components:")
     print(max_comp)
 
     possible_clusters <- NULL
+    
+    # MA: 15 Jul 2020: removing all columns that have only NA.
+    mean_meth_matrix <- mean_meth_matrix[,colSums(is.na(mean_meth_matrix))<nrow(mean_meth_matrix)]
 
     t <- try(pca(mean_meth_matrix, method="nipals", nPcs=max_comp))
     if ("try-error" %in% class(t)) {

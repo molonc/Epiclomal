@@ -41,11 +41,15 @@ rule all:
     input:
         EVAL_BASIC_DIR,
         EVAL_REGION_DIR,
-        os.path.join(NPM_DIRECTORY, '.euclidean_eval'),
-        os.path.join(NPM_DIRECTORY, '.hamming_eval'),
-        os.path.join(NPM_DIRECTORY, '.pearson_eval'),
-        os.path.join(NPM_DIRECTORY, '.densitycut_eval')
-
+        #os.path.join(NPM_DIRECTORY, '.euclidean_eval'),
+        #os.path.join(NPM_DIRECTORY, '.hamming_eval'),
+        #os.path.join(NPM_DIRECTORY, '.pearson_eval'),
+        #os.path.join(NPM_DIRECTORY, '.densitycut_eval')
+        os.path.join(NPM_DIRECTORY, 'results_EuclideanClust.txt'),
+        os.path.join(NPM_DIRECTORY, 'results_HammingClust.txt'),
+        os.path.join(NPM_DIRECTORY, 'results_PearsonClust.txt'),
+        os.path.join(NPM_DIRECTORY, 'results_DensityCut.txt')
+        
 rule preprocess:
     input:
         meth_file = METH_FILE,
@@ -208,7 +212,7 @@ if (config['TRUE_FILE']):
             hfile=os.path.join(NPM_DIRECTORY, 'EuclideanClust_clusters_region_based.tsv.gz')
         output:
             results=os.path.join(NPM_DIRECTORY, "results_EuclideanClust.txt"),
-            flag=touch(temp(os.path.join(NPM_DIRECTORY, '.euclidean_eval')))
+            #flag=touch(temp(os.path.join(NPM_DIRECTORY, '.euclidean_eval')))
         resources:
             h_vmem=default_mem
         params:
@@ -228,7 +232,7 @@ if (config['TRUE_FILE']):
             pfile=os.path.join(NPM_DIRECTORY, 'HammingClust_clusters_CpG_based.tsv.gz')
         output:
             results=os.path.join(NPM_DIRECTORY, "results_HammingClust.txt"),
-            flag=touch(temp(os.path.join(NPM_DIRECTORY, '.hamming_eval')))
+            #flag=touch(temp(os.path.join(NPM_DIRECTORY, '.hamming_eval')))
         resources:
             h_vmem=default_mem
         params:
@@ -247,7 +251,7 @@ if (config['TRUE_FILE']):
             peafile=os.path.join(NPM_DIRECTORY, 'PearsonClust_clusters_CpG_based.tsv.gz')
         output:
             results=os.path.join(NPM_DIRECTORY, "results_PearsonClust.txt"),
-            flag=touch(temp(os.path.join(NPM_DIRECTORY, '.pearson_eval')))
+            #flag=touch(temp(os.path.join(NPM_DIRECTORY, '.pearson_eval')))
         resources:
             h_vmem=default_mem
         params:
@@ -267,7 +271,7 @@ if (config['TRUE_FILE']):
             dfile=os.path.join(NPM_DIRECTORY, 'DensityCut_clusters_Region_based_maxPC.tsv.gz')
         output:
             results=os.path.join(NPM_DIRECTORY, "results_DensityCut.txt"),
-            flag=touch(temp(os.path.join(NPM_DIRECTORY, '.densitycut_eval')))
+            #flag=touch(temp(os.path.join(NPM_DIRECTORY, '.densitycut_eval')))
         resources:
             h_vmem=default_mem
         params:

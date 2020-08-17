@@ -78,11 +78,19 @@ run_eval <- function (input, flag, criterion, GAIN_THRESHOLD) {
 
           # get the mean value and put it in the table below
           hvalues <- read.table(houtfile, header=TRUE)
-          hmean <- hvalues["mean"]
-          colnames(hmean)<-"hd_mean"
+          hmean1 <- hvalues["mean"]
+          colnames(hmean1)<-"hd_mean"
+          
+          hvalues <- read.table(paste0(houtfile, ".corr.tsv"), header=TRUE)
+          hmean2 <- hvalues["mean"]
+          colnames(hmean2)<-"hd_corr_mean"    
+        
+          hvalues <- read.table(paste0(houtfile, ".naive.tsv"), header=TRUE)
+          hmean3 <- hvalues["mean"]
+          colnames(hmean3)<-"hd_naive_mean"                 
 
-          print(paste0('HD mean is ', hmean))
-          table_best <- cbind (table_best, hmean)
+          print(paste0('HD mean is ', hmean1))
+          table_best <- cbind (table_best, hmean1, hmean2, hmean3)
           print('Table after hdist')
           print(table_best)
       }

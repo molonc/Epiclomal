@@ -25,7 +25,7 @@ library(stringr)
 #source(paste0(scriptPath, "/plot_functions.R"))
 #library(ggpubr)
 
-source("/shahlab/mandronescu/MySoftware/Epiclomal/scripts/plot_functions.R")
+source("/scratch/shahlab_tmp/mandronescu/Epiclomal/Epiclomal/scripts/plot_functions.R")
 
 # create parser object
 parser <- ArgumentParser()
@@ -38,19 +38,22 @@ parser$add_argument("--output_dir", type="character", default="output", help="En
 parser$add_argument("--criterion1", type="character", help="The non-very granular selection criterion")
 parser$add_argument("--criterion2", type="character", help="The granular selection criterion, to be used for Luo and Farlik")
 
-datasets <- c("InHouse",
+datasets <- c(
+#              "InHouse",
               "Smallwood2014",
               "Hou2016",
 #              "Luo2017",
               "Farlik2016")
 ntrue_clusters <- c(3,2,2,21,6)              
               
-datapaths <- c("/shahlab/mandronescu/EPI-112_inhouse_data/FINAL_RESULTS",
+datapaths <- c(
+#               "/shahlab/mandronescu/EPI-112_inhouse_data/FINAL_RESULTS",
                "/shahlab/mandronescu/EPI-70_Smallwood2014/FINAL_RESULTS",
                "/shahlab/mandronescu/EPI-105_scTrio/FINAL_RESULTS",
 #               "/shahlab/mandronescu/EPI-106_Luo2017/FINAL_RESULTS_genebodies_all_clean_cells_MAXK30",
                "/shahlab/mandronescu/EPI-89_Farlik2016/FINAL_RESULTS_6clusters_Farlik_clustering")
-simplepaths <- c("/shahlab/mandronescu/EPI-112_inhouse_data/OUTPUT_epiclomal_INHOUSE/RUN/epiclomal_INHOUSE_",
+simplepaths <- c(
+#                 "/shahlab/mandronescu/EPI-112_inhouse_data/OUTPUT_epiclomal_INHOUSE/RUN/epiclomal_INHOUSE_",
                  "/shahlab/mandronescu/EPI-70_Smallwood2014/OUTPUT_epiclomal_Smallwood2014/RUN/epiclomal_Smallwood2014_",
                  "/shahlab/mandronescu/EPI-105_scTrio/OUTPUT_epiclomal_scTrio/RUN/epiclomal_scTrio_",
 #                 "/shahlab/mandronescu/EPI-106_Luo2017/OUTPUT_epiclomal_Luo2017_genebodies_all_clean_cells_MAXK30/RUN/epiclomal_Luo2017_genebodies_all_clean_cells_MAXK30_",

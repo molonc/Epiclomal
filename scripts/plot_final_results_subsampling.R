@@ -199,6 +199,6 @@ plot_data (model, criterion, "nclusters")
 ##################
 ### plots hamming distance ####
 ##################
-print ("Plots for HD")
-model <- c("region", "basic")
-plot_data (model, criterion, "HD")
+#print ("Plots for HD")
+#model <- c("region")
+#plot_data (model, criterion, "HD")

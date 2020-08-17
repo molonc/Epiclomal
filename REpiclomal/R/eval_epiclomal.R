@@ -314,11 +314,12 @@ compute_and_save_hd <- function (data_true, data_estimate, outfile, cpg_indicato
 
 ##### given a methylation file and a true clustering file, save the epigenotype file
 ## used in the subsampling for Smallwood
-## Actually I shouldn't need this because I should use the whole full matrix
-save.epigenotype <- function (methylation_file, true_Z_file, outfile) {
-	library("matrixStats")
+# NOTE: this works only for 2 clusters
+## I am using this function to get the epigenotypes file for true data
+save.epigenotype <- function (true_Z_file, methylation_file, outfile) {
+	  library("matrixStats")
     true_Z <- read.csv(true_Z_file, sep="\t")
-    meth <- read.csv(meth_file, sep="\t", header=TRUE)
+    meth <- read.csv(methylation_file, sep="\t", header=TRUE)
     cluster1 <- true_Z[true_Z$epigenotype_id==1,]$cell_id
     cluster2 <- true_Z[true_Z$epigenotype_id==2,]$cell_id    
     meth1 <- meth[meth$cell_id %in% cluster1,]

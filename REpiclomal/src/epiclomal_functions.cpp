@@ -51,7 +51,8 @@ NumericMatrix impute_means(NumericMatrix input_data) {
         }
         float mean = total/count;
         for(std::vector<int>::iterator idx = na_idx.begin(); idx != na_idx.end(); idx ++){
-            if (isnan(mean)) imputed_data(*idx, i) = NA_REAL;
+        ## MA: added std:: as advised by Igor Bulanov 
+            if (std::isnan(mean)) imputed_data(*idx, i) = NA_REAL;
             else imputed_data(*idx, i) = mean;
         }
     }
