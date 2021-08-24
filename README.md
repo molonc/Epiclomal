@@ -49,7 +49,8 @@ Epiclomal R package has a dependency on DensityCut, which must be manually insta
 
 or 
 
-```git clone https://<BBUSERNAME>@bitbucket.org/jerry00/densitycut_dev.git
+```
+git clone https://<BBUSERNAME>@bitbucket.org/jerry00/densitycut_dev.git
 R CMD build densitycut_dev/
 R CMD INSTALL densitycut_0.0.1.tar.gz
 ```
