@@ -1,0 +1,38 @@
+CPU_time_seconds: 2
+DIC_measure: 105334.9730061829
+DIC_pd: 281.8260411634983
+Max_memory_MB: 153
+Vmeasure: 0.6571006110449706
+alpha_star:
+- 8.0
+- 11.0
+- 16.0
+beta_star:
+  meth:
+  - - - 1250.9538045852885
+      - 8732.046195414774
+  - - - 1509.446610079307
+      - 8473.553389920678
+  - - - 9494.273288579072
+      - 488.726711421018
+clone_prev_MAE: 0.169921875
+clone_prev_MSE: 0.04608154296875
+converged: true
+gamma_star:
+  meth:
+  - - 42841.13245162557
+    - 12634.208582521225
+  - - 9368.867548374486
+    - 34754.791417478766
+log_likelihood: -52385.66046192795
+log_posterior_allK: -59257.5860398052
+log_posterior_clusterK: -59257.58603980521
+lower_bound: -56705.02128573634
+lower_bound_ElogP: -62553.05820900279
+lower_bound_ElogQ: -5848.036923266452
+nclusters: 3
+prevalences:
+- 0.21875
+- 0.3125
+- 0.46875
+seed: 1629968877
