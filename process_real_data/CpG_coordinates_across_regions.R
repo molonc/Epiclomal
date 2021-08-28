@@ -96,7 +96,7 @@ if((args$genome_library == "BSgenome.Hsapiens.UCSC.hg19") | (args$genome_library
   genome_used <- Hsapiens
 }
 
-if((args$genome_library == "BSgenome.Mmusculus.UCSC.mm10")){
+if((args$genome_library == "BSgenome.Mmusculus.UCSC.mm10") | (args$genome_library == "BSgenome.Mmusculus.UCSC.mm9")){
   genome_used <- Mmusculus
 }
 
