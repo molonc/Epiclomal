@@ -37,7 +37,7 @@ print(args)
 
 get_cov_data <- function(coverage_file, data_type) {
 
-  cov_data <- read.table(coverage_file)
+  cov_data <- read.table(coverage_file, header = TRUE)
 
       if (data_type == "novoalign"){
 
