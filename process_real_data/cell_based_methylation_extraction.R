@@ -37,7 +37,7 @@ print(args)
 
 get_cov_data <- function(coverage_file, data_type) {
 
-  cov_data <- read.table(coverage_file)
+  cov_data <- read.table(coverage_file, header = TRUE)
 
       if (data_type == "novoalign"){
 
@@ -113,7 +113,11 @@ get_cov_data <- function(coverage_file, data_type) {
 
     rm(tmp)
   }
+  if (data_type == "other"){
 
+    cov_data[,6] <- cov_data[,6] - cov_data[,5]cov_data$chr <- gsub("chr", "", cov_data$chr)
+
+  }
   colnames(cov_data) <- c("chr","CpG_start","CpG_end","meth_frac","count_meth","count_unmeth")
 
   #print(head(cov_data))
@@ -217,7 +221,7 @@ cat(sapply(c("chr","CpG_start","CpG_end","region_start", "region_end"  ,"region_
 cat("\n", file= outfile, append=TRUE)
 
 # Finding the cov file from the path and cell_id
-cov_file <- Sys.glob(file.path(args$path_cell_data, paste0("*", args$cell_ID, "*")))
+cov_file <- Sys.glob(file.path(args$path_cell_data, paste0("*", args$cell_ID, ".tsv.gz")))
 print("Cov file for this cell is")
 print(cov_file)
 

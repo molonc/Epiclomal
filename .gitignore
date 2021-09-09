@@ -12,3 +12,7 @@ files.txt
 REpiclomal_1.0.tar.gz
 *.snakemake
 *log
+*.pdf
+*.tsv.gz
+*params.yaml
+

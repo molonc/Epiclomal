@@ -47,6 +47,14 @@ python setup.py install
 
 Epiclomal R package has a dependency on DensityCut, which must be manually installed before adding Epiclomal R package. Install according to instructions listed here: https://bitbucket.org/jerry00/densitycut_dev/
 
+or 
+
+```
+git clone https://<BBUSERNAME>@bitbucket.org/jerry00/densitycut_dev.git
+R CMD build densitycut_dev/
+R CMD INSTALL densitycut_0.0.1.tar.gz
+```
+
 Epiclomal also has a dependency on the bigstatsr R package, to install, run command
 ```
 remotes::install_github("privefl/bigstatsr")
