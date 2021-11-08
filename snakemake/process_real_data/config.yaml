@@ -1,14 +1,16 @@
-PROCESS_REAL_DATA_DIR: '/path/to/Epiclomal/process_real_data'
+PROCESS_REAL_DATA_DIR: '../../../process_real_data'
 
-DATA_ID: 'test_1'
-OUTDIR: '/path/to/process_real_data'
+#Data identification for pipeline
+DATA_ID: 'DATA_NAME'
 
-DATA_DIR: '/path/to/raw_data/cov'
+#Data directory for output files
+OUTDIR: 'PROCESS_DATA_NAME'
 
-cells:
-  [cell_1,
-  cell_2,
-  cell_3]
+# All the cell names with the pattern will be extracted from COV_DIR
+#This folder has to be a subfolder in process real data  'data_<DATA_NAME>/cov' ie: data_Smallwood2014/cov'
+COV_DIR: 'data_<DATA_NAME>/cov'
+CELL_PATTERN: ".cov.txt"
+
 
 REGION_FILE: '/path/to/regions.txt'
 TRUE_FILE: '/path/to/true_clone_membership.txt.gz'
@@ -24,17 +26,17 @@ CELL_BASED_METH:
   GENOME: 'mouse'
 
 STATS_METHYLATION:
-  NUM_CELLS_CUTOFF: 5
-  MISS_PROP_CUTOFF: 0.95
-  NLOCI_CUTOFF: 0.0
+#   NUM_CELLS_CUTOFF: 5
+#   MISS_PROP_CUTOFF: 0.95
+#   NLOCI_CUTOFF: 0.0
   ALL_CUTOFFS: 
     - "0_0.95_10000"
-  FILTER_REGIONS_SAME_METH: Null
+  FILTER_REGIONS_SAME_METH: 1
   PLOT_HEATMAP_FILTERED: 1
   PLOT_HEATMAP_UNFILTERED: 1
 
 FILTER_REGIONS:
-  FILTER: True
+  FILTER: False
   COEF_THRESHOLD: 0.95
   MEAN_DIFF_THRESHOLD: 0.05
   N_TO_KEEP: 1000
