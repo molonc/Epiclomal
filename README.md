@@ -82,7 +82,7 @@ source PATH/TO/ENVIROMENT/venv/ec-env/bin/activate
 
 ## Usage
 
-For an example run please see [Smallwood](###Smallwood)
+For an example run please see [Smallwood](#Smallwood)
 
 ### Run entire pipeline with generated synthetic data
 
