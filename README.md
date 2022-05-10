@@ -19,7 +19,9 @@ conda config --add channels 'r'
 conda config --add channels 'conda-forge'
 ```
 
-### From Source
+### Installation 
+
+#### From Source (Anaconda Based)
 
 Clone Epiclomal:
 
@@ -66,8 +68,21 @@ Add Epiclomal R package into current site packages:
 R CMD build REpiclomal
 R CMD INSTALL REpiclomal_1.0.tar.gz
 ```
+#### Compute Canada Installation(non-conda)
+
+Create python virtual enviroment with dependencies:
+```
+sh create.sh 
+```
+
+Activate enviroment: 
+```
+source PATH/TO/ENVIROMENT/venv/ec-env/bin/activate
+```
 
 ## Usage
+
+For an example run please see [Smallwood](###Smallwood)
 
 ### Run entire pipeline with generated synthetic data
 
@@ -91,15 +106,17 @@ snakemake -s /path/to/Epiclomal/snakemake/synthetic_data/Snakefile --cluster 'qs
 The real data pipeline requires two steps which are separated into two workflows.
 First, the real data must be preprocessed into a methylation and region file to be consumed by the clustering software.
 
+
+
 ![Alt text](./snakemake/diagrams/process_real_data.svg)
 
-The real data processing workflow requires a config file, an example config file can be found at `Epiclomal/snakemake/process_real_data/config.yaml`, edit with appropriate paths and parameters. Ensure all cells to cluster are accounted for. Then run
+The real data processing workflow requires a config file, an example config file can be found at [`Epiclomal/snakemake/preprocess/config.yaml`](Epiclomal/snakemake/preprocess/config.yaml), edit with appropriate paths and parameters. Ensure all cells to cluster are accounted for. Then run
 
 ```
 snakemake -s /path/to/Epiclomal/snakemake/process_real_data/Snakefile --cluster 'qsub -V -hard -q shahlab.q -l h_vmem={resources.h_vmem}G -S /bin/bash -o {params.qsub_out} -e {params.qsub_err}' -j 8 --configfile /path/to/Epiclomal/snakemake/process_real_data/config.yaml
 ```
 
-Then, to run the real data through the clustering software, an example config file can be found at `Epiclomal/snakemake/real_data/config.yaml`, replace fields with the paths to the newly generated methylation and region files. Include a true clusters file if available.
+Then, to run the real data through the clustering software, an example config file can be found at [`Epiclomal/snakemake/execute_epiclomal/config.yaml`](Epiclomal/snakemake/execute_epiclomal/config.yaml), replace fields with the paths to the newly generated methylation and region files. Include a true clusters file if available.
 The real data workflow does 1000 iterations of Epiclomal by default, to change this, edit line 13 of the Snakefile.
 
 ![Alt text](./snakemake/diagrams/real_data.svg)
@@ -131,7 +148,23 @@ The base inputs for epiclomal are a list of cells of interest and their bismark 
 ## Output
 The final outputs of the epiclomal pipeline are a file containing the best clustering from epiclomal, which can be found through `all_results_bestrun_{basic|region}.tsv` which is created by the final evaluation script, and final methylation plots of the clustering.
 
-## Source code structure
+## Directory Structure
+
+### snakemake
+Contains Snakefiles and config files that run Epiclomal workflow for real and synthetic data.
+
+### paper_experiments 
+
+Contains spcific experiments dedicated to experiments found in "Epiclomal: probabilistic clustering of sparse single-cell DNA methylation data, Camila P. E. de Souza, Mirela Andronescu, Tehmina Masud, Farhia Kabeer, Justina Biele, Emma Laks, Daniel Lai, Jazmine Brimhall, Beixi Wang, Edmund Su, Tony Hui, Qi Cao, Marcus Wong, Michelle Moksa, Richard A. Moore, Martin Hirst, Samuel Aparicio, Sohrab P. Shah, doi: https://doi.org/10.1101/414482"
+
+### runs
+
+Default output directory of all Epiclomal runs 
+
+### Executables
+
+All source code can be found under the **executables** directory 
+
 ### epiclomal
 Contains the Epiclomal python package. Package includes software to run Epiclomal clustering as well as clustering evaluation script.
 
@@ -144,7 +177,42 @@ Contains REpiclomal R package. Contains non-probabilistic clustering method call
 ### scripts
 Contains R scripts that are called by various parts of the epiclomal workflow. Scripts mainly call functions found in REpiclomal R package. These R scripts generate synthetic data, run non-probabilistic methods and generate plots. Some of the requirements for scripts are: MCMCpack, densityCut (https://bitbucket.org/jerry00/densitycut_dev) and its requirements, NbClust, pcaMethods, pheatmap, argparse.
 
-### snakemake
-Contains Snakefiles and config files that run Epiclomal workflow for real and synthetic data.
 
+
+
+### Smallwood
+
+In order to execte this example please activate the appropriate conda or venv virtual enviroment
+
+Conda: 
+```
+conda activate Epiclomal
+```
+
+Venv: 
+```
+source activate PATH/TO/ec-venv/bin/activate
+```
+
+Then manouver to the snakemake/preprocess folder: 
+```
+cd PATH/TO/snakemake/preprocess
+```
+
+Finally to execute simply run: 
+
+```
+snakemake --configfile /config_smallwood.yaml
+```
+
+Thereafter confirm the preprocess was properly ran in ```runs/smallwood```
+
+Now you may run the main Epiclomal pipeline with: 
+
+```
+cd PATH/TO/snakemake/execute_epiclomal
+snakemake --configfile /config_smallwood.yaml
+```
+
+This is a basic example of running and executing the pipeline. You may use the config files as examples and execute the pipeline with the various configurations outlined in [Usage](#Usage)
 
