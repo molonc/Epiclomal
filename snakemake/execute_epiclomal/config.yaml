@@ -1,0 +1,36 @@
+#Paths
+INPUT_DIR: '/home/emiliano/projects/def-cdesouza/Lab/Epiclomal/smallwood_to_Emiliano'
+METH_F: '/home/emiliano/projects/def-cdesouza/Lab/Epiclomal/smallwood_to_Emiliano/input_Epiclomal_process_Smallwood2014.tsv.gz'
+REGION_F: '/home/emiliano/projects/def-cdesouza/Lab/Epiclomal/smallwood_to_Emiliano/regionIDs_input_Epiclomal_process_Smallwood2014.tsv.gz'
+OUTPUT_DIR: 'runs_epiclomal'
+TRUE_FILE: '/home/emiliano/projects/def-cdesouza/Lab/Epiclomal/smallwood_to_Emiliano/true_clone_membership.txt.gz'
+
+SOFTWARE:
+  hclust_software: '/home/emiliano/projects/def-cdesouza/Lab/Epiclomal/executables/scripts/hclust.R'
+  eval_software: '/home/emiliano/projects/def-cdesouza/Lab/Epiclomal/executables/scripts/eval_epiclomal.R'
+
+# To be given with the -config option if desired in the run_* file.
+CUTOFFS: '0_0.95_10000'
+
+# METH_FILE will be INPUT_DIR/CUTOFFS/METH_F
+# REGION_FILE will be INPUT_DIR/CUTOFFS/REGION_F
+TRUE_PREVALENCES: 'None'
+
+NUM_EPI_ITERS: 1000
+
+PARAMS:
+  NPM:
+    index: 'ch'
+    max_k: 10
+    impute: 0
+    use_cache: 1
+  EPICLOMAL:
+    K: 10
+    slsbulk_iterations: 10
+    mu_has_k: True
+    convergence_tolerange: 1e-4
+    max_num_iters: 1000
+    Bishop_model_selection: False
+    check_uncertainty: True
+    config_file: './config1.yaml'
+

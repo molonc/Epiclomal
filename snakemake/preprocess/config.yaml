@@ -1,0 +1,57 @@
+#Paths
+
+#In the below the path '../../' brings us back to the base 'Epiclomal' folder
+#If the paths are of issue, please enter the fool path from root to the specified files
+PROCESS_REAL_DATA_DIR: '../../executables/process_real_data'
+COV_DIR: '../../INPUT_COV_DIR/cov'
+DATA_ID: 'DATA_ID'
+OUTDIR: '../../runs/EXPERIMENT_NAME'
+REGION_FILE: '../../INPUT_DIR/REGION_FILE.txt'
+TRUE_FILE: '../../INPUT_DIR/CPG_TRUE_ISLANDS.txt'
+DATA_DIR: '../../INPUT_DIR/cov'
+
+#default file pattern
+CELL_PATTERN: ".txt.gz"
+
+#Number of cells to be ran and their suffix
+cells:
+  [cell_1,
+  cell_2,
+  cell_3,
+  cell_4,
+  cell_5,
+  cell_6,
+  cell_10]
+
+#Specifu CPG configs 
+CPG_COORDS:
+  NAME_REGIONS: 'regions'
+  GENOME_LIBRARY: 'BSgenome.Mmusculus.UCSC.mm10'
+  TYPE_OF_C: 'CpG'
+
+#Cell methylation configs
+CELL_BASED_METH:
+  INCLUDE_CHRY: 1
+  DATA_TYPE: 'bismark'
+  GENOME: 'mouse'
+
+STATS_METHYLATION:
+  NUM_CELLS_CUTOFF: 1
+  MISS_PROP_CUTOFF: 0.95
+  NLOCI_CUTOFF: 0.0
+  ALL_CUTOFFS: 
+    - "0_0.95_10000"
+  FILTER_REGIONS_SAME_METH: Null
+  PLOT_HEATMAP_FILTERED: 1
+  PLOT_HEATMAP_UNFILTERED: 1
+
+#Filter regions configurations (Unfinished)
+FILTER_REGIONS:
+  FILTER: False
+  COEF_THRESHOLD: 0.95
+  MEAN_DIFF_THRESHOLD: 0.05
+  N_TO_KEEP: 1000
+
+READY_EPICLOMAL:
+  FILTER_CPG_NO_DATA: 0
+  LUODIAMOND: 0
