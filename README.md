@@ -68,7 +68,7 @@ Add Epiclomal R package into current site packages:
 R CMD build REpiclomal
 R CMD INSTALL REpiclomal_1.0.tar.gz
 ```
-#### Compute Canada Installation(non-conda)
+#### Digital Research Alliance of Canada (former Compute Canada) Installation 
 
 Create python virtual enviroment with dependencies:
 ```

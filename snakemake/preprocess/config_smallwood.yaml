@@ -7,7 +7,7 @@ COV_DIR: '../../smallwood/cov'
 DATA_ID: 'Smallwood2014_CGI'
 OUTDIR: '../../runs/smallwood'
 REGION_FILE: '../../smallwood/cpgIslands_mm10.txt'
-TRUE_FILE: '../../smallwood/cpgIslands_mm10.txt'
+TRUE_FILE: '../../smallwood/true_clone_membership.txt.gz'
 DATA_DIR: '../../smallwood/cov'
 
 CELL_PATTERN: ".txt.gz"
